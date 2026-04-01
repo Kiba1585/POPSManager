@@ -14,9 +14,10 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Remove .NET 10 (fix WPF build)
+      shell: pwsh
       run: |
-        rmdir /s /q "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\10.0.5" || echo "No .NET 10 runtime found"
-        rmdir /s /q "C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\10.0.5" || echo "No .NET 10 desktop runtime found"
+        Remove-Item "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\10.0.5" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item "C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\10.0.5" -Recurse -Force -ErrorAction SilentlyContinue
 
     - name: Setup .NET 8 only
       uses: actions/setup-dotnet@v4
