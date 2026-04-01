@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 using POPSManager.Logic;
 
 namespace POPSManager
@@ -20,7 +21,7 @@ namespace POPSManager
 
         private void SelectPOPS_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 popsFolder = dialog.SelectedPath;
@@ -30,7 +31,7 @@ namespace POPSManager
 
         private void SelectAPPS_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 appsFolder = dialog.SelectedPath;
@@ -76,26 +77,27 @@ namespace POPSManager
                 LogBox.ScrollToEnd();
             });
         }
+
         private async void Convert_Click(object sender, RoutedEventArgs e)
-{
-    var dialog = new System.Windows.Forms.FolderBrowserDialog();
-    if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-        return;
+        {
+            var dialog = new FolderBrowserDialog();
+            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
 
-    string source = dialog.SelectedPath;
+            string source = dialog.SelectedPath;
 
-    dialog = new System.Windows.Forms.FolderBrowserDialog();
-    if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-        return;
+            dialog = new FolderBrowserDialog();
+            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
 
-    string destination = dialog.SelectedPath;
+            string destination = dialog.SelectedPath;
 
-    Log("Iniciando conversión BIN/CUE/ISO → VCD...");
+            Log("Iniciando conversión BIN/CUE/ISO → VCD...");
 
-    var converter = new Converter(UpdateProgress, UpdateSpinner, Log);
-    await converter.ConvertFolder(source, destination);
+            var converter = new Converter(UpdateProgress, UpdateSpinner, Log);
+            await converter.ConvertFolder(source, destination);
 
-    Log("Conversión finalizada.");
-}
+            Log("Conversión finalizada.");
+        }
     }
 }
