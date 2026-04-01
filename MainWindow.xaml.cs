@@ -76,5 +76,26 @@ namespace POPSManager
                 LogBox.ScrollToEnd();
             });
         }
+        private async void Convert_Click(object sender, RoutedEventArgs e)
+{
+    var dialog = new System.Windows.Forms.FolderBrowserDialog();
+    if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+        return;
+
+    string source = dialog.SelectedPath;
+
+    dialog = new System.Windows.Forms.FolderBrowserDialog();
+    if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+        return;
+
+    string destination = dialog.SelectedPath;
+
+    Log("Iniciando conversión BIN/CUE/ISO → VCD...");
+
+    var converter = new Converter(UpdateProgress, UpdateSpinner, Log);
+    await converter.ConvertFolder(source, destination);
+
+    Log("Conversión finalizada.");
+}
     }
 }
