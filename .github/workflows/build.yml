@@ -19,10 +19,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore ./POPSManager/POPSManager.csproj
 
       - name: Publish self-contained EXE
-        run: dotnet publish POPSManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:UseWPF=true
+        run: dotnet publish ./POPSManager/POPSManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:UseWPF=true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
