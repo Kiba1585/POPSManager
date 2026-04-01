@@ -1,20 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-  <OutputType>WinExe</OutputType>
-  <TargetFramework>net8.0-windows</TargetFramework>
-  <UseWPF>true</UseWPF>
-  <UseWindowsForms>true</UseWindowsForms>
-  <ImplicitUsings>enable</ImplicitUsings>
-  <Nullable>enable</Nullable>
-</PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
   <ItemGroup>
-    <!-- Núcleo de DiscUtils -->
-    <PackageReference Include="DiscUtils.Core" Version="0.16.8" />
-
-    <!-- Soporte para ISO9660 (CDReader) -->
-    <PackageReference Include="DiscUtils.Iso9660" Version="0.16.7" />
+    <PackageReference Include="DiscUtils.Core" Version="0.16.13" />
+    <PackageReference Include="DiscUtils.Iso9660" Version="0.16.13" />
   </ItemGroup>
 
 </Project>
