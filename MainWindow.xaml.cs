@@ -43,7 +43,7 @@ namespace POPSManager
         {
             if (!Directory.Exists(popsFolder) || !Directory.Exists(appsFolder))
             {
-                MessageBox.Show("Selecciona ambas carpetas primero.");
+                System.Windows.MessageBox.Show("Selecciona ambas carpetas primero.");
                 return;
             }
 
