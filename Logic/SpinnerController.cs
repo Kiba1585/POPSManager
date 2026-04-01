@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace POPSManager.Logic
@@ -15,6 +16,7 @@ namespace POPSManager.Logic
         public void Start()
         {
             running = true;
+
             Task.Run(async () =>
             {
                 string frames = "|/-\\";
@@ -22,7 +24,7 @@ namespace POPSManager.Logic
 
                 while (running)
                 {
-                    update(frames[i % frames.Length]);
+                    update(frames[i % frames.Length].ToString());
                     i++;
                     await Task.Delay(100);
                 }
