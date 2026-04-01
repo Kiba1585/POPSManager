@@ -9,7 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Núcleo de DiscUtils -->
     <PackageReference Include="DiscUtils.Core" Version="0.16.8" />
+
+    <!-- Soporte para ISO9660 (CDReader) -->
+    <PackageReference Include="DiscUtils.Iso9660" Version="0.16.7" />
   </ItemGroup>
 
 </Project>
