@@ -13,10 +13,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Remove .NET 10 (fix WPF build)
+        run: |
+          rmdir /s /q "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\10.0.5" || echo "No .NET 10 runtime found"
+          rmdir /s /q "C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\10.0.5" || echo "No .NET 10 desktop runtime found"
+
+      - name: Setup .NET 8 only
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: |
+            8.0.x
+          include-prerelease: false
+          quality: ga
 
       - name: Restore
         run: dotnet restore ./POPSManager.csproj
