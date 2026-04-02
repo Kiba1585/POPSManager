@@ -51,29 +51,31 @@ jobs:
         Write-Host "Usando MakeAppx en: $($makeappx.FullName)"
         & $makeappx.FullName pack /d msix /p POPSManager.msix
 
-    - name: Importar certificado PFX
-      run: |
-        $pfxBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
-        [IO.File]::WriteAllBytes("cert.pfx", $pfxBytes)
+    # --- 🔵 Firma desactivada para pruebas ---
+    # - name: Importar certificado PFX
+    #   run: |
+    #     $pfxBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
+    #     [IO.File]::WriteAllBytes("cert.pfx", $pfxBytes)
 
-    - name: Firmar MSIX
-      run: |
-        $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
-                    Where-Object { $_.FullName -like "*\x64\signtool.exe" } |
-                    Select-Object -First 1
-
-        if (-not $signtool) {
-            Write-Error "❌ No se encontró Signtool.exe en x64"
-            exit 1
-        }
-
-        Write-Host "Usando Signtool en: $($signtool.FullName)"
-        & $signtool.FullName sign `
-          /a `
-          /fd SHA256 `
-          /f cert.pfx `
-          /p "${{ secrets.PFX_PASSWORD }}" `
-          POPSManager.msix
+    # - name: Firmar MSIX
+    #   run: |
+    #     $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
+    #                 Where-Object { $_.FullName -like "*\x64\signtool.exe" } |
+    #                 Select-Object -First 1
+    #
+    #     if (-not $signtool) {
+    #         Write-Error "❌ No se encontró Signtool.exe en x64"
+    #         exit 1
+    #     }
+    #
+    #     Write-Host "Usando Signtool en: $($signtool.FullName)"
+    #     & $signtool.FullName sign `
+    #       /a `
+    #       /fd SHA256 `
+    #       /f cert.pfx `
+    #       /p "${{ secrets.PFX_PASSWORD }}" `
+    #       POPSManager.msix
+    # --- 🔵 Firma desactivada para pruebas ---
 
     - name: Subir artefacto MSIX
       uses: actions/upload-artifact@v4
