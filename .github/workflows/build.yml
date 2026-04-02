@@ -39,7 +39,15 @@ jobs:
 
     - name: Empaquetar MSIX
       run: |
-        $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe | Select-Object -First 1
+        $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe |
+                    Where-Object { $_.FullName -like "*\x64\makeappx.exe" } |
+                    Select-Object -First 1
+
+        if (-not $makeappx) {
+            Write-Error "No se encontró MakeAppx.exe en x64"
+            exit 1
+        }
+
         Write-Host "Usando MakeAppx en: $($makeappx.FullName)"
         & $makeappx.FullName pack /d msix /p POPSManager.msix
 
@@ -50,7 +58,15 @@ jobs:
 
     - name: Firmar MSIX
       run: |
-        $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | Select-Object -First 1
+        $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
+                    Where-Object { $_.FullName -like "*\x64\signtool.exe" } |
+                    Select-Object -First 1
+
+        if (-not $signtool) {
+            Write-Error "No se encontró Signtool.exe en x64"
+            exit 1
+        }
+
         Write-Host "Usando Signtool en: $($signtool.FullName)"
         & $signtool.FullName sign `
           /a `
