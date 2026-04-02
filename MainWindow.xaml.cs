@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows; // WPF
-using System.Windows.Forms; // NECESARIO
+using Forms = System.Windows.Forms; // Alias para evitar conflictos
 using POPSManager.Logic;
 
 namespace POPSManager
@@ -21,8 +21,8 @@ namespace POPSManager
 
         private void SelectPOPS_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            var dialog = new Forms.FolderBrowserDialog();
+            if (dialog.ShowDialog() == Forms.DialogResult.OK)
             {
                 popsFolder = dialog.SelectedPath;
                 POPSPath.Text = popsFolder;
@@ -31,8 +31,8 @@ namespace POPSManager
 
         private void SelectAPPS_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            var dialog = new Forms.FolderBrowserDialog();
+            if (dialog.ShowDialog() == Forms.DialogResult.OK)
             {
                 appsFolder = dialog.SelectedPath;
                 APPSPath.Text = appsFolder;
@@ -80,14 +80,14 @@ namespace POPSManager
 
         private async void Convert_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+            var dialog = new Forms.FolderBrowserDialog();
+            if (dialog.ShowDialog() != Forms.DialogResult.OK)
                 return;
 
             string source = dialog.SelectedPath;
 
-            dialog = new System.Windows.Forms.FolderBrowserDialog();
-            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+            dialog = new Forms.FolderBrowserDialog();
+            if (dialog.ShowDialog() != Forms.DialogResult.OK)
                 return;
 
             string destination = dialog.SelectedPath;
