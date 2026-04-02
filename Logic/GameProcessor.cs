@@ -26,6 +26,8 @@ namespace POPSManager.Logic
 
         public async Task ProcessFolder(string popsFolder, string appsFolder)
         {
+            await Task.Yield(); // Evita CS1998
+
             var vcdFiles = Directory.GetFiles(popsFolder, "*.VCD", SearchOption.TopDirectoryOnly);
 
             if (vcdFiles.Length == 0)
@@ -52,6 +54,8 @@ namespace POPSManager.Logic
 
         private async Task ProcessSingleGame(string vcdPath, string popsFolder, string appsFolder)
         {
+            await Task.Yield(); // Evita CS1998
+
             string origName = Path.GetFileNameWithoutExtension(vcdPath);
             string origExt = Path.GetExtension(vcdPath);
 
@@ -59,7 +63,7 @@ namespace POPSManager.Logic
             logger.Log($"Juego encontrado: {origName}");
 
             // Limpieza avanzada del nombre
-            string cdTag;
+            string? cdTag;
             string cleanName = NameCleaner.Clean(origName, out cdTag);
             logger.Log($"Nombre limpio: {cleanName}");
 
@@ -76,7 +80,7 @@ namespace POPSManager.Logic
 
             // Autodetección del Game ID
             logger.Log("Intentando autodetectar Game ID...");
-            string gameId = GameIdDetector.DetectGameId(vcdPath);
+            string? gameId = GameIdDetector.DetectGameId(vcdPath);
 
             if (string.IsNullOrWhiteSpace(gameId))
             {
@@ -104,6 +108,70 @@ namespace POPSManager.Logic
                 if (!File.Exists(newPath))
                     File.Move(vcdPath, newPath);
                 else
+                {
+                    logger.Log("ADVERTENCIA: Ya existe un archivo con el nombre final. No se renombra.");
+                    newPath = vcdPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"ERROR al renombrar: {ex.Message}");
+                return;
+            }
+
+            // Crear carpeta POPS
+            string gameFolder = Path.Combine(popsFolder, $"{gameId}.{cleanName}");
+            try
+            {
+                Directory.CreateDirectory(gameFolder);
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"ERROR al crear carpeta del juego: {ex.Message}");
+            }
+
+            // Detectar región
+            string region = DetectRegion(gameId);
+            logger.Log($"Región detectada: {region}");
+
+            // Crear CHEAT.TXT para PAL
+            if (region == "PAL")
+            {
+                string cheatPath = Path.Combine(gameFolder, "CHEAT.TXT");
+                try
+                {
+                    File.WriteAllLines(cheatPath, new[]
+                    {
+                        "$NOPAL",
+                        "$VMODE_6",
+                        "$FORCE_NTSC",
+                        "$YPOS_12"
+                    });
+                    logger.Log("CHEAT.TXT generado (PAL → NTSC).");
+                }
+                catch (Exception ex)
+                {
+                    logger.Log($"ERROR al crear CHEAT.TXT: {ex.Message}");
+                }
+            }
+            else
+            {
+                logger.Log("NTSC detectado: no se creó CHEAT.TXT.");
+            }
+
+            // Crear ELF vacío
+            try
+            {
+                Directory.CreateDirectory(appsFolder);
+                string elfName = $"{gameId}.{cleanName}.elf.NTSC";
+                string elfPath = Path.Combine(appsFolder, elfName);
+                if (!File.Exists(elfPath))
+                    File.WriteAllBytes(elfPath, Array.Empty<byte>());
+                logger.Log($"ELF creado: {elfName}");
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"ERROR al crear ELF: {                else
                 {
                     logger.Log("ADVERTENCIA: Ya existe un archivo con el nombre final. No se renombra.");
                     newPath = vcdPath;
