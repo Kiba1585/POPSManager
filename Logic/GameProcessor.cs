@@ -84,19 +84,7 @@ namespace POPSManager.Logic
 
             if (string.IsNullOrWhiteSpace(gameId))
             {
-                logger.Log("No se pudo autodetectar Game ID. Juego saltado.");
-                return;
-            }
-
-            logger.Log($"Game ID autodetectado: {gameId}");
-
-            // Validar Game ID
-            if (!IsValidGameId(gameId))
-            {
-                logger.Log($"ERROR: Game ID inválido ({gameId}). Juego saltado.");
-                return;
-            }
-
+                logger
             logger.Log($"Game ID válido: {gameId}");
 
             // Renombrar archivo
