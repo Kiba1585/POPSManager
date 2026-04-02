@@ -1,8 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Forms;
+using System.Windows; // WPF
 using POPSManager.Logic;
 
 namespace POPSManager
@@ -21,7 +20,7 @@ namespace POPSManager
 
         private void SelectPOPS_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new FolderBrowserDialog();
+            var dialog = new System.Windows.Forms.FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 popsFolder = dialog.SelectedPath;
@@ -31,7 +30,7 @@ namespace POPSManager
 
         private void SelectAPPS_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new FolderBrowserDialog();
+            var dialog = new System.Windows.Forms.FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 appsFolder = dialog.SelectedPath;
@@ -43,7 +42,7 @@ namespace POPSManager
         {
             if (!Directory.Exists(popsFolder) || !Directory.Exists(appsFolder))
             {
-                System.Windows.MessageBox.Show("Selecciona ambas carpetas primero.");
+                MessageBox.Show("Selecciona ambas carpetas primero.");
                 return;
             }
 
@@ -80,13 +79,13 @@ namespace POPSManager
 
         private async void Convert_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new FolderBrowserDialog();
+            var dialog = new System.Windows.Forms.FolderBrowserDialog();
             if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                 return;
 
             string source = dialog.SelectedPath;
 
-            dialog = new FolderBrowserDialog();
+            dialog = new System.Windows.Forms.FolderBrowserDialog();
             if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                 return;
 
