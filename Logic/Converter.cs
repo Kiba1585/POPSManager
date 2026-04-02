@@ -26,6 +26,8 @@ namespace POPSManager.Logic
 
         public async Task ConvertFolder(string sourceFolder, string outputFolder)
         {
+            await Task.Yield(); // Evita CS1998
+
             var files = Directory.GetFiles(sourceFolder)
                                  .Where(f => f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) ||
                                              f.EndsWith(".cue", StringComparison.OrdinalIgnoreCase) ||
@@ -56,6 +58,8 @@ namespace POPSManager.Logic
 
         private async Task ConvertSingle(string inputPath, string outputFolder)
         {
+            await Task.Yield(); // Evita CS1998
+
             string name = Path.GetFileNameWithoutExtension(inputPath);
             string outputPath = Path.Combine(outputFolder, name + ".VCD");
 
@@ -104,6 +108,9 @@ namespace POPSManager.Logic
             {
                 spinner.Stop();
             }
+        }
+    }
+}            }
         }
     }
 }
