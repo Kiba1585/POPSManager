@@ -12,7 +12,7 @@ namespace POPSManager.Logic
             "SLUS_", "SCUS_", "SLES_", "SCES_", "SLPS_", "SLPM_", "SCPS_"
         };
 
-        public static string DetectGameId(string vcdPath)
+        public static string? DetectGameId(string vcdPath)
         {
             if (!File.Exists(vcdPath))
                 throw new FileNotFoundException("El archivo VCD no existe.", vcdPath);
