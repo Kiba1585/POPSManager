@@ -44,7 +44,7 @@ jobs:
                     Select-Object -First 1
 
         if (-not $makeappx) {
-            Write-Error "No se encontró MakeAppx.exe en x64"
+            Write-Error "❌ No se encontró MakeAppx.exe en x64"
             exit 1
         }
 
@@ -54,7 +54,7 @@ jobs:
     - name: Importar certificado PFX
       run: |
         $pfxBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
-        Set-Content -Path cert.pfx -Value $pfxBytes -Encoding Byte
+        [IO.File]::WriteAllBytes("cert.pfx", $pfxBytes)
 
     - name: Firmar MSIX
       run: |
@@ -63,7 +63,7 @@ jobs:
                     Select-Object -First 1
 
         if (-not $signtool) {
-            Write-Error "No se encontró Signtool.exe en x64"
+            Write-Error "❌ No se encontró Signtool.exe en x64"
             exit 1
         }
 
