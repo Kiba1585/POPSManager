@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows; // WPF
+using System.Windows.Forms; // NECESARIO
 using POPSManager.Logic;
 
 namespace POPSManager
