@@ -76,12 +76,13 @@
                      VerticalScrollBarVisibility="Auto"
                      Height="250"/>
         </StackPanel>
-<Button Content="Convertir BIN/CUE/ISO a VCD"
+<Button Grid.Row="4"
+        Content="Convertir BIN/CUE/ISO a VCD"
         Height="40"
         FontSize="16"
         Margin="0 0 0 10"
         Click="Convert_Click"/>
-        <Button Grid.Row="4"
+        <Button Grid.Row="5"
                 Content="Procesar juegos"
                 Height="40"
                 FontSize="16"
