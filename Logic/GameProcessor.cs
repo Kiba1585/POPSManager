@@ -84,7 +84,19 @@ namespace POPSManager.Logic
 
             if (string.IsNullOrWhiteSpace(gameId))
             {
-                logger
+                logger.Log("No se pudo autodetectar Game ID. Juego saltado.");
+                return;
+            }
+
+            logger.Log($"Game ID autodetectado: {gameId}");
+
+            // Validar Game ID
+            if (!IsValidGameId(gameId))
+            {
+                logger.Log($"ERROR: Game ID inválido ({gameId}). Juego saltado.");
+                return;
+            }
+
             logger.Log($"Game ID válido: {gameId}");
 
             // Renombrar archivo
@@ -97,6 +109,114 @@ namespace POPSManager.Logic
                     File.Move(vcdPath, newPath);
                 else
                 {
+                    logger.Log("ADVERTENCIA: Ya existe un archivo con el nombre final. No se renombra.");
+                    newPath = vcdPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"ERROR al renombrar: {ex.Message}");
+                return;
+            }
+
+            // Crear carpeta POPS
+            string gameFolder = Path.Combine(popsFolder, $"{gameId}.{cleanName}");
+            try
+            {
+                Directory.CreateDirectory(gameFolder);
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"ERROR al crear carpeta del juego: {ex.Message}");
+            }
+
+            // Detectar región
+            string region = DetectRegion(gameId);
+            logger.Log($"Región detectada: {region}");
+
+            // Crear CHEAT.TXT para PAL
+            if (region == "PAL")
+            {
+                string cheatPath = Path.Combine(gameFolder, "CHEAT.TXT");
+                try
+                {
+                    File.WriteAllLines(cheatPath, new[]
+                    {
+                        "$NOPAL",
+                        "$VMODE_6",
+                        "$FORCE_NTSC",
+                        "$YPOS_12"
+                    });
+                    logger.Log("CHEAT.TXT generado (PAL → NTSC).");
+                }
+                catch (Exception ex)
+                {
+                    logger.Log($"ERROR al crear CHEAT.TXT: {ex.Message}");
+                }
+            }
+            else
+            {
+                logger.Log("NTSC detectado: no se creó CHEAT.TXT.");
+            }
+
+            // Crear ELF vacío
+            try
+            {
+                Directory.CreateDirectory(appsFolder);
+                string elfName = $"{gameId}.{cleanName}.elf.NTSC";
+                string elfPath = Path.Combine(appsFolder, elfName);
+
+                if (!File.Exists(elfPath))
+                    File.WriteAllBytes(elfPath, Array.Empty<byte>());
+
+                logger.Log($"ELF creado: {elfName}");
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"ERROR al crear ELF: {ex.Message}");
+            }
+
+            logger.Log("Juego procesado correctamente.");
+        }
+
+        private bool IsValidGameId(string gameId)
+        {
+            if (string.IsNullOrWhiteSpace(gameId))
+                return false;
+
+            if (gameId.Length != 10)
+                return false;
+
+            string prefix = gameId.Substring(0, 5).ToUpperInvariant();
+            string[] validPrefixes =
+            {
+                "SCES-", "SLES-", "SCED-", "SLED-",
+                "SCUS-", "SLUS-", "SCPS-", "SLPS-", "SLPM-"
+            };
+
+            if (!validPrefixes.Contains(prefix))
+                return false;
+
+            string numeric = gameId.Substring(5, 5);
+            return numeric.All(char.IsDigit);
+        }
+
+        private string DetectRegion(string gameId)
+        {
+            string prefix = gameId.Substring(0, 5).ToUpperInvariant();
+            switch (prefix)
+            {
+                case "SCES-":
+                case "SLES-":
+                case "SCED-":
+                case "SLED-":
+                    return "PAL";
+                default:
+                    return "NTSC";
+            }
+        }
+    }
+}                {
                     logger.Log("ADVERTENCIA: Ya existe un archivo con el nombre final. No se renombra.");
                     newPath = vcdPath;
                 }
