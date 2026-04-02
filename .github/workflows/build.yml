@@ -34,7 +34,7 @@ jobs:
     - name: Crear carpeta MSIX
       run: |
         mkdir msix
-        cp -r ./POPSManager/bin/Release/net8.0-windows/win-x64/publish/* ./msix/
+        cp -r ./bin/Release/net8.0-windows/win-x64/publish/* ./msix/
         cp -r ./Installer/* ./msix/
 
     - name: Empaquetar MSIX
