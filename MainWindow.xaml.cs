@@ -30,7 +30,7 @@ namespace POPSManager
 
         private void SelectAPPS_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.Forms.FolderBrowserDialog();
+            var dialog = new System.Windows.Forms.FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 appsFolder = dialog.SelectedPath;
