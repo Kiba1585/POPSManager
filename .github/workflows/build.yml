@@ -41,6 +41,20 @@ jobs:
       run: |
         MakeAppx pack /d msix /p POPSManager.msix
 
+    - name: Importar certificado PFX
+      run: |
+        $pfxBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
+        Set-Content -Path cert.pfx -Value $pfxBytes -Encoding Byte
+
+    - name: Firmar MSIX
+      run: |
+        signtool sign `
+          /a `
+          /fd SHA256 `
+          /f cert.pfx `
+          /p "${{ secrets.PFX_PASSWORD }}" `
+          POPSManager.msix
+
     - name: Subir artefacto MSIX
       uses: actions/upload-artifact@v4
       with:
