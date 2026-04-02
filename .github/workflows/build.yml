@@ -39,7 +39,9 @@ jobs:
 
     - name: Empaquetar MSIX
       run: |
-        & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\makeappx.exe" pack /d msix /p POPSManager.msix
+        $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe | Select-Object -First 1
+        Write-Host "Usando MakeAppx en: $($makeappx.FullName)"
+        & $makeappx.FullName pack /d msix /p POPSManager.msix
 
     - name: Importar certificado PFX
       run: |
@@ -48,7 +50,9 @@ jobs:
 
     - name: Firmar MSIX
       run: |
-        & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign `
+        $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | Select-Object -First 1
+        Write-Host "Usando Signtool en: $($signtool.FullName)"
+        & $signtool.FullName sign `
           /a `
           /fd SHA256 `
           /f cert.pfx `
