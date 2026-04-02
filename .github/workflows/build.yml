@@ -24,9 +24,25 @@ jobs:
     - name: Publish self-contained EXE
       run: dotnet publish ./POPSManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:UseWPF=true
 
-    - name: Upload artifact
+    - name: Upload EXE artifact
       uses: actions/upload-artifact@v4
       with:
         name: POPSManager-EXE
         path: |
           **/bin/Release/net8.0-windows/win-x64/publish/*
+
+    - name: Crear carpeta MSIX
+      run: |
+        mkdir msix
+        cp -r ./POPSManager/bin/Release/net8.0-windows/win-x64/publish/* ./msix/
+        cp -r ./Installer/* ./msix/
+
+    - name: Empaquetar MSIX
+      run: |
+        MakeAppx pack /d msix /p POPSManager.msix
+
+    - name: Subir artefacto MSIX
+      uses: actions/upload-artifact@v4
+      with:
+        name: POPSManager-MSIX
+        path: POPSManager.msix
