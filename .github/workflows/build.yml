@@ -38,9 +38,8 @@ jobs:
         cp -r ./Installer/* ./msix/
 
     - name: Empaquetar MSIX
-      run: |
-        "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\makeappx.exe" pack /d msix /p POPSManager.msix
-
+  run: |
+    & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\makeappx.exe" pack /d msix /p POPSManager.msix
     - name: Importar certificado PFX
       run: |
         $pfxBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
