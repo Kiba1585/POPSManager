@@ -110,6 +110,20 @@ namespace POPSManager.Logic
             }
         }
     }
+}                }
+
+                logger.Log($"Conversión completada: {name}.VCD");
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"ERROR al convertir {name}: {ex.Message}");
+            }
+            finally
+            {
+                spinner.Stop();
+            }
+        }
+    }
 }            }
         }
     }
