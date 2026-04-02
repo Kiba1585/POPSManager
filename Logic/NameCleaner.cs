@@ -4,7 +4,7 @@ namespace POPSManager.Logic
 {
     public static class NameCleaner
     {
-        public static string Clean(string name, out string cdTag)
+        public static string Clean(string name, out string? cdTag)
         {
             cdTag = DetectDisc(name);
 
@@ -26,13 +26,13 @@ namespace POPSManager.Logic
 
             name = name.Trim();
 
-            if (cdTag != null)
+            if (!string.IsNullOrEmpty(cdTag))
                 name += $" ({cdTag})";
 
             return name;
         }
 
-        private static string DetectDisc(string name)
+        private static string? DetectDisc(string name)
         {
             var match = Regex.Match(name, @"(Disc|Disk|CD)\s*([1-9])", RegexOptions.IgnoreCase);
             if (match.Success)
