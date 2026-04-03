@@ -1,0 +1,106 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ========================================================= -->
+    <!--  ANIMACIONES DE TOASTS -->
+    <!-- ========================================================= -->
+
+    <!-- Animación de entrada -->
+    <Storyboard x:Key="ToastShowAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1"
+                         Duration="0:0:0.25"/>
+
+        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                         From="-20" To="0"
+                         Duration="0:0:0.25"
+                         EasingFunction="{StaticResource QuadraticEaseOut}"/>
+    </Storyboard>
+
+    <!-- Animación de salida -->
+    <Storyboard x:Key="ToastHideAnimation">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="1" To="0"
+                         Duration="0:0:0.25"/>
+
+        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                         From="0" To="-20"
+                         Duration="0:0:0.25"
+                         EasingFunction="{StaticResource QuadraticEaseIn}"/>
+    </Storyboard>
+
+
+    <!-- EASING FUNCTIONS -->
+    <QuadraticEase x:Key="QuadraticEaseOut" EasingMode="EaseOut"/>
+    <QuadraticEase x:Key="QuadraticEaseIn" EasingMode="EaseIn"/>
+
+
+    <!-- ========================================================= -->
+    <!--  ESTILO BASE PARA TOASTS -->
+    <!-- ========================================================= -->
+
+    <Style x:Key="ToastBaseStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="14 10"/>
+        <Setter Property="Margin" Value="0 0 0 10"/>
+        <Setter Property="Opacity" Value="0"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="-20"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#000000"
+                                  BlurRadius="12"
+                                  ShadowDepth="2"
+                                  Opacity="0.35"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!-- ========================================================= -->
+    <!--  TOAST: SUCCESS -->
+    <!-- ========================================================= -->
+
+    <Style x:Key="ToastSuccessStyle"
+           TargetType="Border"
+           BasedOn="{StaticResource ToastBaseStyle}">
+        <Setter Property="Background" Value="{StaticResource Brush.Success}"/>
+    </Style>
+
+
+    <!-- ========================================================= -->
+    <!--  TOAST: INFO -->
+    <!-- ========================================================= -->
+
+    <Style x:Key="ToastInfoStyle"
+           TargetType="Border"
+           BasedOn="{StaticResource ToastBaseStyle}">
+        <Setter Property="Background" Value="{StaticResource Brush.Accent}"/>
+    </Style>
+
+
+    <!-- ========================================================= -->
+    <!--  TOAST: WARNING -->
+    <!-- ========================================================= -->
+
+    <Style x:Key="ToastWarningStyle"
+           TargetType="Border"
+           BasedOn="{StaticResource ToastBaseStyle}">
+        <Setter Property="Background" Value="{StaticResource Brush.Warning}"/>
+    </Style>
+
+
+    <!-- ========================================================= -->
+    <!--  TOAST: ERROR -->
+    <!-- ========================================================= -->
+
+    <Style x:Key="ToastErrorStyle"
+           TargetType="Border"
+           BasedOn="{StaticResource ToastBaseStyle}">
+        <Setter Property="Background" Value="{StaticResource Brush.Error}"/>
+    </Style>
+
+</ResourceDictionary>
