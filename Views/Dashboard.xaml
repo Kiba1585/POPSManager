@@ -1,0 +1,165 @@
+<UserControl x:Class="POPSManager.Views.Dashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Brush.Background}">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock Text="Dashboard"
+                   FontSize="28"
+                   FontWeight="SemiBold"
+                   Foreground="{StaticResource Brush.TextPrimary}"
+                   Margin="0 0 0 20"/>
+
+        <!-- Contenido -->
+        <Grid Grid.Row="1">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Tarjetas superiores -->
+            <UniformGrid Grid.Row="0"
+                         Columns="3"
+                         Margin="0 0 0 20"
+                         HorizontalAlignment="Stretch"
+                         VerticalAlignment="Top"
+                         Height="140">
+
+                <!-- Tarjeta: Juegos procesados -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Juegos procesados"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+
+                        <TextBlock x:Name="ProcessedCount"
+                                   Text="0"
+                                   FontSize="36"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Accent}"
+                                   Margin="0 10 0 0"/>
+
+                        <TextBlock Text="Total convertidos y organizados"
+                                   Foreground="{StaticResource Brush.TextMuted}"
+                                   FontSize="12"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tarjeta: Juegos pendientes -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Pendientes"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+
+                        <TextBlock x:Name="PendingCount"
+                                   Text="0"
+                                   FontSize="36"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Warning}"
+                                   Margin="0 10 0 0"/>
+
+                        <TextBlock Text="Archivos listos para procesar"
+                                   Foreground="{StaticResource Brush.TextMuted}"
+                                   FontSize="12"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tarjeta: Errores recientes -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Errores recientes"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+
+                        <TextBlock x:Name="ErrorCount"
+                                   Text="0"
+                                   FontSize="36"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Error}"
+                                   Margin="0 10 0 0"/>
+
+                        <TextBlock Text="Últimos fallos detectados"
+                                   Foreground="{StaticResource Brush.TextMuted}"
+                                   FontSize="12"/>
+                    </StackPanel>
+                </Border>
+
+            </UniformGrid>
+
+            <!-- Panel inferior -->
+            <Grid Grid.Row="1">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Acciones rápidas -->
+                <Border Grid.Column="0"
+                        Style="{StaticResource Card}"
+                        Margin="0 0 20 0">
+
+                    <StackPanel Spacing="12">
+
+                        <TextBlock Text="Accesos rápidos"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+
+                        <Button Content="Convertir juegos"
+                                Style="{StaticResource PrimaryButton}"
+                                Height="40"/>
+
+                        <Button Content="Procesar POPS"
+                                Style="{StaticResource PrimaryButton}"
+                                Height="40"/>
+
+                        <Button Content="Abrir carpeta POPS"
+                                Style="{StaticResource SecondaryButton}"
+                                Height="40"/>
+
+                        <Button Content="Abrir carpeta APPS"
+                                Style="{StaticResource SecondaryButton}"
+                                Height="40"/>
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- Actividad reciente -->
+                <Border Grid.Column="1"
+                        Style="{StaticResource Card}">
+
+                    <StackPanel Spacing="10">
+
+                        <TextBlock Text="Actividad reciente"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+
+                        <ListBox x:Name="RecentActivity"
+                                 Background="{StaticResource Brush.Panel}"
+                                 BorderThickness="0"
+                                 Foreground="{StaticResource Brush.TextSecondary}"
+                                 FontSize="14"
+                                 Height="220"/>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+</UserControl>
