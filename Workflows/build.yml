@@ -1,0 +1,89 @@
+name: Build POPSManager
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore
+      run: dotnet restore ./POPSManager.csproj
+
+    - name: Publish self-contained EXE
+      run: dotnet publish ./POPSManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:UseWPF=true
+
+    - name: Upload EXE artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: POPSManager-EXE
+        path: |
+          ./bin/Release/net8.0-windows7.0/win-x64/publish/*
+
+    - name: Crear carpeta MSIX
+      run: |
+        mkdir msix
+        cp -r ./bin/Release/net8.0-windows7.0/win-x64/publish/* ./msix/
+
+        if (Test-Path "./Installer") {
+            cp -r ./Installer/* ./msix/
+        } else {
+            Write-Host "⚠️ Carpeta Installer no encontrada, continuando sin archivos adicionales."
+        }
+
+    - name: Empaquetar MSIX
+      run: |
+        $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe |
+                    Where-Object { $_.FullName -like "*\x64\makeappx.exe" } |
+                    Select-Object -First 1
+
+        if (-not $makeappx) {
+            Write-Error "❌ No se encontró MakeAppx.exe en x64"
+            exit 1
+        }
+
+        Write-Host "Usando MakeAppx en: $($makeappx.FullName)"
+        & $makeappx.FullName pack /d msix /p POPSManager.msix
+
+    # --- Firma desactivada para pruebas ---
+    # - name: Importar certificado PFX
+    #   run: |
+    #     $pfxBytes = [System.Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
+    #     [IO.File]::WriteAllBytes("cert.pfx", $pfxBytes)
+    #
+    # - name: Firmar MSIX
+    #   run: |
+    #     $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
+    #                 Where-Object { $_.FullName -like "*\x64\signtool.exe" } |
+    #                 Select-Object -First 1
+    #
+    #     if (-not $signtool) {
+    #         Write-Error "❌ No se encontró Signtool.exe en x64"
+    #         exit 1
+    #     }
+    #
+    #     Write-Host "Usando Signtool en: $($signtool.FullName)"
+    #     & $signtool.FullName sign `
+    #       /a `
+    #       /fd SHA256 `
+    #       /f cert.pfx `
+    #       /p "${{ secrets.PFX_PASSWORD }}" `
+    #       POPSManager.msix
+    # --- Firma desactivada para pruebas ---
+
+    - name: Subir artefacto MSIX
+      uses: actions/upload-artifact@v4
+      with:
+        name: POPSManager-MSIX
+        path: POPSManager.msix
