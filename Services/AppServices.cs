@@ -5,40 +5,28 @@ namespace POPSManager.Services
 {
     public class AppServices
     {
-        public NotificationService Notifications { get; }
-        public LoggingService Logging { get; }
-        public ProgressService Progress { get; }
         public PathsService Paths { get; }
         public SettingsService Settings { get; }
-
-        public Converter Converter { get; }
+        public LoggingService LogService { get; }
+        public NotificationService Notifications { get; }
+        public ProgressService Progress { get; }
         public GameProcessor GameProcessor { get; }
 
         public AppServices()
         {
-            Notifications = new NotificationService();
-            Logging = new LoggingService();
-            Progress = new ProgressService();
             Paths = new PathsService();
             Settings = new SettingsService();
-
-            Converter = new Converter(
-                updateProgress: Progress.Update,
-                updateSpinner: Progress.SetStatus,
-                log: Logging.Write,
-                notify: Notifications.Show
-            );
+            LogService = new LoggingService();
+            Notifications = new NotificationService();
+            Progress = new ProgressService();
 
             GameProcessor = new GameProcessor(
-                updateProgress: Progress.Update,
-                updateSpinner: Progress.SetStatus,
-                log: Logging.Write,
-                notify: Notifications.Show
+                Progress.SetProgress,
+                Progress.SetStatus,
+                LogService.Write,
+                Notifications.Show,
+                Paths
             );
         }
-
-        // Métodos accesibles globalmente
-        public void Notify(UiNotification n) => Notifications.Show(n);
-        public void Log(string msg) => Logging.Write(msg);
     }
 }
