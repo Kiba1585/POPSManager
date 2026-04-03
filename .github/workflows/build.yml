@@ -1,0 +1,86 @@
+name: Build POPSManager
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore
+      run: dotnet restore ./POPSManager.csproj
+
+    - name: Publish self-contained EXE
+      run: dotnet publish ./POPSManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:UseWPF=true
+
+    - name: Detect publish folder
+      id: find_publish
+      shell: pwsh
+      run: |
+        $publish = Get-ChildItem -Recurse -Directory -Filter publish | Select-Object -First 1
+        if (-not $publish) {
+            Write-Error "❌ No se encontró carpeta publish"
+            exit 1
+        }
+        echo "publish_path=$($publish.FullName)" >> $env:GITHUB_OUTPUT
+
+    - name: Upload EXE artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: POPSManager-EXE
+        path: ${{ steps.find_publish.outputs.publish_path }}/*
+
+    - name: Crear carpeta MSIX
+      shell: pwsh
+      run: |
+        mkdir msix
+        cp -r "${{ steps.find_publish.outputs.publish_path }}/*" ./msix/
+        if (Test-Path "./Installer") {
+            cp -r ./Installer/* ./msix/
+        }
+
+    - name: Restaurar certificado desde Base64
+      shell: pwsh
+      run: |
+        echo "$env:PFX_FILE" > cert_base64.txt
+        certutil -decode cert_base64.txt cert.pfx
+
+    - name: Importar certificado
+      shell: pwsh
+      run: |
+        Import-PfxCertificate -FilePath cert.pfx -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString -String "$env:PFX_PASSWORD" -AsPlainText -Force)
+
+    - name: Empaquetar MSIX
+      shell: pwsh
+      run: |
+        $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe |
+                    Where-Object { $_.FullName -like "*\x64\makeappx.exe" } |
+                    Select-Object -First 1
+        & $makeappx.FullName pack /d msix /p POPSManager.msix
+
+    - name: Firmar MSIX
+      shell: pwsh
+      run: |
+        & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign `
+          /fd SHA256 `
+          /a `
+          /f cert.pfx `
+          /p "$env:PFX_PASSWORD" `
+          POPSManager.msix
+
+    - name: Subir artefacto MSIX
+      uses: actions/upload-artifact@v4
+      with:
+        name: POPSManager-MSIX
+        path: POPSManager.msix
