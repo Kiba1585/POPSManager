@@ -1,0 +1,148 @@
+<UserControl x:Class="POPSManager.Views.Dashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Brush.Background}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+        <!-- StackPanel corregido -->
+        <StackPanel Margin="20">
+
+            <!-- TÍTULO -->
+            <TextBlock Text="Dashboard"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       Margin="0 0 0 20"/>
+
+            <!-- ========================================================= -->
+            <!--  TARJETAS DE ESTADÍSTICAS -->
+            <!-- ========================================================= -->
+
+            <UniformGrid Columns="3"
+                         Margin="0 10 0 0"
+                         HorizontalAlignment="Stretch"
+                         VerticalAlignment="Top">
+
+                <!-- Juegos procesados -->
+                <Border Style="{StaticResource Card}"
+                        Margin="10"
+                        Effect="{StaticResource ShadowDefault}">
+                    <StackPanel>
+                        <TextBlock Text="Juegos procesados"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Margin="0 0 0 6"/>
+                        <TextBlock x:Name="ProcessedCount"
+                                   Text="0"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Accent}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Archivos pendientes -->
+                <Border Style="{StaticResource Card}"
+                        Margin="10"
+                        Effect="{StaticResource ShadowDefault}">
+                    <StackPanel>
+                        <TextBlock Text="Archivos pendientes"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Margin="0 0 0 6"/>
+                        <TextBlock x:Name="PendingCount"
+                                   Text="0"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Warning}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Errores recientes -->
+                <Border Style="{StaticResource Card}"
+                        Margin="10"
+                        Effect="{StaticResource ShadowDefault}">
+                    <StackPanel>
+                        <TextBlock Text="Errores recientes"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Margin="0 0 0 6"/>
+                        <TextBlock x:Name="ErrorCount"
+                                   Text="0"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Error}"/>
+                    </StackPanel>
+                </Border>
+
+            </UniformGrid>
+
+            <!-- ========================================================= -->
+            <!--  ACCIONES RÁPIDAS -->
+            <!-- ========================================================= -->
+
+            <TextBlock Text="Acciones rápidas"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Margin="0 20 0 10"
+                       Foreground="{StaticResource Brush.TextPrimary}"/>
+
+            <!-- StackPanel corregido -->
+            <StackPanel Orientation="Horizontal">
+
+                <Button Content="Convertir juegos"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource PrimaryButton}"
+                        Margin="0 0 20 0"
+                        Click="OpenConvert_Click"/>
+
+                <Button Content="Procesar POPS"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource PrimaryButton}"
+                        Margin="0 0 20 0"
+                        Click="OpenProcessPops_Click"/>
+
+                <Button Content="Abrir carpeta POPS"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource SecondaryButton}"
+                        Margin="0 0 20 0"
+                        Click="OpenPopsFolder_Click"/>
+
+                <Button Content="Abrir carpeta APPS"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource SecondaryButton}"
+                        Click="OpenAppsFolder_Click"/>
+
+            </StackPanel>
+
+            <!-- ========================================================= -->
+            <!--  SECCIÓN DE INFORMACIÓN -->
+            <!-- ========================================================= -->
+
+            <Border Style="{StaticResource Card}"
+                    Margin="0 20 0 0"
+                    Effect="{StaticResource ShadowSoft}">
+                <StackPanel>
+
+                    <TextBlock Text="Información del sistema"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 10"/>
+
+                    <TextBlock x:Name="SystemInfo"
+                               Text="Cargando..."
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"/>
+
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+
+    </ScrollViewer>
+</UserControl>
