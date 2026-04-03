@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ========================================================= -->
+    <!--  SOMBRA SUAVE (DEFAULT) -->
+    <!-- ========================================================= -->
+    <DropShadowEffect x:Key="ShadowDefault"
+                      Color="#000000"
+                      BlurRadius="18"
+                      ShadowDepth="3"
+                      Direction="270"
+                      Opacity="0.35"/>
+
+    <!-- ========================================================= -->
+    <!--  SOMBRA FUERTE (STRONG) -->
+    <!-- ========================================================= -->
+    <DropShadowEffect x:Key="ShadowStrong"
+                      Color="#000000"
+                      BlurRadius="28"
+                      ShadowDepth="4"
+                      Direction="270"
+                      Opacity="0.45"/>
+
+    <!-- ========================================================= -->
+    <!--  SOMBRA SUAVE (SOFT) -->
+    <!-- ========================================================= -->
+    <DropShadowEffect x:Key="ShadowSoft"
+                      Color="#000000"
+                      BlurRadius="10"
+                      ShadowDepth="2"
+                      Direction="270"
+                      Opacity="0.20"/>
+
+    <!-- ========================================================= -->
+    <!--  SOMBRA INTERNA (INSET) -->
+    <!-- ========================================================= -->
+    <DropShadowEffect x:Key="ShadowInset"
+                      Color="#000000"
+                      BlurRadius="12"
+                      ShadowDepth="0"
+                      Direction="270"
+                      Opacity="0.40"
+                      RenderingBias="Quality"/>
+</ResourceDictionary>
