@@ -4,7 +4,6 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>false</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishSingleFile>true</PublishSingleFile>
@@ -17,21 +16,14 @@
     <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
   </ItemGroup>
 
-  <!-- INCLUIR TODAS LAS CARPETAS DEL PROYECTO -->
+  <!-- SOLO XAML, NO .CS -->
   <ItemGroup>
-    <Compile Include="Logic\**\*.cs" />
-    <Compile Include="Models\**\*.cs" />
-    <Compile Include="Services\**\*.cs" />
-    <Compile Include="Views\**\*.cs" />
-    <Compile Include="Controls\**\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <Page Include="MainWindow.xaml" />
     <Page Include="Views\**\*.xaml" />
     <Page Include="Controls\**\*.xaml" />
-    <Page Include="MainWindow.xaml" />
   </ItemGroup>
 
+  <!-- Recursos -->
   <ItemGroup>
     <Resource Include="Styles\**\*.xaml" />
   </ItemGroup>
