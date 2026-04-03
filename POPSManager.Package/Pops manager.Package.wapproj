@@ -1,0 +1,23 @@
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <ProjectReference Include="..\POPSManager\POPSManager.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-123456789ABC}</ProjectGuid>
+    <OutputType>AppxBundle</OutputType>
+    <AppxBundlePlatforms>x64</AppxBundlePlatforms>
+    <PackageCertificateKeyFile>..\cert.pfx</PackageCertificateKeyFile>
+    <PackageCertificatePassword></PackageCertificatePassword>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+    <AppxBundle>Always</AppxBundle>
+    <AppxPackageDir>bin\Release\AppxPackages\</AppxPackageDir>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.targets" />
+
+</Project>
