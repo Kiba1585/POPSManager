@@ -1,0 +1,135 @@
+<UserControl x:Class="POPSManager.Views.Dashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Brush.Background}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+        <StackPanel Margin="20" Spacing="20">
+
+            <!-- TÍTULO -->
+            <TextBlock Text="Dashboard"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource Brush.TextPrimary}"/>
+
+            <!-- ========================================================= -->
+            <!--  TARJETAS DE ESTADÍSTICAS -->
+            <!-- ========================================================= -->
+
+            <UniformGrid Columns="3" Margin="0 10 0 0" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+
+                <!-- Juegos procesados -->
+                <Border Style="{StaticResource Card}"
+                        Margin="10"
+                        Effect="{StaticResource ShadowDefault}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Juegos procesados"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                        <TextBlock x:Name="ProcessedCount"
+                                   Text="0"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Accent}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Archivos pendientes -->
+                <Border Style="{StaticResource Card}"
+                        Margin="10"
+                        Effect="{StaticResource ShadowDefault}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Archivos pendientes"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                        <TextBlock x:Name="PendingCount"
+                                   Text="0"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Warning}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Errores recientes -->
+                <Border Style="{StaticResource Card}"
+                        Margin="10"
+                        Effect="{StaticResource ShadowDefault}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Errores recientes"
+                                   FontSize="16"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                        <TextBlock x:Name="ErrorCount"
+                                   Text="0"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Error}"/>
+                    </StackPanel>
+                </Border>
+
+            </UniformGrid>
+
+            <!-- ========================================================= -->
+            <!--  ACCIONES RÁPIDAS -->
+            <!-- ========================================================= -->
+
+            <TextBlock Text="Acciones rápidas"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Margin="0 10 0 0"
+                       Foreground="{StaticResource Brush.TextPrimary}"/>
+
+            <StackPanel Orientation="Horizontal" Spacing="20">
+
+                <Button Content="Convertir juegos"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource PrimaryButton}"
+                        Click="OpenConvert_Click"/>
+
+                <Button Content="Procesar POPS"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource PrimaryButton}"
+                        Click="OpenProcessPops_Click"/>
+
+                <Button Content="Abrir carpeta POPS"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource SecondaryButton}"
+                        Click="OpenPopsFolder_Click"/>
+
+                <Button Content="Abrir carpeta APPS"
+                        Width="180"
+                        Height="42"
+                        Style="{StaticResource SecondaryButton}"
+                        Click="OpenAppsFolder_Click"/>
+
+            </StackPanel>
+
+            <!-- ========================================================= -->
+            <!--  SECCIÓN DE INFORMACIÓN -->
+            <!-- ========================================================= -->
+
+            <Border Style="{StaticResource Card}"
+                    Margin="0 20 0 0"
+                    Effect="{StaticResource ShadowSoft}">
+                <StackPanel Spacing="10">
+
+                    <TextBlock Text="Información del sistema"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.TextPrimary}"/>
+
+                    <TextBlock x:Name="SystemInfo"
+                               Text="Cargando..."
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"/>
+
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+
+    </ScrollViewer>
+</UserControl>
