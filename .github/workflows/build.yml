@@ -26,7 +26,7 @@ jobs:
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
     # -----------------------------
-    # 2. Publicar la app (Win32/WPF)
+    # 2. Publicar la app (framework-dependent)
     # -----------------------------
     - name: Publish application
       shell: pwsh
@@ -38,15 +38,22 @@ jobs:
           -o publish
 
     # -----------------------------
-    # 3. Preparar carpeta MSIX
+    # 3. Preparar carpeta MSIX (solo archivos válidos)
     # -----------------------------
     - name: Prepare MSIX folder
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path msix | Out-Null
-        Copy-Item -Path publish\* -Destination msix -Recurse -Force
-        Copy-Item -Path Installer\AppxManifest.xml -Destination msix -Force
-        Copy-Item -Path Installer\Assets -Destination msix\Assets -Recurse -Force
+
+        # Copiar solo archivos válidos para MSIX
+        Copy-Item publish\POPSManager.exe msix\
+        Copy-Item publish\*.dll msix\
+        Copy-Item publish\*.json msix\ -ErrorAction SilentlyContinue
+        Copy-Item publish\*.config msix\ -ErrorAction SilentlyContinue
+
+        # Copiar manifest y assets
+        Copy-Item Installer\AppxManifest.xml msix\
+        Copy-Item Installer\Assets msix\Assets -Recurse -Force
 
     # -----------------------------
     # 4. Crear el archivo .msix (MakeAppx dinámico)
