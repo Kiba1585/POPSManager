@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: self-hosted
 
     steps:
     - name: Checkout
@@ -23,79 +23,45 @@ jobs:
         $date = Get-Date -Format "yyyy.MM.dd"
         $run = "${{ github.run_number }}"
         $version = "$date.$run"
-        Write-Host "Version: $version"
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
     # -----------------------------
-    # 2. Instalar Windows 10 SDK 19041 (incluye UAP.props)
-    # -----------------------------
-    - name: Install Windows 10 SDK 19041
-      shell: pwsh
-      run: |
-        Write-Host "📦 Instalando Windows 10 SDK 19041..."
-        Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/?linkid=2120843 -OutFile sdk.exe
-        Start-Process .\sdk.exe -ArgumentList "/quiet" -Wait
-        Write-Host "✔ SDK instalado correctamente."
-
-    # -----------------------------
-    # 3. Restaurar paquetes NuGet con RID win-x86
+    # 2. Restaurar paquetes NuGet con RID win-x86
     # -----------------------------
     - name: Restore NuGet packages
       shell: pwsh
       run: |
-        Write-Host "📦 Restaurando paquetes NuGet para win-x86..."
+        Write-Host "📦 Restaurando paquetes NuGet..."
         dotnet restore POPSManager.csproj -r win-x86
 
     # -----------------------------
-    # 4. Reconstruir el PFX desde Base64
+    # 3. Reconstruir el PFX desde Base64
     # -----------------------------
     - name: Restore PFX certificate
       shell: pwsh
       run: |
-        $pfxBase64 = "${{ secrets.PFX_FILE }}"
-        if ([string]::IsNullOrWhiteSpace($pfxBase64)) {
-          Write-Error "❌ ERROR: El secreto PFX_FILE está vacío."
-          exit 1
-        }
-        $bytes = [Convert]::FromBase64String($pfxBase64)
+        $bytes = [Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
         [IO.File]::WriteAllBytes("cert.pfx", $bytes)
-        Write-Host "✔ PFX restaurado correctamente."
+        Write-Host "✔ Certificado PFX restaurado."
 
     # -----------------------------
-    # 5. Importar el certificado
+    # 4. Importar el certificado
     # -----------------------------
     - name: Import PFX certificate
       shell: pwsh
       run: |
-        $password = "${{ secrets.PFX_PASSWORD }}"
-        if ([string]::IsNullOrWhiteSpace($password)) {
-          Write-Error "❌ ERROR: El secreto PFX_PASSWORD está vacío."
-          exit 1
-        }
-
-        $secure = ConvertTo-SecureString -String $password -AsPlainText -Force
-
-        Import-PfxCertificate `
-          -FilePath cert.pfx `
-          -CertStoreLocation Cert:\CurrentUser\My `
-          -Password $secure `
-          -Exportable | Out-Null
-
-        Write-Host "✔ Certificado importado correctamente."
+        $secure = ConvertTo-SecureString -String "${{ secrets.PFX_PASSWORD }}" -AsPlainText -Force
+        Import-PfxCertificate -FilePath cert.pfx -CertStoreLocation Cert:\CurrentUser\My -Password $secure -Exportable | Out-Null
+        Write-Host "✔ Certificado importado."
 
     # -----------------------------
-    # 6. Compilar el proyecto MSIX (.wapproj)
+    # 5. Compilar el proyecto MSIX (.wapproj)
     # -----------------------------
     - name: Build MSIX Package
       shell: pwsh
       run: |
         Write-Host "🔍 Buscando MSBuild.exe..."
-        $msbuild = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter MSBuild.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-
-        if (-not $msbuild) {
-          Write-Error "❌ No se encontró MSBuild.exe en el runner."
-          exit 1
-        }
+        $msbuild = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter MSBuild.exe | Select-Object -First 1
 
         Write-Host "✔ MSBuild encontrado en: $($msbuild.FullName)"
 
@@ -108,7 +74,7 @@ jobs:
           /p:Version=${{ steps.version.outputs.version }}
 
     # -----------------------------
-    # 7. Firmar el MSIX / MSIXBUNDLE
+    # 6. Firmar el MSIX / MSIXBUNDLE
     # -----------------------------
     - name: Sign MSIX package
       shell: pwsh
@@ -119,19 +85,17 @@ jobs:
           exit 1
         }
 
-        $password = "${{ secrets.PFX_PASSWORD }}"
-
         signtool sign `
           /fd SHA256 `
           /a `
           /f cert.pfx `
-          /p $password `
+          /p "${{ secrets.PFX_PASSWORD }}" `
           "$($msix.FullName)"
 
-        Write-Host "✔ MSIX firmado correctamente: $($msix.Name)"
+        Write-Host "✔ MSIX firmado: $($msix.Name)"
 
     # -----------------------------
-    # 8. Subir artefacto
+    # 7. Subir artefacto
     # -----------------------------
     - name: Upload signed MSIX
       uses: actions/upload-artifact@v4
@@ -140,7 +104,7 @@ jobs:
         path: POPSManager.Package/bin/Release/**/*.msix*
 
     # -----------------------------
-    # 9. Crear Release en GitHub
+    # 8. Crear Release en GitHub
     # -----------------------------
     - name: Create GitHub Release
       id: create_release
@@ -148,13 +112,11 @@ jobs:
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: Release ${{ steps.version.outputs.version }}
-        draft: false
-        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # -----------------------------
-    # 10. Subir MSIX firmado al Release
+    # 9. Subir MSIX firmado al Release
     # -----------------------------
     - name: Upload MSIX to Release
       uses: softprops/action-gh-release@v2
