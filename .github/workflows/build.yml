@@ -13,6 +13,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # -----------------------------
+    # 1. Generar número de versión automático
+    # -----------------------------
     - name: Generate version
       id: version
       shell: pwsh
@@ -23,12 +26,29 @@ jobs:
         Write-Host "Version: $version"
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
-    - name: Restore NuGet packages (win-x86)
+    # -----------------------------
+    # 2. Instalar Windows 10 SDK 19041 (incluye UAP.props)
+    # -----------------------------
+    - name: Install Windows 10 SDK 19041
+      shell: pwsh
+      run: |
+        Write-Host "📦 Instalando Windows 10 SDK 19041..."
+        Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/?linkid=2120843 -OutFile sdk.exe
+        Start-Process .\sdk.exe -ArgumentList "/quiet" -Wait
+        Write-Host "✔ SDK instalado correctamente."
+
+    # -----------------------------
+    # 3. Restaurar paquetes NuGet con RID win-x86
+    # -----------------------------
+    - name: Restore NuGet packages
       shell: pwsh
       run: |
         Write-Host "📦 Restaurando paquetes NuGet para win-x86..."
         dotnet restore POPSManager.csproj -r win-x86
 
+    # -----------------------------
+    # 4. Reconstruir el PFX desde Base64
+    # -----------------------------
     - name: Restore PFX certificate
       shell: pwsh
       run: |
@@ -41,6 +61,9 @@ jobs:
         [IO.File]::WriteAllBytes("cert.pfx", $bytes)
         Write-Host "✔ PFX restaurado correctamente."
 
+    # -----------------------------
+    # 5. Importar el certificado
+    # -----------------------------
     - name: Import PFX certificate
       shell: pwsh
       run: |
@@ -60,6 +83,9 @@ jobs:
 
         Write-Host "✔ Certificado importado correctamente."
 
+    # -----------------------------
+    # 6. Compilar el proyecto MSIX (.wapproj)
+    # -----------------------------
     - name: Build MSIX Package
       shell: pwsh
       run: |
@@ -81,6 +107,9 @@ jobs:
           /p:RuntimeIdentifier=win-x86 `
           /p:Version=${{ steps.version.outputs.version }}
 
+    # -----------------------------
+    # 7. Firmar el MSIX / MSIXBUNDLE
+    # -----------------------------
     - name: Sign MSIX package
       shell: pwsh
       run: |
@@ -101,12 +130,18 @@ jobs:
 
         Write-Host "✔ MSIX firmado correctamente: $($msix.Name)"
 
+    # -----------------------------
+    # 8. Subir artefacto
+    # -----------------------------
     - name: Upload signed MSIX
       uses: actions/upload-artifact@v4
       with:
         name: Signed-MSIX
         path: POPSManager.Package/bin/Release/**/*.msix*
 
+    # -----------------------------
+    # 9. Crear Release en GitHub
+    # -----------------------------
     - name: Create GitHub Release
       id: create_release
       uses: softprops/action-gh-release@v2
@@ -118,6 +153,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    # -----------------------------
+    # 10. Subir MSIX firmado al Release
+    # -----------------------------
     - name: Upload MSIX to Release
       uses: softprops/action-gh-release@v2
       with:
