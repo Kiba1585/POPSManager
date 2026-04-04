@@ -1,23 +1,20 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <ItemGroup>
-    <!-- Ruta correcta al proyecto principal -->
     <ProjectReference Include="..\POPSManager.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
     <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-123456789ABC}</ProjectGuid>
 
-    <!-- Tipo de salida -->
     <OutputType>AppxBundle</OutputType>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
     <AppxBundle>Always</AppxBundle>
 
-    <!-- Requerido por DesktopBridge -->
-    <TargetPlatformVersion>10.0.19041.0</TargetPlatformVersion>
+    <!-- 🔥 Cambiado para que exista en GitHub Actions -->
+    <TargetPlatformVersion>10.0.22621.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
 
-    <!-- Configuración de empaquetado -->
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
     <AppxPackageDir>bin\Release\AppxPackages\</AppxPackageDir>
