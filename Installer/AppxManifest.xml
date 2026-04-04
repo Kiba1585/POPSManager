@@ -5,25 +5,26 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
-  <!-- Identidad del paquete -->
   <Identity
     Name="POPSManager"
     Publisher="CN=Raidel"
     Version="1.0.0.0" />
 
-  <!-- Propiedades generales -->
   <Properties>
     <DisplayName>POPSManager</DisplayName>
     <PublisherDisplayName>Raidel</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
-  <!-- Idiomas -->
   <Resources>
     <Resource Language="en-us" />
   </Resources>
 
-  <!-- Aplicación Win32 empaquetada en VFS -->
+  <!-- 🔥 ESTE NODO ES OBLIGATORIO PARA MSIX -->
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
   <Applications>
     <Application Id="POPSManager"
                  Executable="VFS\ProgramFilesX64\POPSManager\POPSManager.exe"
@@ -38,7 +39,6 @@
     </Application>
   </Applications>
 
-  <!-- Capacidades -->
   <Capabilities>
     <Capability Name="internetClient" />
   </Capabilities>
