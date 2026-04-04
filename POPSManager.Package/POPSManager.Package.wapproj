@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <!-- Ruta correcta al proyecto principal -->
-    <ProjectReference Include="..\POPSManager\POPSManager.csproj" />
+    <ProjectReference Include="..\POPSManager.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
