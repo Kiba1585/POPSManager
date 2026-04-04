@@ -14,7 +14,13 @@ jobs:
       uses: actions/checkout@v4
 
     # -----------------------------
-    # 1. Generar número de versión automático
+    # 1. Limpiar workspace (evita DLLs ARM64 mezcladas)
+    # -----------------------------
+    - name: Clean workspace
+      run: git clean -xfd
+
+    # -----------------------------
+    # 2. Generar número de versión automático
     # -----------------------------
     - name: Generate version
       id: version
@@ -26,7 +32,7 @@ jobs:
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
     # -----------------------------
-    # 2. Publicar la app (x64)
+    # 3. Publicar la app (x64 puro)
     # -----------------------------
     - name: Publish application
       shell: pwsh
@@ -35,27 +41,53 @@ jobs:
           -c Release `
           -r win-x64 `
           --self-contained false `
+          -p:PlatformTarget=x64 `
+          -p:PublishReadyToRun=false `
           -o publish
 
     # -----------------------------
-    # 3. Crear estructura MSIX válida (VFS)
+    # 4. Validar arquitectura de cada DLL (evita ARM64)
+    # -----------------------------
+    - name: Validate DLL architecture
+      shell: pwsh
+      run: |
+        Install-PackageProvider -Name NuGet -Force | Out-Null
+        Install-Module -Name Get-PEHeader -Force -Scope CurrentUser
+
+        Write-Host "🔍 Validando arquitectura de DLLs..."
+
+        $invalid = @()
+
+        Get-ChildItem publish\*.dll | ForEach-Object {
+          $arch = (Get-PEHeader $_.FullName).FileHeader.Machine
+
+          switch ($arch) {
+            34404 { $invalid += $_; Write-Host "❌ ARM64 encontrado: $($_.Name)" }
+            43620 { $invalid += $_; Write-Host "❌ ARM64EC encontrado: $($_.Name)" }
+            default { Write-Host "✔ OK ($arch): $($_.Name)" }
+          }
+        }
+
+        if ($invalid.Count -gt 0) {
+          Write-Error "❌ Se encontraron DLLs ARM64. No se puede continuar."
+          exit 1
+        }
+
+    # -----------------------------
+    # 5. Crear estructura MSIX válida (VFS)
     # -----------------------------
     - name: Prepare MSIX structure
       shell: pwsh
       run: |
-        # Crear estructura MSIX
         New-Item -ItemType Directory -Force -Path msix\VFS\ProgramFilesX64\POPSManager | Out-Null
         New-Item -ItemType Directory -Force -Path msix\Assets | Out-Null
 
-        # Copiar binarios dentro de VFS
         Copy-Item publish\* msix\VFS\ProgramFilesX64\POPSManager\ -Recurse -Force
-
-        # Copiar manifest y assets
         Copy-Item Installer\AppxManifest.xml msix\
         Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
     # -----------------------------
-    # 4. Crear MSIX con MakeAppx
+    # 6. Crear MSIX con MakeAppx
     # -----------------------------
     - name: Create MSIX package
       shell: pwsh
@@ -79,7 +111,7 @@ jobs:
           /l
 
     # -----------------------------
-    # 5. Restaurar certificado PFX
+    # 7. Restaurar certificado PFX
     # -----------------------------
     - name: Restore PFX certificate
       shell: pwsh
@@ -88,7 +120,7 @@ jobs:
         [IO.File]::WriteAllBytes("cert.pfx", $bytes)
 
     # -----------------------------
-    # 6. Firmar MSIX con SignTool
+    # 8. Firmar MSIX con SignTool
     # -----------------------------
     - name: Sign MSIX package
       shell: pwsh
@@ -114,7 +146,7 @@ jobs:
           POPSManager_${{ steps.version.outputs.version }}.msix
 
     # -----------------------------
-    # 7. Subir artefacto
+    # 9. Subir artefacto
     # -----------------------------
     - name: Upload MSIX artifact
       uses: actions/upload-artifact@v4
@@ -123,7 +155,7 @@ jobs:
         path: POPSManager_*.msix
 
     # -----------------------------
-    # 8. Crear Release
+    # 10. Crear Release
     # -----------------------------
     - name: Create GitHub Release
       id: create_release
@@ -135,7 +167,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # -----------------------------
-    # 9. Subir MSIX al Release
+    # 11. Subir MSIX al Release
     # -----------------------------
     - name: Upload MSIX to Release
       uses: softprops/action-gh-release@v2
