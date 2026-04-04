@@ -1,0 +1,126 @@
+name: Build, Sign and Release MSIX
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Generate version
+      id: version
+      shell: pwsh
+      run: |
+        $date = Get-Date -Format "yyyy.MM.dd"
+        $run = "${{ github.run_number }}"
+        $version = "$date.$run"
+        Write-Host "Version: $version"
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+
+    - name: Restore NuGet packages (win-x86)
+      shell: pwsh
+      run: |
+        Write-Host "📦 Restaurando paquetes NuGet para win-x86..."
+        dotnet restore POPSManager.csproj -r win-x86
+
+    - name: Restore PFX certificate
+      shell: pwsh
+      run: |
+        $pfxBase64 = "${{ secrets.PFX_FILE }}"
+        if ([string]::IsNullOrWhiteSpace($pfxBase64)) {
+          Write-Error "❌ ERROR: El secreto PFX_FILE está vacío."
+          exit 1
+        }
+        $bytes = [Convert]::FromBase64String($pfxBase64)
+        [IO.File]::WriteAllBytes("cert.pfx", $bytes)
+        Write-Host "✔ PFX restaurado correctamente."
+
+    - name: Import PFX certificate
+      shell: pwsh
+      run: |
+        $password = "${{ secrets.PFX_PASSWORD }}"
+        if ([string]::IsNullOrWhiteSpace($password)) {
+          Write-Error "❌ ERROR: El secreto PFX_PASSWORD está vacío."
+          exit 1
+        }
+
+        $secure = ConvertTo-SecureString -String $password -AsPlainText -Force
+
+        Import-PfxCertificate `
+          -FilePath cert.pfx `
+          -CertStoreLocation Cert:\CurrentUser\My `
+          -Password $secure `
+          -Exportable | Out-Null
+
+        Write-Host "✔ Certificado importado correctamente."
+
+    - name: Build MSIX Package
+      shell: pwsh
+      run: |
+        Write-Host "🔍 Buscando MSBuild.exe..."
+        $msbuild = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter MSBuild.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+
+        if (-not $msbuild) {
+          Write-Error "❌ No se encontró MSBuild.exe en el runner."
+          exit 1
+        }
+
+        Write-Host "✔ MSBuild encontrado en: $($msbuild.FullName)"
+
+        & "$($msbuild.FullName)" POPSManager.Package/POPSManager.Package.wapproj `
+          /p:Configuration=Release `
+          /p:AppxBundle=Always `
+          /p:AppxBundlePlatforms=x64 `
+          /p:UapAppxPackageBuildMode=StoreUpload `
+          /p:RuntimeIdentifier=win-x86 `
+          /p:Version=${{ steps.version.outputs.version }}
+
+    - name: Sign MSIX package
+      shell: pwsh
+      run: |
+        $msix = Get-ChildItem -Path "POPSManager.Package/bin/Release" -Filter *.msix* -Recurse | Select-Object -First 1
+        if (-not $msix) {
+          Write-Error "❌ No se encontró ningún archivo MSIX/MSIXBUNDLE para firmar."
+          exit 1
+        }
+
+        $password = "${{ secrets.PFX_PASSWORD }}"
+
+        signtool sign `
+          /fd SHA256 `
+          /a `
+          /f cert.pfx `
+          /p $password `
+          "$($msix.FullName)"
+
+        Write-Host "✔ MSIX firmado correctamente: $($msix.Name)"
+
+    - name: Upload signed MSIX
+      uses: actions/upload-artifact@v4
+      with:
+        name: Signed-MSIX
+        path: POPSManager.Package/bin/Release/**/*.msix*
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        name: Release ${{ steps.version.outputs.version }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload MSIX to Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: POPSManager.Package/bin/Release/**/*.msix*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
