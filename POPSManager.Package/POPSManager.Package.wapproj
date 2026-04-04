@@ -6,11 +6,19 @@
 
   <PropertyGroup>
     <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-123456789ABC}</ProjectGuid>
+
+    <!-- Tipo de salida -->
     <OutputType>AppxBundle</OutputType>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
+    <AppxBundle>Always</AppxBundle>
+
+    <!-- 🔥 ESTO ERA LO QUE FALTABA -->
+    <TargetPlatformVersion>10.0.19041.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+
+    <!-- Configuración de empaquetado -->
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
-    <AppxBundle>Always</AppxBundle>
     <AppxPackageDir>bin\Release\AppxPackages\</AppxPackageDir>
   </PropertyGroup>
 
