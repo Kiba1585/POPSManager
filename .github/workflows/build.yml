@@ -1,4 +1,4 @@
-name: Build, Sign and Release MSIX
+name: Build, Pack and Release MSIX
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: windows-latest
 
     steps:
     - name: Checkout
@@ -26,85 +26,84 @@ jobs:
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
     # -----------------------------
-    # 2. Restaurar paquetes NuGet con RID win-x86
+    # 2. Publicar la app (Win32/WPF)
     # -----------------------------
-    - name: Restore NuGet packages
+    - name: Publish application
       shell: pwsh
       run: |
-        Write-Host "📦 Restaurando paquetes NuGet..."
-        dotnet restore POPSManager.csproj -r win-x86
+        dotnet publish POPSManager.csproj `
+          -c Release `
+          -r win-x64 `
+          --self-contained false `
+          -o publish
 
     # -----------------------------
-    # 3. Reconstruir el PFX desde Base64
+    # 3. Preparar carpeta MSIX
+    # -----------------------------
+    - name: Prepare MSIX folder
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path msix | Out-Null
+        Copy-Item -Path publish\* -Destination msix -Recurse -Force
+        Copy-Item -Path Installer\AppxManifest.xml -Destination msix -Force
+        Copy-Item -Path Installer\Assets -Destination msix\Assets -Recurse -Force
+
+    # -----------------------------
+    # 4. Crear el archivo .msix
+    # -----------------------------
+    - name: Create MSIX package
+      shell: pwsh
+      run: |
+        $makeappx = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\makeappx.exe"
+        if (-not (Test-Path $makeappx)) {
+          Write-Error "❌ No se encontró MakeAppx.exe"
+          exit 1
+        }
+
+        & $makeappx pack `
+          /d msix `
+          /p POPSManager_${{ steps.version.outputs.version }}.msix `
+          /l
+
+    # -----------------------------
+    # 5. Restaurar certificado PFX
     # -----------------------------
     - name: Restore PFX certificate
       shell: pwsh
       run: |
         $bytes = [Convert]::FromBase64String("${{ secrets.PFX_FILE }}")
         [IO.File]::WriteAllBytes("cert.pfx", $bytes)
-        Write-Host "✔ Certificado PFX restaurado."
 
     # -----------------------------
-    # 4. Importar el certificado
-    # -----------------------------
-    - name: Import PFX certificate
-      shell: pwsh
-      run: |
-        $secure = ConvertTo-SecureString -String "${{ secrets.PFX_PASSWORD }}" -AsPlainText -Force
-        Import-PfxCertificate -FilePath cert.pfx -CertStoreLocation Cert:\CurrentUser\My -Password $secure -Exportable | Out-Null
-        Write-Host "✔ Certificado importado."
-
-    # -----------------------------
-    # 5. Compilar el proyecto MSIX (.wapproj)
-    # -----------------------------
-    - name: Build MSIX Package
-      shell: pwsh
-      run: |
-        Write-Host "🔍 Buscando MSBuild.exe..."
-        $msbuild = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter MSBuild.exe | Select-Object -First 1
-
-        Write-Host "✔ MSBuild encontrado en: $($msbuild.FullName)"
-
-        & "$($msbuild.FullName)" POPSManager.Package/POPSManager.Package.wapproj `
-          /p:Configuration=Release `
-          /p:AppxBundle=Always `
-          /p:AppxBundlePlatforms=x64 `
-          /p:UapAppxPackageBuildMode=StoreUpload `
-          /p:RuntimeIdentifier=win-x86 `
-          /p:Version=${{ steps.version.outputs.version }}
-
-    # -----------------------------
-    # 6. Firmar el MSIX / MSIXBUNDLE
+    # 6. Firmar el MSIX
     # -----------------------------
     - name: Sign MSIX package
       shell: pwsh
       run: |
-        $msix = Get-ChildItem -Path "POPSManager.Package/bin/Release" -Filter *.msix* -Recurse | Select-Object -First 1
-        if (-not $msix) {
-          Write-Error "❌ No se encontró ningún archivo MSIX/MSIXBUNDLE para firmar."
+        $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+        if (-not (Test-Path $signtool)) {
+          Write-Error "❌ No se encontró SignTool.exe"
           exit 1
         }
 
-        signtool sign `
+        & $signtool sign `
           /fd SHA256 `
           /a `
           /f cert.pfx `
           /p "${{ secrets.PFX_PASSWORD }}" `
-          "$($msix.FullName)"
-
-        Write-Host "✔ MSIX firmado: $($msix.Name)"
+          POPSManager_${{ steps.version.outputs.version }}.msix
 
     # -----------------------------
     # 7. Subir artefacto
     # -----------------------------
-    - name: Upload signed MSIX
+    - name: Upload MSIX artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Signed-MSIX
-        path: POPSManager.Package/bin/Release/**/*.msix*
+        name: POPSManager-MSIX
+        path: POPSManager_*.msix
 
     # -----------------------------
-    # 8. Crear Release en GitHub
+    # 8. Crear Release
     # -----------------------------
     - name: Create GitHub Release
       id: create_release
@@ -116,11 +115,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # -----------------------------
-    # 9. Subir MSIX firmado al Release
+    # 9. Subir MSIX al Release
     # -----------------------------
     - name: Upload MSIX to Release
       uses: softprops/action-gh-release@v2
       with:
-        files: POPSManager.Package/bin/Release/**/*.msix*
+        files: POPSManager_*.msix
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
