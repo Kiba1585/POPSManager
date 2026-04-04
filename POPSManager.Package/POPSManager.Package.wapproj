@@ -8,8 +8,6 @@
     <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-123456789ABC}</ProjectGuid>
     <OutputType>AppxBundle</OutputType>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
-    <PackageCertificateKeyFile>..\cert.pfx</PackageCertificateKeyFile>
-    <PackageCertificatePassword></PackageCertificatePassword>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
     <AppxBundle>Always</AppxBundle>
