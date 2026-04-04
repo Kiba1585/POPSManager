@@ -26,7 +26,7 @@ jobs:
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
     # -----------------------------
-    # 2. Publicar la app (framework-dependent)
+    # 2. Publicar la app (x64)
     # -----------------------------
     - name: Publish application
       shell: pwsh
@@ -38,37 +38,36 @@ jobs:
           -o publish
 
     # -----------------------------
-    # 3. Preparar carpeta MSIX (solo archivos válidos)
+    # 3. Crear estructura MSIX válida (VFS)
     # -----------------------------
-    - name: Prepare MSIX folder
+    - name: Prepare MSIX structure
       shell: pwsh
       run: |
-        New-Item -ItemType Directory -Force -Path msix | Out-Null
+        # Crear estructura MSIX
+        New-Item -ItemType Directory -Force -Path msix\VFS\ProgramFilesX64\POPSManager | Out-Null
+        New-Item -ItemType Directory -Force -Path msix\Assets | Out-Null
 
-        # Copiar solo archivos válidos para MSIX
-        Copy-Item publish\POPSManager.exe msix\
-        Copy-Item publish\*.dll msix\
-        Copy-Item publish\*.json msix\ -ErrorAction SilentlyContinue
-        Copy-Item publish\*.config msix\ -ErrorAction SilentlyContinue
+        # Copiar binarios dentro de VFS
+        Copy-Item publish\* msix\VFS\ProgramFilesX64\POPSManager\ -Recurse -Force
 
         # Copiar manifest y assets
         Copy-Item Installer\AppxManifest.xml msix\
-        Copy-Item Installer\Assets msix\Assets -Recurse -Force
+        Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
     # -----------------------------
-    # 4. Crear el archivo .msix (MakeAppx dinámico)
+    # 4. Crear MSIX con MakeAppx
     # -----------------------------
     - name: Create MSIX package
       shell: pwsh
       run: |
         Write-Host "🔍 Buscando MakeAppx.exe..."
 
-        $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe -ErrorAction SilentlyContinue |
+        $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe |
                     Where-Object { $_.FullName -like "*x64*" } |
                     Select-Object -First 1
 
         if (-not $makeappx) {
-          Write-Error "❌ No se encontró MakeAppx.exe en el runner."
+          Write-Error "❌ No se encontró MakeAppx.exe."
           exit 1
         }
 
@@ -89,19 +88,19 @@ jobs:
         [IO.File]::WriteAllBytes("cert.pfx", $bytes)
 
     # -----------------------------
-    # 6. Firmar el MSIX (SignTool dinámico)
+    # 6. Firmar MSIX con SignTool
     # -----------------------------
     - name: Sign MSIX package
       shell: pwsh
       run: |
         Write-Host "🔍 Buscando SignTool.exe..."
 
-        $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+        $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
                      Where-Object { $_.FullName -like "*x64*" } |
                      Select-Object -First 1
 
         if (-not $signtool) {
-          Write-Error "❌ No se encontró SignTool.exe en el runner."
+          Write-Error "❌ No se encontró SignTool.exe."
           exit 1
         }
 
