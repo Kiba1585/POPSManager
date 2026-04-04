@@ -20,9 +20,10 @@
     <Resource Language="en-us" />
   </Resources>
 
-  <!-- 🔥 ESTE NODO ES OBLIGATORIO PARA MSIX -->
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+    <TargetDeviceFamily Name="Windows.Desktop"
+                        MinVersion="10.0.17763.0"
+                        MaxVersionTested="10.0.26100.0" />
   </Dependencies>
 
   <Applications>
@@ -41,6 +42,8 @@
 
   <Capabilities>
     <Capability Name="internetClient" />
+    <!-- 🔥 Obligatorio para apps Win32 empaquetadas -->
+    <rescap:Capability Name="runFullTrust" />
   </Capabilities>
 
 </Package>
