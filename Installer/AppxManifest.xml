@@ -7,12 +7,12 @@
 
   <Identity
     Name="POPSManager"
-    Publisher="CN=Raidel"
+    Publisher="CN=POPSManager"
     Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>POPSManager</DisplayName>
-    <PublisherDisplayName>Raidel</PublisherDisplayName>
+    <PublisherDisplayName>POPSManager</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -42,7 +42,6 @@
 
   <Capabilities>
     <Capability Name="internetClient" />
-    <!-- 🔥 Obligatorio para apps Win32 empaquetadas -->
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
 
