@@ -59,11 +59,9 @@ jobs:
             $fs = [System.IO.File]::OpenRead($Path)
             $br = New-Object System.IO.BinaryReader($fs)
 
-            # Offset del encabezado PE
             $fs.Seek(0x3C, 'Begin') | Out-Null
             $peOffset = $br.ReadInt32()
 
-            # Leer Machine
             $fs.Seek($peOffset + 4, 'Begin') | Out-Null
             $machine = $br.ReadUInt16()
 
@@ -79,8 +77,8 @@ jobs:
             $arch = Get-DllArchitecture $_.FullName
 
             switch ($arch) {
-                0x8664 { Write-Host "✔ x64: $($_.Name)" }          # x64
-                0x014C { Write-Host "⚠ x86 permitido: $($_.Name)" } # x86
+                0x8664 { Write-Host "✔ x64: $($_.Name)" }
+                0x014C { Write-Host "⚠ x86 permitido: $($_.Name)" }
                 0xAA64 { $invalid += $_; Write-Host "❌ ARM64: $($_.Name)" }
                 0xA641 { $invalid += $_; Write-Host "❌ ARM64EC: $($_.Name)" }
                 default { Write-Host "❓ Desconocido ($arch): $($_.Name)" }
@@ -174,7 +172,7 @@ jobs:
         path: POPSManager_*.msix
 
     # -----------------------------
-    # 10. Crear Release
+    # 10. Crear Release (con token correcto)
     # -----------------------------
     - name: Create GitHub Release
       id: create_release
@@ -182,8 +180,7 @@ jobs:
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: Release ${{ steps.version.outputs.version }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     # -----------------------------
     # 11. Subir MSIX al Release
@@ -192,5 +189,4 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: POPSManager_*.msix
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
