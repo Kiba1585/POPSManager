@@ -172,7 +172,18 @@ jobs:
         path: POPSManager_*.msix
 
     # -----------------------------
-    # 10. Crear Release (con token correcto)
+    # 10. Crear TAG antes del release
+    # -----------------------------
+    - name: Create tag
+      shell: pwsh
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git tag v${{ steps.version.outputs.version }}
+        git push origin v${{ steps.version.outputs.version }}
+
+    # -----------------------------
+    # 11. Crear Release
     # -----------------------------
     - name: Create GitHub Release
       id: create_release
@@ -183,7 +194,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     # -----------------------------
-    # 11. Subir MSIX al Release
+    # 12. Subir MSIX al Release
     # -----------------------------
     - name: Upload MSIX to Release
       uses: softprops/action-gh-release@v2
