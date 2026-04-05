@@ -19,13 +19,7 @@ jobs:
         fetch-depth: 0
 
     # -----------------------------
-    # 1. Limpiar workspace
-    # -----------------------------
-    - name: Clean workspace
-      run: git clean -xfd
-
-    # -----------------------------
-    # 2. Generar número de versión automático
+    # 1. Generar número de versión automático
     # -----------------------------
     - name: Generate version
       id: version
@@ -35,6 +29,24 @@ jobs:
         $run = "${{ github.run_number }}"
         $version = "$date.$run"
         echo "version=$version" >> $env:GITHUB_OUTPUT
+
+    # -----------------------------
+    # 2. Crear TAG usando GitHub API (INFALIBLE)
+    # -----------------------------
+    - name: Create tag via GitHub API
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const version = "v${{ steps.version.outputs.version }}";
+          const sha = context.sha;
+
+          await github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `refs/tags/${version}`,
+            sha: sha
+          });
 
     # -----------------------------
     # 3. Publicar la app (x64 puro)
@@ -51,7 +63,7 @@ jobs:
           -o publish
 
     # -----------------------------
-    # 4. Validar arquitectura de DLLs (sin módulos externos)
+    # 4. Validar arquitectura de DLLs
     # -----------------------------
     - name: Validate DLL architecture
       shell: pwsh
@@ -96,7 +108,7 @@ jobs:
         }
 
     # -----------------------------
-    # 5. Crear estructura MSIX válida (VFS)
+    # 5. Crear estructura MSIX
     # -----------------------------
     - name: Prepare MSIX structure
       shell: pwsh
@@ -109,23 +121,14 @@ jobs:
         Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
     # -----------------------------
-    # 6. Crear MSIX con MakeAppx
+    # 6. Crear MSIX
     # -----------------------------
     - name: Create MSIX package
       shell: pwsh
       run: |
-        Write-Host "🔍 Buscando MakeAppx.exe..."
-
         $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe |
                     Where-Object { $_.FullName -like "*x64*" } |
                     Select-Object -First 1
-
-        if (-not $makeappx) {
-          Write-Error "❌ No se encontró MakeAppx.exe."
-          exit 1
-        }
-
-        Write-Host "✔ MakeAppx encontrado en: $($makeappx.FullName)"
 
         & $makeappx.FullName pack `
           /d msix `
@@ -133,7 +136,7 @@ jobs:
           /l
 
     # -----------------------------
-    # 7. Restaurar certificado PFX
+    # 7. Restaurar certificado
     # -----------------------------
     - name: Restore PFX certificate
       shell: pwsh
@@ -142,23 +145,14 @@ jobs:
         [IO.File]::WriteAllBytes("cert.pfx", $bytes)
 
     # -----------------------------
-    # 8. Firmar MSIX con SignTool
+    # 8. Firmar MSIX
     # -----------------------------
     - name: Sign MSIX package
       shell: pwsh
       run: |
-        Write-Host "🔍 Buscando SignTool.exe..."
-
         $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
                      Where-Object { $_.FullName -like "*x64*" } |
                      Select-Object -First 1
-
-        if (-not $signtool) {
-          Write-Error "❌ No se encontró SignTool.exe."
-          exit 1
-        }
-
-        Write-Host "✔ SignTool encontrado en: $($signtool.FullName)"
 
         & $signtool.FullName sign `
           /fd SHA256 `
@@ -177,29 +171,9 @@ jobs:
         path: POPSManager_*.msix
 
     # -----------------------------
-    # 10. Asegurar que estamos en main
-    # -----------------------------
-    - name: Ensure we are on main
-      shell: pwsh
-      run: |
-        git checkout main
-
-    # -----------------------------
-    # 11. Crear TAG antes del release
-    # -----------------------------
-    - name: Create tag
-      shell: pwsh
-      run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git tag v${{ steps.version.outputs.version }}
-        git push origin v${{ steps.version.outputs.version }}
-
-    # -----------------------------
-    # 12. Crear Release
+    # 10. Crear Release
     # -----------------------------
     - name: Create GitHub Release
-      id: create_release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ steps.version.outputs.version }}
@@ -207,7 +181,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     # -----------------------------
-    # 13. Subir MSIX al Release
+    # 11. Subir MSIX al Release
     # -----------------------------
     - name: Upload MSIX to Release
       uses: softprops/action-gh-release@v2
