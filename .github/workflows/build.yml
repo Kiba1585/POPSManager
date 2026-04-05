@@ -10,8 +10,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
+    # -----------------------------
+    # 0. Checkout con historial completo
+    # -----------------------------
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     # -----------------------------
     # 1. Limpiar workspace
@@ -172,7 +177,15 @@ jobs:
         path: POPSManager_*.msix
 
     # -----------------------------
-    # 10. Crear TAG antes del release
+    # 10. Asegurar que estamos en main
+    # -----------------------------
+    - name: Ensure we are on main
+      shell: pwsh
+      run: |
+        git checkout main
+
+    # -----------------------------
+    # 11. Crear TAG antes del release
     # -----------------------------
     - name: Create tag
       shell: pwsh
@@ -183,7 +196,7 @@ jobs:
         git push origin v${{ steps.version.outputs.version }}
 
     # -----------------------------
-    # 11. Crear Release
+    # 12. Crear Release
     # -----------------------------
     - name: Create GitHub Release
       id: create_release
@@ -194,7 +207,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     # -----------------------------
-    # 12. Subir MSIX al Release
+    # 13. Subir MSIX al Release
     # -----------------------------
     - name: Upload MSIX to Release
       uses: softprops/action-gh-release@v2
