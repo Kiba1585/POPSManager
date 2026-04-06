@@ -26,10 +26,18 @@ jobs:
 
       - name: Prepare MSIX folder structure
         run: |
+          # Crear carpetas necesarias
           New-Item -ItemType Directory -Force -Path "msix\VFS\ProgramFiles\POPSManager" | Out-Null
+          New-Item -ItemType Directory -Force -Path "msix\Assets" | Out-Null
+
+          # Copiar archivos publicados
           Copy-Item publish\* msix\VFS\ProgramFiles\POPSManager\ -Recurse -Force
+
+          # Copiar manifest corregido
           Copy-Item Installer\AppxManifest.xml msix\ -Force
-          Copy-Item Assets\* msix\Assets\ -Recurse -Force
+
+          # Copiar íconos desde Installer/Assets
+          Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
       - name: Locate MakeAppx.exe
         id: makeappx
