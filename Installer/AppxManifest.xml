@@ -28,7 +28,7 @@
 
   <Applications>
     <Application Id="POPSManager"
-                 Executable="VFS\ProgramFilesX64\POPSManager\POPSManager.exe"
+                 Executable="VFS\ProgramFiles\POPSManager\POPSManager.exe"
                  EntryPoint="Windows.FullTrustApplication">
 
       <uap:VisualElements
