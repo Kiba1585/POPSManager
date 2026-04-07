@@ -5,23 +5,45 @@
 
     <Application.Resources>
 
-        <!-- =============================== -->
-        <!--   DICCIONARIOS DE RECURSOS      -->
-        <!-- =============================== -->
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
 
-                <!-- Paleta de colores -->
+                <!-- =============================== -->
+                <!--   PALETA DE COLORES            -->
+                <!-- =============================== -->
                 <ResourceDictionary Source="Resources/Colors.xaml"/>
 
-                <!-- Estilos de controles -->
+                <!-- =============================== -->
+                <!--   ESTILOS BASE (TextBlock, etc.) -->
+                <!-- =============================== -->
                 <ResourceDictionary Source="Resources/Styles.xaml"/>
 
-                <!-- Botones -->
+                <!-- =============================== -->
+                <!--   BOTONES                      -->
+                <!-- =============================== -->
                 <ResourceDictionary Source="Resources/Buttons.xaml"/>
 
-                <!-- Tarjetas, sombras, bordes -->
+                <!-- =============================== -->
+                <!--   TARJETAS, BORDES, SOMBRAS    -->
+                <!-- =============================== -->
                 <ResourceDictionary Source="Resources/Cards.xaml"/>
+                <ResourceDictionary Source="Resources/Shadows.xaml"/>
+
+                <!-- =============================== -->
+                <!--   TOASTS (animaciones + estilos) -->
+                <!-- =============================== -->
+                <ResourceDictionary Source="Resources/Toasts.xaml"/>
+
+                <!-- =============================== -->
+                <!--   SIDEBAR / MENÚ LATERAL       -->
+                <!-- =============================== -->
+                <ResourceDictionary Source="Resources/SidebarStyles.xaml"/>
+
+                <!-- =============================== -->
+                <!--   ESTILOS DE CONTROLES EXTRA   -->
+                <!-- =============================== -->
+                <ResourceDictionary Source="Resources/ProgressPanel.xaml"/>
+                <ResourceDictionary Source="Resources/LogsPanel.xaml"/>
 
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
