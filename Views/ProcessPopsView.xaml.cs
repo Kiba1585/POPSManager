@@ -13,7 +13,7 @@ namespace POPSManager.Views
     public partial class ProcessPopsView : UserControl
     {
         // Acceso seguro a los servicios globales
-        private AppServices Services => App.Services;
+        private AppServices Services => App.Services!;
 
         public ProcessPopsView()
         {
