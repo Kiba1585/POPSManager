@@ -12,7 +12,7 @@ namespace POPSManager.Views
 {
     public partial class ConvertView : UserControl
     {
-        private AppServices Services => ((App)Application.Current).Services;
+        private AppServices Services => App.Services;
 
         public ConvertView()
         {
