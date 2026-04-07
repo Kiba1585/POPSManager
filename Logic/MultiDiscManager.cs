@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 
-namespace POPSManager.Core
+namespace POPSManager.Logic
 {
     public static class MultiDiscManager
     {
