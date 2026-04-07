@@ -5,15 +5,21 @@ namespace POPSManager
 {
     public partial class App : Application
     {
-        // Inicialización segura y sin warnings
-        public AppServices Services { get; } = new AppServices();
+        // Servicios globales accesibles desde toda la aplicación
+        public static AppServices Services { get; private set; }
+
+        public App()
+        {
+            // Inicialización segura y sin warnings
+            Services = new AppServices();
+        }
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-            // Ya no es necesario inicializar aquí
-            // Services = new AppServices();
+            // Aquí podrías agregar inicializaciones globales si lo necesitas
+            // Ejemplo: Services.Paths.EnsureFolderStructure();
         }
     }
 }
