@@ -21,14 +21,14 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  SELECCIONAR CARPETA VCD
+        //  SELECCIONAR CARPETA DE JUEGOS (VCD + ISO)
         // ============================================================
         private void BrowseVcd_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog
             {
                 IsFolderPicker = true,
-                Title = "Seleccionar carpeta con archivos VCD"
+                Title = "Seleccionar carpeta con juegos (VCD / ISO)"
             };
 
             if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
@@ -39,7 +39,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  CARGAR LISTA DE JUEGOS
+        //  CARGAR LISTA DE JUEGOS (PS1 + PS2)
         // ============================================================
         private void LoadGames()
         {
@@ -48,24 +48,25 @@ namespace POPSManager.Views
             if (!Directory.Exists(VcdPath.Text))
                 return;
 
-            var files = Directory.GetFiles(VcdPath.Text, "*.vcd")
+            var files = Directory.GetFiles(VcdPath.Text)
+                                 .Where(f =>
+                                     f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
+                                     f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
                                  .OrderBy(f => f);
 
             foreach (var file in files)
                 GamesList.Items.Add(Path.GetFileName(file));
 
-            // Notificación visual
             Services.Notifications.Show(
                 new UiNotification(NotificationType.Info,
-                $"Se detectaron {GamesList.Items.Count} juegos."));
+                $"Se detectaron {GamesList.Items.Count} juegos (PS1/PS2)."));
         }
 
         // ============================================================
-        //  PROCESAR JUEGOS
+        //  PROCESAR JUEGOS (PS1 + PS2)
         // ============================================================
         private async void Process_Click(object sender, RoutedEventArgs e)
         {
-            // Validación
             if (!Directory.Exists(VcdPath.Text))
             {
                 Services.Notifications.Show(
@@ -78,11 +79,10 @@ namespace POPSManager.Views
             {
                 Services.Notifications.Show(
                     new UiNotification(NotificationType.Warning,
-                    "No hay archivos VCD para procesar."));
+                    "No hay archivos VCD o ISO para procesar."));
                 return;
             }
 
-            // Iniciar progreso
             Services.Progress.Start("Procesando juegos...");
 
             try
