@@ -24,7 +24,6 @@ namespace POPSManager.Logic
 
                 var files = cd.GetFiles("/", "*.*", SearchOption.AllDirectories);
 
-                // Buscar cualquier archivo que contenga un ID válido
                 foreach (var file in files)
                 {
                     string name = Path.GetFileName(file);
@@ -35,7 +34,6 @@ namespace POPSManager.Logic
                         string prefix = match.Groups[1].Value.ToUpperInvariant();
                         string number = match.Groups[2].Value.PadLeft(5, '0');
 
-                        // Formato final: SCES-01234
                         return $"{prefix}-{number}";
                     }
                 }
@@ -44,7 +42,6 @@ namespace POPSManager.Logic
             }
             catch
             {
-                // Si el VCD está corrupto o no es ISO9660 válido
                 return null;
             }
         }
