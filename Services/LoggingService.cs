@@ -62,5 +62,9 @@ namespace POPSManager.Services
         public void Info(string msg) => WriteInternal(msg, "INFO");
         public void Warn(string msg) => WriteInternal(msg, "WARN");
         public void Error(string msg) => WriteInternal(msg, "ERROR");
+
+        // Opcionales (más expresivos)
+        public void WriteWarn(string msg) => Warn(msg);
+        public void WriteError(string msg) => Error(msg);
     }
 }
