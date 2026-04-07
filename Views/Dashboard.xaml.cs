@@ -18,8 +18,8 @@ namespace POPSManager.Views
         {
             InitializeComponent();
 
-            // CORRECCIÓN: App.Services es estático → no se accede vía instancia
-            _services = App.Services;
+            // CORRECCIÓN: App.Services es nullable → usar !
+            _services = App.Services!;
             _paths = _services.Paths;
 
             LoadStats();
@@ -118,7 +118,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  CAMBIAR RUTA RAÍZ (sin WinForms)
+        //  CAMBIAR RUTA RAÍZ
         // ============================================================
         private void ChangeRootPath_Click(object sender, RoutedEventArgs e)
         {
@@ -144,7 +144,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  SELECCIONAR POPSTARTER.ELF (WPF OpenFileDialog)
+        //  SELECCIONAR POPSTARTER.ELF
         // ============================================================
         private void SelectElf_Click(object sender, RoutedEventArgs e)
         {
