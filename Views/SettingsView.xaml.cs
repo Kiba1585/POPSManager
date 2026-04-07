@@ -17,8 +17,8 @@ namespace POPSManager.Views
             InitializeComponent();
 
             // Cargar valores iniciales
-            PopsPath.Text = Services.Paths.PopsFolder;
-            AppsPath.Text = Services.Paths.AppsFolder;
+            PopsPath.Text = Services.Settings.PopsFolder;
+            AppsPath.Text = Services.Settings.AppsFolder;
 
             DarkModeToggle.IsChecked = Services.Settings.DarkMode;
             NotificationsToggle.IsChecked = Services.Settings.NotificationsEnabled;
@@ -40,7 +40,10 @@ namespace POPSManager.Views
 
             if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                Services.Paths.PopsFolder = dlg.FileName;
+                // Guardar en Settings
+                Services.Settings.SetPopsFolder(dlg.FileName);
+
+                // Actualizar UI
                 PopsPath.Text = dlg.FileName;
 
                 Services.Notifications.Show(
@@ -61,7 +64,10 @@ namespace POPSManager.Views
 
             if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                Services.Paths.AppsFolder = dlg.FileName;
+                // Guardar en Settings
+                Services.Settings.SetAppsFolder(dlg.FileName);
+
+                // Actualizar UI
                 AppsPath.Text = dlg.FileName;
 
                 Services.Notifications.Show(
@@ -103,6 +109,8 @@ namespace POPSManager.Views
         private void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.DarkMode = true;
+            Services.Settings.Save();
+
             Services.Notifications.Show(
                 new UiNotification(NotificationType.Info, "Modo oscuro activado"));
         }
@@ -110,6 +118,8 @@ namespace POPSManager.Views
         private void DarkModeToggle_Unchecked(object sender, RoutedEventArgs e)
         {
             Services.Settings.DarkMode = false;
+            Services.Settings.Save();
+
             Services.Notifications.Show(
                 new UiNotification(NotificationType.Info, "Modo oscuro desactivado"));
         }
@@ -120,6 +130,8 @@ namespace POPSManager.Views
         private void NotificationsToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.NotificationsEnabled = true;
+            Services.Settings.Save();
+
             Services.Notifications.Show(
                 new UiNotification(NotificationType.Info, "Notificaciones activadas"));
         }
@@ -127,6 +139,8 @@ namespace POPSManager.Views
         private void NotificationsToggle_Unchecked(object sender, RoutedEventArgs e)
         {
             Services.Settings.NotificationsEnabled = false;
+            Services.Settings.Save();
+
             Services.Notifications.Show(
                 new UiNotification(NotificationType.Info, "Notificaciones desactivadas"));
         }
