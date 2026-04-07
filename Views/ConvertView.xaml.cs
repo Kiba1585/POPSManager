@@ -1,11 +1,12 @@
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using POPSManager.Models;
-using POPSManager.Services;   // ← ESTE ERA EL QUE FALTABA
+using POPSManager.Services;
 
 namespace POPSManager.Views
 {
@@ -19,6 +20,9 @@ namespace POPSManager.Views
             InitializeComponent();
         }
 
+        // ============================================================
+        //  SELECCIONAR CARPETA DE ORIGEN
+        // ============================================================
         private void BrowseSource_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog
@@ -34,6 +38,9 @@ namespace POPSManager.Views
             }
         }
 
+        // ============================================================
+        //  SELECCIONAR CARPETA DE DESTINO
+        // ============================================================
         private void BrowseOutput_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog
@@ -48,6 +55,9 @@ namespace POPSManager.Views
             }
         }
 
+        // ============================================================
+        //  CARGAR ARCHIVOS DETECTADOS
+        // ============================================================
         private void LoadFiles()
         {
             FilesList.Items.Clear();
@@ -56,37 +66,76 @@ namespace POPSManager.Views
                 return;
 
             var files = Directory.GetFiles(SourcePath.Text, "*.*")
-                                 .Where(f => f.EndsWith(".bin", System.StringComparison.OrdinalIgnoreCase) ||
-                                             f.EndsWith(".cue", System.StringComparison.OrdinalIgnoreCase) ||
-                                             f.EndsWith(".iso", System.StringComparison.OrdinalIgnoreCase));
+                                 .Where(f =>
+                                     f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) ||
+                                     f.EndsWith(".cue", StringComparison.OrdinalIgnoreCase) ||
+                                     f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                                 .OrderBy(f => f);
 
             foreach (var file in files)
                 FilesList.Items.Add(Path.GetFileName(file));
+
+            // Notificación visual
+            Services.Notifications.Show(
+                new UiNotification(NotificationType.Info,
+                $"Se detectaron {FilesList.Items.Count} archivos."));
         }
 
+        // ============================================================
+        //  CONVERTIR ARCHIVOS
+        // ============================================================
         private async void Convert_Click(object sender, RoutedEventArgs e)
         {
-            if (!Directory.Exists(SourcePath.Text) ||
-                !Directory.Exists(OutputPath.Text))
+            // Validación
+            if (!Directory.Exists(SourcePath.Text))
             {
                 Services.Notifications.Show(
                     new UiNotification(NotificationType.Error,
-                    "Debes seleccionar carpetas válidas."));
+                    "La carpeta de origen no existe."));
                 return;
             }
 
-            Services.Progress.SetStatus("Convirtiendo archivos...");
-
-            await Task.Run(() =>
+            if (!Directory.Exists(OutputPath.Text))
             {
-                Services.Converter.ConvertFolder(SourcePath.Text, OutputPath.Text);
-            });
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Error,
+                    "La carpeta de destino no existe."));
+                return;
+            }
 
-            Services.Progress.SetStatus("Listo");
+            if (FilesList.Items.Count == 0)
+            {
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Warning,
+                    "No hay archivos para convertir."));
+                return;
+            }
 
-            Services.Notifications.Show(
-                new UiNotification(NotificationType.Success,
-                "Conversión completada."));
+            // Iniciar progreso
+            Services.Progress.Start("Convirtiendo archivos...");
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    Services.Converter.ConvertFolder(SourcePath.Text, OutputPath.Text);
+                });
+
+                Services.Progress.SetStatus("Listo");
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Success,
+                    "Conversión completada."));
+            }
+            catch (Exception ex)
+            {
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Error,
+                    $"Error durante la conversión: {ex.Message}"));
+            }
+            finally
+            {
+                Services.Progress.Stop();
+            }
         }
     }
 }
