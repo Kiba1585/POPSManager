@@ -9,13 +9,24 @@ namespace POPSManager.Logic
     {
         private static readonly Regex DiscRegex = new Regex(@"\(CD(\d+)\)", RegexOptions.IgnoreCase);
 
-        // popsRoot = carpeta POPS raíz
-        // gameId   = ID del juego (SCES_12345, etc.)
+        /// <summary>
+        /// Genera DISCS.TXT para juegos multidisco.
+        /// </summary>
+        /// <param name="popsRoot">Carpeta raíz POPS</param>
+        /// <param name="gameId">ID del juego (SCES_12345)</param>
+        /// <param name="log">Acción de log</param>
         public static void ProcessMultiDisc(string popsRoot, string gameId, Action<string> log)
         {
-            // Buscar todos los VCD de ese juego en subcarpetas:
-            // Ej: POPS/SCES_12345 (CD1)/SCES_12345.Final Fantasy IX (CD1).VCD
-            var discs = Directory.GetFiles(popsRoot, $"{gameId}.*.VCD", SearchOption.AllDirectories)
+            // Buscar SOLO dentro de carpetas del juego:
+            // Ej: POPS/SCES_12345 (CD1)/
+            var gameFolders = Directory.GetDirectories(popsRoot, $"{gameId} (CD*)");
+
+            if (gameFolders.Length <= 1)
+                return;
+
+            // Buscar VCDs dentro de cada carpeta del juego
+            var discs = gameFolders
+                .SelectMany(folder => Directory.GetFiles(folder, "*.VCD"))
                 .Select(path => new
                 {
                     Path = path,
@@ -31,8 +42,10 @@ namespace POPSManager.Logic
 
             log($"Juego multidisco detectado: {gameId} ({discs.Count} discos)");
 
+            // Crear contenido de DISCS.TXT
             string[] lines = discs.Select(d => d.Name).ToArray();
 
+            // Guardar DISCS.TXT en cada carpeta del juego
             foreach (var disc in discs)
             {
                 string folder = Path.GetDirectoryName(disc.Path)!;
