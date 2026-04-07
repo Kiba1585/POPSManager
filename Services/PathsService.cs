@@ -6,10 +6,14 @@ namespace POPSManager.Services
     public class PathsService
     {
         public string RootFolder { get; private set; }
+
         public string PopsFolder => Path.Combine(RootFolder, "POPS");
         public string AppsFolder => Path.Combine(RootFolder, "APPS");
-        public string CfgFolder => Path.Combine(RootFolder, "CFG");
-        public string ArtFolder => Path.Combine(RootFolder, "ART");
+        public string CfgFolder  => Path.Combine(RootFolder, "CFG");
+        public string ArtFolder  => Path.Combine(RootFolder, "ART");
+
+        // ★ Carpeta necesaria para PS2
+        public string DvdFolder  => Path.Combine(RootFolder, "DVD");
 
         public string PopstarterElfPath { get; private set; }
 
@@ -36,6 +40,9 @@ namespace POPSManager.Services
             CreateFolder(AppsFolder);
             CreateFolder(CfgFolder);
             CreateFolder(ArtFolder);
+
+            // ★ Crear carpeta DVD para juegos PS2
+            CreateFolder(DvdFolder);
         }
 
         private void CreateFolder(string path)
