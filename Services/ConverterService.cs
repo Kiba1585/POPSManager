@@ -222,12 +222,4 @@ namespace POPSManager.Services
             return name;
         }
     }
-
-    public class ConvertedGame
-    {
-        public string VcdPath { get; set; }
-        public string BaseName { get; set; }
-        public int DiscNumber { get; set; }
-        public bool IsMultiDisc { get; set; }
-    }
 }
