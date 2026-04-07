@@ -20,11 +20,20 @@ namespace POPSManager.Services
             logFilePath = Path.Combine(folder, $"log_{DateTime.Now:yyyyMMdd}.txt");
         }
 
-        // ============================
-        //  MÉTODO PRINCIPAL
-        // ============================
+        // ============================================================
+        //  MÉTODO REQUERIDO POR Action<string>
+        // ============================================================
 
-        public void Write(string message, string level = "INFO")
+        public void Write(string message)
+        {
+            WriteInternal(message, "INFO");
+        }
+
+        // ============================================================
+        //  MÉTODO INTERNO REAL (CON NIVEL)
+        // ============================================================
+
+        private void WriteInternal(string message, string level)
         {
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
             string formatted = $"[{timestamp}] [{level}] {message}";
@@ -42,16 +51,16 @@ namespace POPSManager.Services
             }
             catch
             {
-                // Si falla el archivo, no rompemos la app
+                // No romper la app si falla el archivo
             }
         }
 
-        // ============================
+        // ============================================================
         //  ATAJOS PARA NIVELES
-        // ============================
+        // ============================================================
 
-        public void Info(string msg) => Write(msg, "INFO");
-        public void Warn(string msg) => Write(msg, "WARN");
-        public void Error(string msg) => Write(msg, "ERROR");
+        public void Info(string msg) => WriteInternal(msg, "INFO");
+        public void Warn(string msg) => WriteInternal(msg, "WARN");
+        public void Error(string msg) => WriteInternal(msg, "ERROR");
     }
 }
