@@ -1,11 +1,12 @@
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using POPSManager.Models;
-using POPSManager.Services;   // ← ESTE ERA EL QUE FALTABA
+using POPSManager.Services;
 
 namespace POPSManager.Views
 {
@@ -19,6 +20,9 @@ namespace POPSManager.Views
             InitializeComponent();
         }
 
+        // ============================================================
+        //  SELECCIONAR CARPETA VCD
+        // ============================================================
         private void BrowseVcd_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog
@@ -34,6 +38,9 @@ namespace POPSManager.Views
             }
         }
 
+        // ============================================================
+        //  CARGAR LISTA DE JUEGOS
+        // ============================================================
         private void LoadGames()
         {
             GamesList.Items.Clear();
@@ -41,14 +48,24 @@ namespace POPSManager.Views
             if (!Directory.Exists(VcdPath.Text))
                 return;
 
-            var files = Directory.GetFiles(VcdPath.Text, "*.vcd");
+            var files = Directory.GetFiles(VcdPath.Text, "*.vcd")
+                                 .OrderBy(f => f);
 
             foreach (var file in files)
                 GamesList.Items.Add(Path.GetFileName(file));
+
+            // Notificación visual
+            Services.Notifications.Show(
+                new UiNotification(NotificationType.Info,
+                $"Se detectaron {GamesList.Items.Count} juegos."));
         }
 
+        // ============================================================
+        //  PROCESAR JUEGOS
+        // ============================================================
         private async void Process_Click(object sender, RoutedEventArgs e)
         {
+            // Validación
             if (!Directory.Exists(VcdPath.Text))
             {
                 Services.Notifications.Show(
@@ -57,18 +74,40 @@ namespace POPSManager.Views
                 return;
             }
 
-            Services.Progress.SetStatus("Procesando juegos...");
-
-            await Task.Run(() =>
+            if (GamesList.Items.Count == 0)
             {
-                Services.GameProcessor.ProcessFolder(VcdPath.Text);
-            });
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Warning,
+                    "No hay archivos VCD para procesar."));
+                return;
+            }
 
-            Services.Progress.SetStatus("Listo");
+            // Iniciar progreso
+            Services.Progress.Start("Procesando juegos...");
 
-            Services.Notifications.Show(
-                new UiNotification(NotificationType.Success,
-                "Procesamiento completado."));
+            try
+            {
+                await Task.Run(() =>
+                {
+                    Services.GameProcessor.ProcessFolder(VcdPath.Text);
+                });
+
+                Services.Progress.SetStatus("Listo");
+
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Success,
+                    "Procesamiento completado."));
+            }
+            catch (Exception ex)
+            {
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Error,
+                    $"Error durante el procesamiento: {ex.Message}"));
+            }
+            finally
+            {
+                Services.Progress.Stop();
+            }
         }
     }
 }
