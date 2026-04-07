@@ -1,49 +1,43 @@
-using DiscUtils.Iso9660;
-using System;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
     public static class GameIdDetector
     {
-        private static readonly Regex IdRegex =
-            new Regex(@"(SLUS|SCUS|SLES|SCES|SLPS|SLPM|SCPS)[\-_\.]?(\d{3,5})",
-                      RegexOptions.IgnoreCase);
+        private static readonly string[] Patterns =
+        {
+            "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPS"
+        };
 
         public static string? DetectGameId(string vcdPath)
         {
-            if (!File.Exists(vcdPath))
-                throw new FileNotFoundException("El archivo VCD no existe.", vcdPath);
+            // Aquí podrías leer sectores del VCD si deseas detección real
+            return null;
+        }
 
-            try
+        public static string DetectFromName(string name)
+        {
+            name = name.ToUpperInvariant();
+
+            foreach (var p in Patterns)
             {
-                using var stream = File.OpenRead(vcdPath);
-                using var cd = new CDReader(stream, true);
-
-                var files = cd.GetFiles("/", "*.*", SearchOption.AllDirectories);
-
-                foreach (var file in files)
+                if (name.Contains(p))
                 {
-                    string name = Path.GetFileName(file);
+                    int index = name.IndexOf(p);
+                    string id = name.Substring(index);
 
-                    var match = IdRegex.Match(name);
-                    if (match.Success)
-                    {
-                        string prefix = match.Groups[1].Value.ToUpperInvariant();
-                        string number = match.Groups[2].Value.PadLeft(5, '0');
+                    id = id.Replace("-", "_")
+                           .Replace(" ", "_");
 
-                        return $"{prefix}-{number}";
-                    }
+                    if (id.Length > 12)
+                        id = id.Substring(0, 12);
+
+                    return id;
                 }
+            }
 
-                return null;
-            }
-            catch
-            {
-                return null;
-            }
+            return "";
         }
     }
 }
