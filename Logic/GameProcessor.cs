@@ -1,8 +1,8 @@
 using POPSManager.Models;
 using POPSManager.Services;
-using POPSManager.Logic.MultiDisc;   // ← IMPORTANTE
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
@@ -74,46 +74,57 @@ namespace POPSManager.Logic
 
         private void ProcessSingle(string vcdPath)
         {
-            string fileName = Path.GetFileNameWithoutExtension(vcdPath);
+            string originalName = Path.GetFileNameWithoutExtension(vcdPath);
 
-            log($"Procesando juego: {fileName}");
+            log($"Procesando juego: {originalName}");
 
             // Detectar ID del juego
-            string gameId = DetectGameId(fileName);
+            string gameId = DetectGameId(originalName);
 
             if (string.IsNullOrWhiteSpace(gameId))
             {
-                log($"No se pudo detectar ID para {fileName}");
+                log($"No se pudo detectar ID para {originalName}");
                 notify(new UiNotification(NotificationType.Warning,
-                    $"No se pudo detectar ID para {fileName}"));
+                    $"No se pudo detectar ID para {originalName}"));
                 return;
             }
 
             log($"ID detectado: {gameId}");
 
-            // Crear estructura POPS
-            string popsFolder = Path.Combine(paths.PopsFolder, gameId);
-            Directory.CreateDirectory(popsFolder);
+            // Detectar número de disco (por defecto 1)
+            int discNumber = DetectDiscNumber(originalName);
 
-            // Copiar VCD
-            string destVcd = Path.Combine(popsFolder, $"{gameId}.VCD");
+            // Obtener nombre limpio del juego (sin ID ni tags de disco)
+            string cleanTitle = ExtractCleanTitle(originalName, gameId);
+
+            // Si por alguna razón queda vacío, usamos el ID como fallback
+            if (string.IsNullOrWhiteSpace(cleanTitle))
+                cleanTitle = gameId;
+
+            // Nombre final: ID.NombreLimpio (CDX).VCD
+            string finalFileName = $"{gameId}.{cleanTitle} (CD{discNumber}).VCD";
+
+            // Carpeta POPS por disco: POPS/ID (CDX)/
+            string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD{discNumber})");
+            Directory.CreateDirectory(popsDiscFolder);
+
+            // Copiar VCD con el nombre final
+            string destVcd = Path.Combine(popsDiscFolder, finalFileName);
             File.Copy(vcdPath, destVcd, true);
 
             log($"Copiado VCD → {destVcd}");
 
-            // ============================================================
-            //  MULTIDISCO (NUEVO)
-            // ============================================================
+            // MULTIDISCO: genera DISCS.TXT en todas las carpetas de ese juego
             MultiDiscManager.ProcessMultiDisc(paths.PopsFolder, gameId, log);
 
-            // Generar ELF si es PS1
-            if (IsPs1(gameId))
+            // Generar ELF si es PS1 (lo dejamos en la carpeta del primer disco)
+            if (IsPs1(gameId) && discNumber == 1)
             {
-                GenerateElf(gameId, popsFolder);
+                GenerateElf(gameId, popsDiscFolder);
             }
 
             notify(new UiNotification(NotificationType.Success,
-                $"{fileName} procesado correctamente."));
+                $"{originalName} procesado correctamente."));
         }
 
         // ============================================================
@@ -163,6 +174,50 @@ namespace POPSManager.Logic
                    id.StartsWith("SLES") ||
                    id.StartsWith("SLUS") ||
                    id.StartsWith("SCUS");
+        }
+
+        // ============================================================
+        //  DETECTAR NÚMERO DE DISCO
+        // ============================================================
+
+        private int DetectDiscNumber(string name)
+        {
+            // Soporta: (Disc 1), (Disk 1), (CD 1), (CD1), etc.
+            var regex = new Regex(@"\((CD|DISC|DISK)\s*(\d+)\)", RegexOptions.IgnoreCase);
+            var match = regex.Match(name);
+            if (match.Success && int.TryParse(match.Groups[2].Value, out int num))
+                return num;
+
+            return 1;
+        }
+
+        // ============================================================
+        //  LIMPIAR NOMBRE DEL JUEGO
+        // ============================================================
+
+        private string ExtractCleanTitle(string originalName, string gameId)
+        {
+            string name = originalName;
+
+            // Quitar el ID si viene en el nombre
+            int idx = name.IndexOf(gameId, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+            {
+                name = name.Remove(idx, gameId.Length);
+            }
+
+            // Quitar tags de disco: (Disc 1), (Disk 1), (CD 1), (CD1), etc.
+            name = Regex.Replace(name, @"\((CD|DISC|DISK)\s*\d+\)", "", RegexOptions.IgnoreCase);
+
+            // Limpiar separadores raros
+            name = name.Replace("_", " ")
+                       .Replace(".", " ")
+                       .Trim();
+
+            // Colapsar espacios múltiples
+            name = Regex.Replace(name, @"\s{2,}", " ");
+
+            return name;
         }
 
         // ============================================================
