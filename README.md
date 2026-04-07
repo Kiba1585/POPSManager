@@ -1,124 +1,159 @@
-POPSManager
-Gestor profesional y modular para automatizar flujos de trabajo de juegos PlayStation 1 en POPStarter
+---
 
-POPSManager es una herramienta moderna, modular y totalmente automatizada diseñada para simplificar y profesionalizar la preparación de juegos de PlayStation 1 para POPStarter. El programa gestiona desde la validación de archivos hasta la creación de VCD, generación de ELF, renombrado profesional, soporte multidisco y creación automática de archivos auxiliares como DISCS.TXT y cheats.
+# 📦 POPSManager
 
-Su arquitectura está pensada para ser escalable, mantenible y compatible con pipelines CI/CD como GitHub Actions.
+Conversor y organizador automático de juegos PS1/PS2 para OPL + POPStarter
+
+POPSManager es una herramienta moderna y automatizada diseñada para preparar juegos de PlayStation 1 y PlayStation 2 para su uso en Open PS2 Loader (OPL) y POPStarter, generando toda la estructura necesaria sin requerir conocimientos técnicos del usuario.
+
+Su objetivo es ofrecer un flujo rápido, seguro, legal y totalmente automatizado.
 
 ---
 
-✨ Características principales
+## 🚀 Características principales
 
-🔧 Procesamiento automático de juegos
-- Detección automática del Game ID.
-- Renombrado profesional con formato:  
-  GameID.Name (CDX).VCD
-- Validación de integridad de archivos.
-- Conversión y empaquetado automático.
-
-💿 Soporte multidisco
-- Detección automática de múltiples discos.
-- Generación automática de DISCS.TXT con el orden correcto.
-- Renombrado consistente entre discos.
-- Integración completa con POPStarter.
-
-📁 Generación de estructura POPStarter
-- Creación automática de carpetas necesarias.
-- Generación del ELF correspondiente con rutas internas correctas.
-- Compatibilidad con PathsService para evitar rutas hardcodeadas.
-
-🎮 Archivos auxiliares
-- Generación automática de:
-  - CHEATS.TXT
-  - DISCS.TXT
-  - Archivos de configuración POPStarter
-
-🖥️ Interfaz moderna
-- UI limpia, profesional y compatible con temas claros y oscuros.
-- Progreso en tiempo real, notificaciones y logs detallados.
-
-🔐 Preparado para CI/CD
-- Arquitectura compatible con pipelines automatizados.
-- Soporte para empaquetado MSIX y firma digital.
-- Código modular, limpio y mantenible.
+### 🎮 PS1 → Conversión automática a VCD
+- Convierte BIN/CUE/ISO a formato VCD compatible con POPStarter.  
+- Genera nombres limpios y profesionales.  
+- Detecta automáticamente juegos multidisco.  
+- Crea carpetas POPS y subcarpetas por juego.  
+- Genera BOOT.ELF para cada juego PS1 en la carpeta APPS/.  
+- Crea automáticamente el archivo DISCS.TXT para multidisco.
 
 ---
 
-🧩 Arquitectura del proyecto
-
-POPSManager está dividido en módulos independientes para facilitar mantenimiento y escalabilidad:
-
-| Módulo | Descripción |
-|-------|-------------|
-| GameProcessor | Núcleo del procesamiento de juegos, validación, multidisco y generación de archivos. |
-| PathsService | Descubrimiento dinámico de rutas y binarios, evitando riesgos legales. |
-| Converter / VCD Builder | Conversión y empaquetado de imágenes PS1 a formato POPStarter. |
-| UI (Views + Controls) | Interfaz moderna, modular y compatible con Dark Mode. |
-| LoggingService | Registro detallado de cada operación. |
+### 🎮 PS2 → Copia directa
+- Los juegos PS2 no se convierten.  
+- Se copian directamente a la carpeta DVD/.  
+- Se detectan automáticamente ISOs PS2 para evitar conversiones erróneas.
 
 ---
 
-🚀 Cómo usar POPSManager
-
-1. Ejecuta el programa.
-2. Selecciona la carpeta o archivo del juego.
-3. POPSManager detectará automáticamente:
-   - Game ID  
-   - Número de discos  
-   - Nombre del juego  
-4. El programa generará:
-   - VCD renombrado profesionalmente  
-   - Estructura POPStarter  
-   - ELF correspondiente  
-   - DISCS.TXT (si aplica)  
-   - Cheats y archivos auxiliares  
-5. El resultado final estará listo para copiar a tu dispositivo.
-
----
-
-📂 Estructura generada
+### 🗂️ Estructura OPL generada automáticamente
+POPSManager crea todas las carpetas necesarias si no existen:
 
 `
-POPS/
- ├── XXGAMEID.ELF
- ├── XXGAMEID.VCD
- ├── CHEATS.TXT
- ├── DISCS.TXT   (solo multidisco)
- └── POPS.CFG
+/POPS
+/DVD
+/APPS
+/ART
+/CFG
 `
 
 ---
 
-🛠️ Requisitos
+### 🔍 Detección inteligente
+- Detecta Game ID sin extraer contenido protegido.  
+- Limpia nombres automáticamente.  
+- Detecta número de disco (CD1, CD2, Disc 1, etc.).  
+- Evita conversiones innecesarias (PS2 ISO).  
 
+---
+
+### 🧩 Multidisco totalmente soportado
+POPStarter requiere un archivo DISCS.TXT para enlazar discos.  
+POPSManager lo genera automáticamente:
+
+`
+mass:/POPS/SLUS12345 (CD1)/SLUS12345 (CD1).VCD
+mass:/POPS/SLUS12345 (CD2)/SLUS12345 (CD2).VCD
+`
+
+---
+
+### 🖥️ Interfaz moderna y clara
+- Notificaciones tipo toast.  
+- Barra de progreso global.  
+- Logs en tiempo real.  
+- Animaciones suaves.  
+- Vistas separadas para cada tarea.
+
+---
+
+### 🔒 Cumplimiento legal
+POPSManager no extrae, modifica ni distribuye contenido protegido.  
+Todo se basa en:
+- Conversión de archivos proporcionados por el usuario.  
+- Generación de metadatos y archivos auxiliares.  
+- Detección de nombres y patrones, no de contenido interno.  
+
+---
+
+## 📁 Estructura generada
+
+### PS1 (POPStarter)
+`
+/POPS/SLUS12345 (CD1)/SLUS12345 (CD1).VCD
+/POPS/SLUS_12345 (CD1)/DISCS.TXT
+/APPS/SLUS_12345.ELF
+`
+
+### PS2 (OPL)
+`
+/DVD/SLUS_99999.ISO
+`
+
+---
+
+## 🧠 Cómo funciona internamente
+
+### 1. Conversión PS1
+- Lee sectores de 2352 bytes.  
+- Extrae solo los 2048 bytes de datos.  
+- Escribe encabezado POPStarter.  
+- Genera VCD optimizado.
+
+### 2. Detección PS2
+- Lee primeros 32 KB del ISO.  
+- Busca cadenas como PLAYSTATION 2 o BOOT2.
+
+### 3. Multidisco
+- Detecta patrones:  
+  - CD1, CD2, Disc 1, Disc2, Disk3  
+- Ordena discos.  
+- Genera DISCS.TXT.
+
+### 4. Generación de ELF
+- Crea un ELF por juego PS1.  
+- No modifica contenido del juego.  
+- Compatible con POPStarter.
+
+---
+
+## 🛠️ Requisitos
 - Windows 10/11  
 - .NET 8  
-- POPStarter compatible con PS2  
-- Juegos en formato BIN/CUE o ISO  
+- Juegos en formato BIN/CUE/ISO  
+- Carpeta de destino para OPL (USB/HDD/SMB)
 
 ---
 
-🧪 Pipeline CI/CD (Opcional)
-
-POPSManager está preparado para integrarse con GitHub Actions:
-
-- Compilación automática  
-- Firma digital con certificados  
-- Empaquetado MSIX  
-- Publicación de releases con assets generados  
+## 📸 Capturas (opcional)
+(Puedes añadirlas luego si deseas)
 
 ---
 
-🤝 Contribuciones
+## 🧩 Estado del proyecto
+POPSManager está en desarrollo activo y orientado a ofrecer una experiencia profesional, estable y completamente automatizada para usuarios de OPL y POPStarter.
 
+---
+
+## 🤝 Contribuciones
 Las contribuciones son bienvenidas.  
-El proyecto está diseñado para ser modular, limpio y fácil de extender.
+Puedes enviar:
+- Pull requests  
+- Reportes de errores  
+- Ideas de mejora  
 
 ---
 
-📜 Licencia
+## 📜 Licencia
+Este proyecto no distribuye contenido protegido por copyright.  
+El usuario es responsable de los archivos que procesa.
 
-Este proyecto no incluye binarios de POPStarter ni ningún archivo con copyright.  
-El usuario debe proporcionar sus propios binarios legalmente obtenidos.
+---
+
+## 🙌 Autor
+Desarrollado por Raidel, con enfoque en automatización, UX moderna y compatibilidad total con OPL + POPStarter.
 
 ---
