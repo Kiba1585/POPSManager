@@ -2,6 +2,7 @@ using POPSManager.Models;
 using POPSManager.Services;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
@@ -31,10 +32,11 @@ namespace POPSManager.Logic
         // ============================================================
         //  PROCESAR CARPETA COMPLETA
         // ============================================================
-
         public void ProcessFolder(string folder)
         {
-            var files = Directory.GetFiles(folder, "*.vcd");
+            var files = Directory.GetFiles(folder, "*.vcd")
+                                 .OrderBy(f => f)
+                                 .ToArray();
 
             if (files.Length == 0)
             {
@@ -71,7 +73,6 @@ namespace POPSManager.Logic
         // ============================================================
         //  PROCESAR UN SOLO JUEGO
         // ============================================================
-
         private void ProcessSingle(string vcdPath)
         {
             string originalName = Path.GetFileNameWithoutExtension(vcdPath);
@@ -80,7 +81,6 @@ namespace POPSManager.Logic
             // ============================================================
             // 1) Validar integridad del VCD
             // ============================================================
-
             if (!IntegrityValidator.Validate(vcdPath))
             {
                 notify(new UiNotification(NotificationType.Error,
@@ -89,12 +89,10 @@ namespace POPSManager.Logic
             }
 
             // ============================================================
-            // 2) Detectar ID real del juego desde el VCD
+            // 2) Detectar ID real del juego
             // ============================================================
-
             string? detectedId = GameIdDetector.DetectGameId(vcdPath);
 
-            // Fallback: detectar ID desde el nombre del archivo
             string gameId = !string.IsNullOrWhiteSpace(detectedId)
                 ? detectedId
                 : DetectGameIdFromName(originalName);
@@ -112,7 +110,6 @@ namespace POPSManager.Logic
             // ============================================================
             // 3) Limpiar nombre del juego y detectar CDX
             // ============================================================
-
             string cleanTitle = NameCleaner.Clean(originalName, out string? cdTag);
 
             int discNumber = cdTag != null
@@ -125,7 +122,6 @@ namespace POPSManager.Logic
             // ============================================================
             // 4) Nombre final profesional
             // ============================================================
-
             string finalFileName = $"{gameId}.{cleanTitle}.VCD";
 
             // Carpeta POPS por disco
@@ -141,13 +137,11 @@ namespace POPSManager.Logic
             // ============================================================
             // 5) MULTIDISCO
             // ============================================================
-
             MultiDiscManager.ProcessMultiDisc(paths.PopsFolder, gameId, log);
 
             // ============================================================
             // 6) GENERAR ELF SOLO PARA CD1
             // ============================================================
-
             if (discNumber == 1)
             {
                 if (string.IsNullOrWhiteSpace(paths.PopstarterElfPath))
@@ -187,7 +181,6 @@ namespace POPSManager.Logic
         // ============================================================
         //  DETECTAR ID DESDE EL NOMBRE (FALLBACK)
         // ============================================================
-
         private string DetectGameIdFromName(string fileName)
         {
             fileName = fileName.ToUpperInvariant();
