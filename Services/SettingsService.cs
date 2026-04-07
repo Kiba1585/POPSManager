@@ -18,6 +18,10 @@ namespace POPSManager.Services
         public string RootFolder { get; set; } = "";
         public string CustomElfPath { get; set; } = "";
 
+        // ★ NUEVO: rutas personalizadas
+        public string? CustomPopsFolder { get; set; }
+        public string? CustomAppsFolder { get; set; }
+
         // Evento para notificar cambios globales
         public event Action? OnSettingsChanged;
 
@@ -59,6 +63,10 @@ namespace POPSManager.Services
                     NotificationsEnabled = data.NotificationsEnabled;
                     RootFolder = data.RootFolder ?? "";
                     CustomElfPath = data.CustomElfPath ?? "";
+
+                    // ★ NUEVO
+                    CustomPopsFolder = data.CustomPopsFolder;
+                    CustomAppsFolder = data.CustomAppsFolder;
                 }
 
                 log("Settings cargados correctamente.");
@@ -83,7 +91,11 @@ namespace POPSManager.Services
                     DarkMode = DarkMode,
                     NotificationsEnabled = NotificationsEnabled,
                     RootFolder = RootFolder,
-                    CustomElfPath = CustomElfPath
+                    CustomElfPath = CustomElfPath,
+
+                    // ★ NUEVO
+                    CustomPopsFolder = CustomPopsFolder,
+                    CustomAppsFolder = CustomAppsFolder
                 };
 
                 var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -103,12 +115,17 @@ namespace POPSManager.Services
         // ============================
         private void NormalizeValues()
         {
-            // Quitar barras finales
             if (!string.IsNullOrWhiteSpace(RootFolder))
                 RootFolder = RootFolder.Trim().TrimEnd('\\', '/');
 
             if (!string.IsNullOrWhiteSpace(CustomElfPath))
                 CustomElfPath = CustomElfPath.Trim();
+
+            if (!string.IsNullOrWhiteSpace(CustomPopsFolder))
+                CustomPopsFolder = CustomPopsFolder.Trim().TrimEnd('\\', '/');
+
+            if (!string.IsNullOrWhiteSpace(CustomAppsFolder))
+                CustomAppsFolder = CustomAppsFolder.Trim().TrimEnd('\\', '/');
         }
 
         // ============================
@@ -147,6 +164,10 @@ namespace POPSManager.Services
             public bool NotificationsEnabled { get; set; }
             public string? RootFolder { get; set; }
             public string? CustomElfPath { get; set; }
+
+            // ★ NUEVO
+            public string? CustomPopsFolder { get; set; }
+            public string? CustomAppsFolder { get; set; }
         }
     }
 }
