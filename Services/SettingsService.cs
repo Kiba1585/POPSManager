@@ -9,16 +9,13 @@ namespace POPSManager.Services
         private readonly string settingsPath;
         private readonly Action<string> log;
 
-        // ============================
-        //  PROPIEDADES CONFIGURABLES
-        // ============================
-
         public bool DarkMode { get; set; } = false;
         public bool NotificationsEnabled { get; set; } = true;
 
-        // NUEVA ARQUITECTURA
         public string RootFolder { get; set; } = "";
         public string CustomElfPath { get; set; } = "";
+
+        public event Action? OnSettingsChanged;
 
         public SettingsService(Action<string> log)
         {
@@ -34,10 +31,6 @@ namespace POPSManager.Services
 
             Load();
         }
-
-        // ============================
-        //  CARGAR SETTINGS
-        // ============================
 
         public void Load()
         {
@@ -56,7 +49,6 @@ namespace POPSManager.Services
                 {
                     DarkMode = data.DarkMode;
                     NotificationsEnabled = data.NotificationsEnabled;
-
                     RootFolder = data.RootFolder ?? "";
                     CustomElfPath = data.CustomElfPath ?? "";
                 }
@@ -69,10 +61,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================
-        //  GUARDAR SETTINGS
-        // ============================
-
         public void Save()
         {
             try
@@ -81,7 +69,6 @@ namespace POPSManager.Services
                 {
                     DarkMode = DarkMode,
                     NotificationsEnabled = NotificationsEnabled,
-
                     RootFolder = RootFolder,
                     CustomElfPath = CustomElfPath
                 };
@@ -90,6 +77,7 @@ namespace POPSManager.Services
                 File.WriteAllText(settingsPath, json);
 
                 log("Settings guardados correctamente.");
+                OnSettingsChanged?.Invoke();
             }
             catch (Exception ex)
             {
@@ -97,31 +85,34 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================
-        //  SETTERS ESPECÍFICOS
-        // ============================
-
         public void SetRootFolder(string path)
         {
+            if (!Directory.Exists(path))
+            {
+                log($"ERROR: Carpeta inválida: {path}");
+                return;
+            }
+
             RootFolder = path;
             Save();
         }
 
         public void SetCustomElfPath(string path)
         {
+            if (!File.Exists(path))
+            {
+                log($"ERROR: Archivo no encontrado: {path}");
+                return;
+            }
+
             CustomElfPath = path;
             Save();
         }
-
-        // ============================
-        //  CLASE INTERNA PARA JSON
-        // ============================
 
         private class SettingsData
         {
             public bool DarkMode { get; set; }
             public bool NotificationsEnabled { get; set; }
-
             public string? RootFolder { get; set; }
             public string? CustomElfPath { get; set; }
         }
