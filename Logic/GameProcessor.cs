@@ -91,7 +91,7 @@ namespace POPSManager.Logic
 
             log($"ID detectado: {gameId}");
 
-            // Detectar número de disco (por defecto 1)
+            // Detectar número de disco
             int discNumber = DetectDiscNumber(originalName);
 
             // Obtener nombre limpio del juego
@@ -122,7 +122,13 @@ namespace POPSManager.Logic
 
             if (IsPs1(gameId) && discNumber == 1)
             {
-                string baseElf = paths.BaseElfPath; // Debe existir en PathsService
+                if (string.IsNullOrWhiteSpace(paths.BaseElfPath))
+                {
+                    notify(new UiNotification(NotificationType.Error,
+                        "No se encontró POPSTARTER.ELF. Configúralo en Ajustes."));
+                    return;
+                }
+
                 string outputElf = Path.Combine(popsDiscFolder, $"{gameId}.ELF");
 
                 // Ruta POPStarter correcta
@@ -133,7 +139,7 @@ namespace POPSManager.Logic
                 string displayTitle = $"{cleanTitle} (CD{discNumber})";
 
                 bool ok = ElfGenerator.GenerateElf(
-                    baseElf,
+                    paths.BaseElfPath,
                     outputElf,
                     gameId,
                     vcdPopstarterPath,
