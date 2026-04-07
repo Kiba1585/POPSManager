@@ -16,18 +16,27 @@ namespace POPSManager
         {
             InitializeComponent();
 
-            var services = ((App)Application.Current).Services;
+            var services = App.Services;
 
+            // Notificaciones
             services.Notifications.OnNotify = ShowNotification;
+
+            // Logs
             services.LogService.OnLog = AddLog;
 
+            // Progreso global
             services.Progress.OnStart = ProgressStart;
             services.Progress.OnStop = ProgressStop;
             services.Progress.OnProgress = ProgressUpdate;
             services.Progress.OnStatus = ProgressStatus;
 
+            // Vista inicial
             LoadView(new Dashboard());
         }
+
+        // ============================================================
+        //  NAVEGACIÓN ENTRE VISTAS
+        // ============================================================
 
         public void LoadView(UserControl view)
         {
@@ -62,6 +71,10 @@ namespace POPSManager
         {
             LoadView(new AboutView());
         }
+
+        // ============================================================
+        //  NOTIFICACIONES (TOASTS)
+        // ============================================================
 
         private void ShowNotification(UiNotification notification)
         {
@@ -107,10 +120,18 @@ namespace POPSManager
             });
         }
 
+        // ============================================================
+        //  LOGS
+        // ============================================================
+
         private void AddLog(string message)
         {
             Console.WriteLine(message);
         }
+
+        // ============================================================
+        //  PROGRESO GLOBAL
+        // ============================================================
 
         private void ProgressStart()
         {
@@ -149,6 +170,10 @@ namespace POPSManager
             });
         }
 
+        // ============================================================
+        //  DRAG & DROP GLOBAL
+        // ============================================================
+
         private void Window_DragOver(object sender, DragEventArgs e)
         {
             e.Effects = DragDropEffects.Copy;
@@ -157,9 +182,7 @@ namespace POPSManager
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            var services = ((App)Application.Current).Services;
-
-            services.Notifications.Show(
+            App.Services.Notifications.Show(
                 new UiNotification(NotificationType.Info,
                 "Arrastra archivos dentro de la vista correspondiente."));
         }
