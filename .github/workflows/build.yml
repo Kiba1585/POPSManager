@@ -75,9 +75,9 @@ jobs:
 
       - name: Sign MSIX package
         run: |
-          $password = ConvertTo-SecureString "${{ secrets.CERT_PASSWORD }}" -AsPlainText -Force
+          $password = ConvertTo-SecureString "${{ secrets.PFX_PASSWORD }}" -AsPlainText -Force
           $certPath = "$env:RUNNER_TEMP\cert.pfx"
-          Set-Content -Path $certPath -Value ([System.Convert]::FromBase64String("${{ secrets.CERT_PFX }}")) -Encoding Byte
+          Set-Content -Path $certPath -Value ([System.Convert]::FromBase64String("${{ secrets.PFX_FILE }}")) -Encoding Byte
           & "$env:SIGNTOOL" sign /a /f $certPath /p $password "POPSManager_${{ github.ref_name }}.msix"
 
       - name: Upload MSIX artifact
