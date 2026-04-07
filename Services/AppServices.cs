@@ -5,6 +5,10 @@ namespace POPSManager.Services
 {
     public class AppServices
     {
+        // ============================
+        //  SERVICIOS GLOBALES
+        // ============================
+
         public PathsService Paths { get; }
         public SettingsService Settings { get; }
         public LoggingService LogService { get; }
@@ -15,21 +19,45 @@ namespace POPSManager.Services
 
         public AppServices()
         {
-            // Inicializar servicios base
-            Paths = new PathsService();
-            Settings = new SettingsService();
+            // ============================
+            // 1. Logging
+            // ============================
             LogService = new LoggingService();
+
+            // ============================
+            // 2. Settings (carga settings.json)
+            // ============================
+            Settings = new SettingsService(LogService.Write);
+
+            // ============================
+            // 3. PathsService (usa Settings)
+            // ============================
+            Paths = new PathsService(LogService.Write, Settings);
+
+            // ============================
+            // 4. Notificaciones
+            // ============================
             Notifications = new NotificationService();
+
+            // ============================
+            // 5. Progreso
+            // ============================
             Progress = new ProgressService();
+
+            // ============================
+            // 6. Conversor
+            // ============================
             Converter = new ConverterService();
 
-            // Inicializar GameProcessor con callbacks correctos
+            // ============================
+            // 7. GameProcessor FINAL
+            // ============================
             GameProcessor = new GameProcessor(
-                Progress.SetProgress,   // Actualizar porcentaje
-                Progress.SetStatus,     // Actualizar texto de estado
-                LogService.Write,       // Registrar logs
-                Notifications.Show,     // Mostrar notificaciones
-                Paths                   // Acceso a rutas
+                Progress.SetProgress,      // Actualizar porcentaje
+                Progress.SetStatus,        // Actualizar texto de estado
+                LogService.Write,          // Registrar logs
+                Notifications.Show,        // Mostrar notificaciones
+                Paths                      // Acceso a rutas (incluye POPStarter)
             );
         }
     }
