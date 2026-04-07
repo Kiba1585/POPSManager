@@ -12,7 +12,6 @@ namespace POPSManager.Views
 {
     public partial class ConvertView : UserControl
     {
-        // Acceso seguro a los servicios globales
         private AppServices Services => ((App)Application.Current).Services;
 
         public ConvertView()
@@ -75,7 +74,6 @@ namespace POPSManager.Views
             foreach (var file in files)
                 FilesList.Items.Add(Path.GetFileName(file));
 
-            // Notificación visual
             Services.Notifications.Show(
                 new UiNotification(NotificationType.Info,
                 $"Se detectaron {FilesList.Items.Count} archivos."));
@@ -86,7 +84,6 @@ namespace POPSManager.Views
         // ============================================================
         private async void Convert_Click(object sender, RoutedEventArgs e)
         {
-            // Validación
             if (!Directory.Exists(SourcePath.Text))
             {
                 Services.Notifications.Show(
@@ -111,7 +108,6 @@ namespace POPSManager.Views
                 return;
             }
 
-            // Iniciar progreso
             Services.Progress.Start("Convirtiendo archivos...");
 
             try
@@ -122,9 +118,6 @@ namespace POPSManager.Views
                 });
 
                 Services.Progress.SetStatus("Listo");
-                Services.Notifications.Show(
-                    new UiNotification(NotificationType.Success,
-                    "Conversión completada."));
             }
             catch (Exception ex)
             {
