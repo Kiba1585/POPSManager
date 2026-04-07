@@ -7,14 +7,32 @@ namespace POPSManager.Logic
 {
     public static class ElfGenerator
     {
-        private const int GameIdOffset = 0x2C;
-        private const int VcdPathOffset = 0x100;
-        private const int MaxVcdPathLength = 128;
+        // POPStarter r13 RIP 06
+        private const int GameIdOffset      = 0x2C;
+        private const int VcdPathOffset     = 0x100;
+        private const int MaxVcdPathLength  = 128;
 
+        // Título que OPL muestra (offset típico en r13 RIP 06)
+        private const int TitleOffset       = 0x200;
+        private const int MaxTitleLength    = 32; // bytes ASCII
+
+        /// <summary>
+        /// Genera un ELF de POPStarter parcheado con:
+        /// - ID del juego
+        /// - Ruta del VCD
+        /// - Título visible en OPL (solo nombre + CDX, sin ID)
+        /// </summary>
+        /// <param name="baseElfPath">Ruta del ELF base (POPSTARTER.ELF)</param>
+        /// <param name="outputElfPath">Ruta donde se guardará el ELF generado</param>
+        /// <param name="gameId">ID del juego (SCES_XXXXX, SLUS_XXXXX, etc.)</param>
+        /// <param name="vcdPath">Ruta completa al VCD (ej: mass:/POPS/ID (CD1)/ID.Nombre (CD1).VCD)</param>
+        /// <param name="displayTitle">Texto que OPL mostrará (ej: "Final Fantasy IX (CD1)")</param>
+        /// <param name="log">Acción opcional para loguear mensajes</param>
         public static bool GenerateElf(string baseElfPath,
                                        string outputElfPath,
                                        string gameId,
                                        string vcdPath,
+                                       string displayTitle,
                                        Action<string>? log = null)
         {
             try
@@ -28,13 +46,21 @@ namespace POPSManager.Logic
                 byte[] elf = File.ReadAllBytes(baseElfPath);
 
                 // Validar tamaño mínimo del ELF
-                if (elf.Length < VcdPathOffset + MaxVcdPathLength)
+                int minSize = Math.Max(
+                    VcdPathOffset + MaxVcdPathLength,
+                    TitleOffset + MaxTitleLength
+                );
+
+                if (elf.Length < minSize)
                 {
                     log?.Invoke("ERROR: El ELF base es demasiado pequeño o está corrupto.");
                     return false;
                 }
 
-                // Normalizar ID
+                // ============================================================
+                // 1) Escribir Game ID en offset 0x2C
+                // ============================================================
+
                 gameId = gameId.ToUpperInvariant();
                 if (gameId.Length > 11)
                     gameId = gameId.Substring(0, 11);
@@ -42,14 +68,37 @@ namespace POPSManager.Logic
                 byte[] idBytes = Encoding.ASCII.GetBytes(gameId.PadRight(11, '\0'));
                 Array.Copy(idBytes, 0, elf, GameIdOffset, idBytes.Length);
 
-                // Normalizar ruta VCD
+                // ============================================================
+                // 2) Escribir ruta del VCD en offset 0x100
+                //    Ejemplo: mass:/POPS/SLUS_00892 (CD1)/SLUS_00892.Final Fantasy IX (CD1).VCD
+                // ============================================================
+
                 if (vcdPath.Length > MaxVcdPathLength)
                     vcdPath = vcdPath.Substring(0, MaxVcdPathLength);
 
                 byte[] pathBytes = Encoding.ASCII.GetBytes(vcdPath.PadRight(MaxVcdPathLength, '\0'));
                 Array.Copy(pathBytes, 0, elf, VcdPathOffset, pathBytes.Length);
 
-                // Guardar ELF final
+                // ============================================================
+                // 3) Escribir título visible en OPL en offset 0x200
+                //    SOLO nombre del juego + (CDX), sin ID
+                //    Ejemplo: "Final Fantasy IX (CD1)"
+                // ============================================================
+
+                if (string.IsNullOrWhiteSpace(displayTitle))
+                    displayTitle = gameId; // fallback por seguridad
+
+                // Limitar longitud en caracteres para no exceder MaxTitleLength en bytes
+                if (displayTitle.Length > MaxTitleLength)
+                    displayTitle = displayTitle.Substring(0, MaxTitleLength);
+
+                byte[] titleBytes = Encoding.ASCII.GetBytes(displayTitle.PadRight(MaxTitleLength, '\0'));
+                Array.Copy(titleBytes, 0, elf, TitleOffset, titleBytes.Length);
+
+                // ============================================================
+                // 4) Guardar ELF final
+                // ============================================================
+
                 Directory.CreateDirectory(Path.GetDirectoryName(outputElfPath)!);
                 File.WriteAllBytes(outputElfPath, elf);
 
