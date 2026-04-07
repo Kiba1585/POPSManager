@@ -9,8 +9,8 @@ namespace POPSManager.Services
         //  SERVICIOS GLOBALES
         // ============================
 
-        public PathsService Paths { get; }
         public SettingsService Settings { get; }
+        public PathsService Paths { get; }
         public LoggingService LogService { get; }
         public NotificationService Notifications { get; }
         public ProgressService Progress { get; }
