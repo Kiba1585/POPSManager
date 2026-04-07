@@ -7,21 +7,13 @@ namespace POPSManager.Logic
 {
     public static class ElfGenerator
     {
-        // POPStarter r13 RIP 06
-        private const int GameIdOffset      = 0x2C;
-        private const int VcdPathOffset     = 0x100;
-        private const int MaxVcdPathLength  = 128;
+        private const int GameIdOffset = 0x2C;
+        private const int VcdPathOffset = 0x100;
+        private const int MaxVcdPathLength = 128;
 
-        // Título visible en OPL
-        private const int TitleOffset       = 0x200;
-        private const int MaxTitleLength    = 32;
+        private const int TitleOffset = 0x200;
+        private const int MaxTitleLength = 32;
 
-        /// <summary>
-        /// Genera un ELF de POPStarter parcheado con:
-        /// - ID del juego
-        /// - Ruta del VCD
-        /// - Título visible en OPL
-        /// </summary>
         public static bool GenerateElf(string baseElfPath,
                                        string outputElfPath,
                                        string gameId,
@@ -39,7 +31,6 @@ namespace POPSManager.Logic
 
                 byte[] elf = File.ReadAllBytes(baseElfPath);
 
-                // Validar tamaño mínimo
                 int minSize = Math.Max(
                     VcdPathOffset + MaxVcdPathLength,
                     TitleOffset + MaxTitleLength
@@ -51,10 +42,6 @@ namespace POPSManager.Logic
                     return false;
                 }
 
-                // ============================================================
-                // 1) Escribir Game ID
-                // ============================================================
-
                 gameId = gameId.ToUpperInvariant();
                 if (gameId.Length > 11)
                     gameId = gameId[..11];
@@ -62,19 +49,11 @@ namespace POPSManager.Logic
                 byte[] idBytes = Encoding.ASCII.GetBytes(gameId.PadRight(11, '\0'));
                 Array.Copy(idBytes, 0, elf, GameIdOffset, idBytes.Length);
 
-                // ============================================================
-                // 2) Escribir ruta del VCD
-                // ============================================================
-
                 if (vcdPath.Length > MaxVcdPathLength)
                     vcdPath = vcdPath[..MaxVcdPathLength];
 
                 byte[] pathBytes = Encoding.ASCII.GetBytes(vcdPath.PadRight(MaxVcdPathLength, '\0'));
                 Array.Copy(pathBytes, 0, elf, VcdPathOffset, pathBytes.Length);
-
-                // ============================================================
-                // 3) Escribir título visible en OPL
-                // ============================================================
 
                 if (string.IsNullOrWhiteSpace(displayTitle))
                     displayTitle = gameId;
@@ -84,10 +63,6 @@ namespace POPSManager.Logic
 
                 byte[] titleBytes = Encoding.ASCII.GetBytes(displayTitle.PadRight(MaxTitleLength, '\0'));
                 Array.Copy(titleBytes, 0, elf, TitleOffset, titleBytes.Length);
-
-                // ============================================================
-                // 4) Guardar ELF final
-                // ============================================================
 
                 Directory.CreateDirectory(Path.GetDirectoryName(outputElfPath)!);
                 File.WriteAllBytes(outputElfPath, elf);
