@@ -3,7 +3,6 @@ using POPSManager.Services;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
@@ -30,18 +29,20 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR CARPETA COMPLETA
+        //  PROCESAR CARPETA COMPLETA (PS1 + PS2)
         // ============================================================
         public void ProcessFolder(string folder)
         {
-            var files = Directory.GetFiles(folder, "*.vcd")
+            var files = Directory.GetFiles(folder)
+                                 .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
+                                             f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
                                  .OrderBy(f => f)
                                  .ToArray();
 
             if (files.Length == 0)
             {
                 notify(new UiNotification(NotificationType.Warning,
-                    "No se encontraron archivos VCD."));
+                    "No se encontraron archivos VCD o ISO."));
                 return;
             }
 
@@ -57,7 +58,10 @@ namespace POPSManager.Logic
 
                 try
                 {
-                    ProcessSingle(file);
+                    if (file.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase))
+                        ProcessPS1(file);
+                    else if (file.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                        ProcessPS2(file);
                 }
                 catch (Exception ex)
                 {
@@ -71,16 +75,13 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR UN SOLO JUEGO
+        //  PROCESAR PS1 (VCD)
         // ============================================================
-        private void ProcessSingle(string vcdPath)
+        private void ProcessPS1(string vcdPath)
         {
             string originalName = Path.GetFileNameWithoutExtension(vcdPath);
-            log($"Procesando juego: {originalName}");
+            log($"[PS1] Procesando: {originalName}");
 
-            // ============================================================
-            // 1) Validar integridad del VCD
-            // ============================================================
             if (!IntegrityValidator.Validate(vcdPath))
             {
                 notify(new UiNotification(NotificationType.Error,
@@ -88,60 +89,36 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // ============================================================
-            // 2) Detectar ID real del juego
-            // ============================================================
             string? detectedId = GameIdDetector.DetectGameId(vcdPath);
-
             string gameId = !string.IsNullOrWhiteSpace(detectedId)
                 ? detectedId
-                : DetectGameIdFromName(originalName);
+                : GameIdDetector.DetectFromName(originalName);
 
             if (string.IsNullOrWhiteSpace(gameId))
             {
-                log($"No se pudo detectar ID para {originalName}");
                 notify(new UiNotification(NotificationType.Warning,
                     $"No se pudo detectar ID para {originalName}"));
                 return;
             }
 
-            log($"ID detectado: {gameId}");
-
-            // ============================================================
-            // 3) Limpiar nombre del juego y detectar CDX
-            // ============================================================
             string cleanTitle = NameCleaner.Clean(originalName, out string? cdTag);
-
-            int discNumber = cdTag != null
-                ? int.Parse(cdTag.Replace("CD", ""))
-                : 1;
+            int discNumber = cdTag != null ? int.Parse(cdTag.Replace("CD", "")) : 1;
 
             if (string.IsNullOrWhiteSpace(cleanTitle))
                 cleanTitle = gameId;
 
-            // ============================================================
-            // 4) Nombre final profesional
-            // ============================================================
             string finalFileName = $"{gameId}.{cleanTitle}.VCD";
 
-            // Carpeta POPS por disco
             string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD{discNumber})");
             Directory.CreateDirectory(popsDiscFolder);
 
-            // Copiar VCD
             string destVcd = Path.Combine(popsDiscFolder, finalFileName);
             File.Copy(vcdPath, destVcd, true);
 
-            log($"Copiado VCD → {destVcd}");
+            log($"[PS1] Copiado VCD → {destVcd}");
 
-            // ============================================================
-            // 5) MULTIDISCO
-            // ============================================================
             MultiDiscManager.ProcessMultiDisc(paths.PopsFolder, gameId, log);
 
-            // ============================================================
-            // 6) GENERAR ELF SOLO PARA CD1
-            // ============================================================
             if (discNumber == 1)
             {
                 if (string.IsNullOrWhiteSpace(paths.PopstarterElfPath))
@@ -152,10 +129,8 @@ namespace POPSManager.Logic
                 }
 
                 string outputElf = Path.Combine(popsDiscFolder, $"{gameId}.ELF");
-
                 string vcdPopstarterPath =
                     $"mass:/POPS/{gameId} (CD{discNumber})/{finalFileName}";
-
                 string displayTitle = $"{cleanTitle} (CD{discNumber})";
 
                 bool ok = ElfGenerator.GenerateElf(
@@ -179,35 +154,35 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECTAR ID DESDE EL NOMBRE (FALLBACK)
+        //  PROCESAR PS2 (ISO)
         // ============================================================
-        private string DetectGameIdFromName(string fileName)
+        private void ProcessPS2(string isoPath)
         {
-            fileName = fileName.ToUpperInvariant();
+            string originalName = Path.GetFileNameWithoutExtension(isoPath);
+            log($"[PS2] Procesando: {originalName}");
 
-            string[] patterns =
+            string? detectedId = GameIdDetector.DetectFromName(originalName);
+
+            if (string.IsNullOrWhiteSpace(detectedId))
             {
-                "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPS"
-            };
-
-            foreach (var p in patterns)
-            {
-                if (fileName.Contains(p))
-                {
-                    int index = fileName.IndexOf(p);
-                    string id = fileName.Substring(index);
-
-                    id = id.Replace("-", "_")
-                           .Replace(" ", "_");
-
-                    if (id.Length > 12)
-                        id = id.Substring(0, 12);
-
-                    return id;
-                }
+                notify(new UiNotification(NotificationType.Warning,
+                    $"No se pudo detectar ID para {originalName}. Se copiará sin renombrar."));
+                detectedId = originalName.Replace(" ", "_");
             }
 
-            return "";
+            string cleanTitle = NameCleaner.CleanTitleOnly(originalName);
+
+            string finalName = $"{detectedId}.{cleanTitle}.iso";
+
+            string dest = Path.Combine(paths.DvdFolder, finalName);
+            Directory.CreateDirectory(paths.DvdFolder);
+
+            File.Copy(isoPath, dest, true);
+
+            log($"[PS2] Copiado ISO → {dest}");
+
+            notify(new UiNotification(NotificationType.Success,
+                $"{originalName} copiado a DVD correctamente."));
         }
     }
 }
