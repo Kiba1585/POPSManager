@@ -5,108 +5,69 @@ namespace POPSManager.Services
 {
     public class PathsService
     {
-        public string PopsFolder { get; private set; }
+        public string PopsFolder { get; set; }
+        public string AppsFolder { get; set; }
         public string BaseElfPath { get; private set; }
 
-        private readonly Action<string> log;
+        private readonly Action<string>? log;
 
-        public PathsService(Action<string> log)
+        public PathsService(Action<string>? log = null, SettingsService? settings = null)
         {
             this.log = log;
 
-            // Carpeta POPS por defecto en Documentos
-            PopsFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "POPS"
-            );
+            // POPS
+            PopsFolder = settings?.PopsFolder ??
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPS");
 
-            EnsureFolder(PopsFolder);
+            if (!Directory.Exists(PopsFolder))
+                Directory.CreateDirectory(PopsFolder);
 
-            // Buscar POPSTARTER.ELF automáticamente
-            BaseElfPath = FindPopstarterElf();
+            // APPS
+            AppsFolder = settings?.AppsFolder ??
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "APPS");
+
+            if (!Directory.Exists(AppsFolder))
+                Directory.CreateDirectory(AppsFolder);
+
+            // POPSTARTER.ELF
+            if (settings != null && !string.IsNullOrWhiteSpace(settings.CustomElfPath))
+                BaseElfPath = settings.CustomElfPath;
+            else
+                BaseElfPath = FindPopstarterElf();
         }
-
-        // ============================================================
-        //  CREAR CARPETA SI NO EXISTE
-        // ============================================================
-
-        private void EnsureFolder(string folder)
-        {
-            try
-            {
-                if (!Directory.Exists(folder))
-                {
-                    Directory.CreateDirectory(folder);
-                    log($"Carpeta creada: {folder}");
-                }
-            }
-            catch (Exception ex)
-            {
-                log($"ERROR creando carpeta {folder}: {ex.Message}");
-            }
-        }
-
-        // ============================================================
-        //  BUSCAR POPSTARTER.ELF AUTOMÁTICAMENTE
-        // ============================================================
 
         private string FindPopstarterElf()
         {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-
             string[] searchPaths =
             {
-                Path.Combine(baseDir, "POPSTARTER.ELF"),
-                Path.Combine(baseDir, "Resources", "POPSTARTER.ELF"),
-                Path.Combine(baseDir, "Installer", "POPSTARTER.ELF"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "POPSTARTER.ELF"),
                 Path.Combine(PopsFolder, "POPSTARTER.ELF"),
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "POPSTARTER.ELF"
-                )
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPSTARTER.ELF")
             };
 
             foreach (var path in searchPaths)
             {
-                try
+                if (File.Exists(path))
                 {
-                    if (File.Exists(path))
-                    {
-                        log($"POPSTARTER.ELF encontrado en: {path}");
-                        return path;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    log($"ERROR accediendo a {path}: {ex.Message}");
+                    log?.Invoke($"POPSTARTER.ELF encontrado en: {path}");
+                    return path;
                 }
             }
 
-            log("ADVERTENCIA: No se encontró POPSTARTER.ELF en ninguna ubicación conocida.");
+            log?.Invoke("ADVERTENCIA: No se encontró POPSTARTER.ELF.");
             return "";
         }
 
-        // ============================================================
-        //  PERMITIR AL USUARIO SELECCIONAR MANUALMENTE EL ELF
-        // ============================================================
-
         public void SetCustomElfPath(string path)
         {
-            try
+            if (File.Exists(path))
             {
-                if (File.Exists(path))
-                {
-                    BaseElfPath = path;
-                    log($"POPSTARTER.ELF configurado manualmente: {path}");
-                }
-                else
-                {
-                    log($"ERROR: El archivo especificado no existe: {path}");
-                }
+                BaseElfPath = path;
+                log?.Invoke($"POPSTARTER.ELF configurado manualmente: {path}");
             }
-            catch (Exception ex)
+            else
             {
-                log($"ERROR verificando archivo personalizado: {ex.Message}");
+                log?.Invoke($"ERROR: Archivo no encontrado: {path}");
             }
         }
     }
