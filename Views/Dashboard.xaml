@@ -27,7 +27,7 @@
                         Margin="10"
                         Effect="{StaticResource ShadowDefault}">
                     <StackPanel Spacing="6">
-                        <TextBlock Text="Juegos procesados"
+                        <TextBlock Text="Juegos procesados (PS1 / PS2)"
                                    FontSize="16"
                                    Foreground="{StaticResource Brush.TextSecondary}"/>
                         <TextBlock x:Name="ProcessedCount"
@@ -83,14 +83,14 @@
 
                 <StackPanel Orientation="Horizontal" Spacing="20">
 
-                    <Button Content="Convertir juegos"
-                            Width="180"
+                    <Button Content="Convertir juegos (PS1)"
+                            Width="200"
                             Height="42"
                             Style="{StaticResource PrimaryButton}"
                             Click="OpenConvert_Click"/>
 
-                    <Button Content="Procesar POPS"
-                            Width="180"
+                    <Button Content="Procesar juegos (PS1 / PS2)"
+                            Width="220"
                             Height="42"
                             Style="{StaticResource PrimaryButton}"
                             Click="OpenProcessPops_Click"/>
