@@ -25,8 +25,11 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Publish project
-        run: dotnet publish -c Release -r win-x64 --self-contained false -o publish
+      # ================================
+      #   PUBLICACIÓN SELF-CONTAINED
+      # ================================
+      - name: Publish project (self-contained)
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o publish
 
       - name: Prepare MSIX folder structure
         run: |
