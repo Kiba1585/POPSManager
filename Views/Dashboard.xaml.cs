@@ -18,7 +18,8 @@ namespace POPSManager.Views
         {
             InitializeComponent();
 
-            _services = ((App)Application.Current).Services;
+            // CORRECCIÓN: App.Services es estático → no se accede vía instancia
+            _services = App.Services;
             _paths = _services.Paths;
 
             LoadStats();
