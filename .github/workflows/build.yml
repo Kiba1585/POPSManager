@@ -13,6 +13,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Clean workspace
+        run: git clean -xfd
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -26,17 +29,11 @@ jobs:
 
       - name: Prepare MSIX folder structure
         run: |
-          # Crear carpetas necesarias
           New-Item -ItemType Directory -Force -Path "msix\VFS\ProgramFiles\POPSManager" | Out-Null
           New-Item -ItemType Directory -Force -Path "msix\Assets" | Out-Null
 
-          # Copiar archivos publicados
           Copy-Item publish\* msix\VFS\ProgramFiles\POPSManager\ -Recurse -Force
-
-          # Copiar manifest corregido
           Copy-Item Installer\AppxManifest.xml msix\ -Force
-
-          # Copiar íconos desde Installer/Assets
           Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
       - name: Locate MakeAppx.exe
