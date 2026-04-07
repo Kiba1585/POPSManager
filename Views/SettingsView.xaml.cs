@@ -12,7 +12,7 @@ namespace POPSManager.Views
     public partial class SettingsView : UserControl
     {
         // Acceso seguro a los servicios globales
-        private AppServices Services => ((App)Application.Current).Services;
+        private AppServices Services => App.Services;
 
         public SettingsView()
         {
@@ -27,8 +27,9 @@ namespace POPSManager.Views
         // ============================================================
         private void LoadSettings()
         {
-            PopsPath.Text = Services.Settings.PopsFolder;
-            AppsPath.Text = Services.Settings.AppsFolder;
+            // Rutas desde PathsService (no SettingsService)
+            PopsPath.Text = Services.Paths.PopsFolder;
+            AppsPath.Text = Services.Paths.AppsFolder;
 
             DarkModeToggle.IsChecked = Services.Settings.DarkMode;
             NotificationsToggle.IsChecked = Services.Settings.NotificationsEnabled;
@@ -57,7 +58,9 @@ namespace POPSManager.Views
                     return;
                 }
 
-                Services.Settings.SetPopsFolder(dlg.FileName);
+                // Actualizar PathsService (la fuente real de rutas)
+                Services.Paths.SetCustomPopsFolder(dlg.FileName);
+
                 PopsPath.Text = dlg.FileName;
 
                 Services.Notifications.Show(
@@ -87,7 +90,8 @@ namespace POPSManager.Views
                     return;
                 }
 
-                Services.Settings.SetAppsFolder(dlg.FileName);
+                Services.Paths.SetCustomAppsFolder(dlg.FileName);
+
                 AppsPath.Text = dlg.FileName;
 
                 Services.Notifications.Show(
@@ -117,9 +121,11 @@ namespace POPSManager.Views
                     return;
                 }
 
+                // Persistir en Settings
                 Services.Settings.CustomElfPath = dlg.FileName;
                 Services.Settings.Save();
 
+                // Actualizar PathsService
                 Services.Paths.SetCustomElfPath(dlg.FileName);
 
                 ElfPathBox.Text = dlg.FileName;
