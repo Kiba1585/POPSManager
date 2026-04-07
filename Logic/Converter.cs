@@ -4,7 +4,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
@@ -29,10 +28,6 @@ namespace POPSManager.Logic
             this.notify = notify;
             this.paths = paths;
         }
-
-        // ============================================================
-        //  CONVERTIR CARPETA COMPLETA
-        // ============================================================
 
         public void ConvertFolder(string sourceFolder)
         {
@@ -76,15 +71,10 @@ namespace POPSManager.Logic
             updateSpinner("Completado");
         }
 
-        // ============================================================
-        //  CONVERTIR UN SOLO ARCHIVO
-        // ============================================================
-
         private void ConvertSingle(string inputPath)
         {
             string fileName = Path.GetFileNameWithoutExtension(inputPath);
 
-            // Resolver CUE → BIN
             if (inputPath.EndsWith(".cue", StringComparison.OrdinalIgnoreCase))
             {
                 string? bin = ResolveCue(inputPath);
@@ -100,7 +90,6 @@ namespace POPSManager.Logic
                 fileName = Path.GetFileNameWithoutExtension(bin);
             }
 
-            // Detectar si es PS1 o PS2
             if (IsPs2Iso(inputPath))
             {
                 log($"ISO ignorado (PS2): {inputPath}");
@@ -115,19 +104,12 @@ namespace POPSManager.Logic
             using var input = File.OpenRead(inputPath);
             using var output = File.Create(outputPath);
 
-            // Escribir encabezado POPStarter
             WriteHeader(output);
-
-            // Convertir sectores
             ConvertSectors(input, output, fileName);
 
             notify(new UiNotification(NotificationType.Success,
                 $"{fileName}.VCD generado correctamente."));
         }
-
-        // ============================================================
-        //  RESOLVER CUE → BIN
-        // ============================================================
 
         private string? ResolveCue(string cuePath)
         {
@@ -152,18 +134,10 @@ namespace POPSManager.Logic
             return null;
         }
 
-        // ============================================================
-        //  DETECTAR SI ES ISO DE PS2 (CORREGIDO)
-        // ============================================================
-
         private bool IsPs2Iso(string path)
         {
-            // PS1 usa SCES/SLES/SLUS/SCUS
-            // PS2 usa SLUS_2xxx, SCUS_9xxx, SLES_5xxx, etc.
-
             string name = Path.GetFileName(path).ToUpperInvariant();
 
-            // PS2 IDs típicos
             string[] ps2Patterns =
             {
                 "SLUS_2", "SLUS_3",
@@ -175,20 +149,12 @@ namespace POPSManager.Logic
             return ps2Patterns.Any(p => name.Contains(p));
         }
 
-        // ============================================================
-        //  ESCRIBIR ENCABEZADO POPSTARTER
-        // ============================================================
-
         private void WriteHeader(FileStream output)
         {
             byte[] header = new byte[0x800];
             Array.Copy(Encoding.ASCII.GetBytes("PSX"), header, 3);
             output.Write(header, 0, header.Length);
         }
-
-        // ============================================================
-        //  CONVERTIR SECTORES 2352 → 2048
-        // ============================================================
 
         private void ConvertSectors(FileStream input, FileStream output, string name)
         {
