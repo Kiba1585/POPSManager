@@ -75,11 +75,29 @@ namespace POPSManager.Logic
         private void ProcessSingle(string vcdPath)
         {
             string originalName = Path.GetFileNameWithoutExtension(vcdPath);
-
             log($"Procesando juego: {originalName}");
 
-            // Detectar ID del juego
-            string gameId = DetectGameId(originalName);
+            // ============================================================
+            // 1) Validar integridad del VCD
+            // ============================================================
+
+            if (!IntegrityValidator.Validate(vcdPath))
+            {
+                notify(new UiNotification(NotificationType.Error,
+                    $"{originalName}.VCD está corrupto o incompleto."));
+                return;
+            }
+
+            // ============================================================
+            // 2) Detectar ID real del juego desde el VCD
+            // ============================================================
+
+            string? detectedId = GameIdDetector.DetectGameId(vcdPath);
+
+            // Fallback: detectar ID desde el nombre del archivo
+            string gameId = !string.IsNullOrWhiteSpace(detectedId)
+                ? detectedId
+                : DetectGameIdFromName(originalName);
 
             if (string.IsNullOrWhiteSpace(gameId))
             {
@@ -91,16 +109,24 @@ namespace POPSManager.Logic
 
             log($"ID detectado: {gameId}");
 
-            // Detectar número de disco
-            int discNumber = DetectDiscNumber(originalName);
+            // ============================================================
+            // 3) Limpiar nombre del juego y detectar CDX
+            // ============================================================
 
-            // Obtener nombre limpio del juego
-            string cleanTitle = ExtractCleanTitle(originalName, gameId);
+            string cleanTitle = NameCleaner.Clean(originalName, out string? cdTag);
+
+            int discNumber = cdTag != null
+                ? int.Parse(cdTag.Replace("CD", ""))
+                : 1;
+
             if (string.IsNullOrWhiteSpace(cleanTitle))
                 cleanTitle = gameId;
 
-            // Nombre final: ID.Nombre (CDX).VCD
-            string finalFileName = $"{gameId}.{cleanTitle} (CD{discNumber}).VCD";
+            // ============================================================
+            // 4) Nombre final profesional
+            // ============================================================
+
+            string finalFileName = $"{gameId}.{cleanTitle}.VCD";
 
             // Carpeta POPS por disco
             string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD{discNumber})");
@@ -112,14 +138,17 @@ namespace POPSManager.Logic
 
             log($"Copiado VCD → {destVcd}");
 
-            // MULTIDISCO
+            // ============================================================
+            // 5) MULTIDISCO
+            // ============================================================
+
             MultiDiscManager.ProcessMultiDisc(paths.PopsFolder, gameId, log);
 
             // ============================================================
-            //  GENERAR ELF SOLO PARA CD1
+            // 6) GENERAR ELF SOLO PARA CD1
             // ============================================================
 
-            if (IsPs1(gameId) && discNumber == 1)
+            if (discNumber == 1)
             {
                 if (string.IsNullOrWhiteSpace(paths.PopstarterElfPath))
                 {
@@ -130,11 +159,9 @@ namespace POPSManager.Logic
 
                 string outputElf = Path.Combine(popsDiscFolder, $"{gameId}.ELF");
 
-                // Ruta POPStarter correcta
                 string vcdPopstarterPath =
                     $"mass:/POPS/{gameId} (CD{discNumber})/{finalFileName}";
 
-                // Título visible en OPL
                 string displayTitle = $"{cleanTitle} (CD{discNumber})";
 
                 bool ok = ElfGenerator.GenerateElf(
@@ -158,89 +185,36 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECTAR ID DEL JUEGO
+        //  DETECTAR ID DESDE EL NOMBRE (FALLBACK)
         // ============================================================
 
-        private string DetectGameId(string fileName)
+        private string DetectGameIdFromName(string fileName)
         {
             fileName = fileName.ToUpperInvariant();
 
             string[] patterns =
             {
-                "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPH"
+                "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPS"
             };
 
             foreach (var p in patterns)
             {
                 if (fileName.Contains(p))
                 {
-                    string cleaned = CleanId(fileName, p);
-                    return cleaned;
+                    int index = fileName.IndexOf(p);
+                    string id = fileName.Substring(index);
+
+                    id = id.Replace("-", "_")
+                           .Replace(" ", "_");
+
+                    if (id.Length > 12)
+                        id = id.Substring(0, 12);
+
+                    return id;
                 }
             }
 
             return "";
-        }
-
-        private string CleanId(string name, string prefix)
-        {
-            int index = name.IndexOf(prefix);
-            if (index < 0) return "";
-
-            string id = name.Substring(index);
-
-            id = id.Replace("-", "_")
-                   .Replace(" ", "_");
-
-            if (id.Length > 12)
-                id = id.Substring(0, 12);
-
-            return id;
-        }
-
-        private bool IsPs1(string id)
-        {
-            return id.StartsWith("SCES") ||
-                   id.StartsWith("SLES") ||
-                   id.StartsWith("SLUS") ||
-                   id.StartsWith("SCUS");
-        }
-
-        // ============================================================
-        //  DETECTAR NÚMERO DE DISCO
-        // ============================================================
-
-        private int DetectDiscNumber(string name)
-        {
-            var regex = new Regex(@"\((CD|DISC|DISK)\s*(\d+)\)", RegexOptions.IgnoreCase);
-            var match = regex.Match(name);
-            if (match.Success && int.TryParse(match.Groups[2].Value, out int num))
-                return num;
-
-            return 1;
-        }
-
-        // ============================================================
-        //  LIMPIAR NOMBRE DEL JUEGO
-        // ============================================================
-
-        private string ExtractCleanTitle(string originalName, string gameId)
-        {
-            string name = originalName;
-
-            int idx = name.IndexOf(gameId, StringComparison.OrdinalIgnoreCase);
-            if (idx >= 0)
-                name = name.Remove(idx, gameId.Length);
-
-            name = Regex.Replace(name, @"\((CD|DISC|DISK)\s*\d+\)", "", RegexOptions.IgnoreCase);
-
-            name = name.Replace("_", " ")
-                       .Replace(".", " ")
-                       .Trim();
-
-            name = Regex.Replace(name, @"\s{2,}", " ");
-
-            return name;
         }
     }
 }
