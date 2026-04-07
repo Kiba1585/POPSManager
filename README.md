@@ -129,7 +129,7 @@ Todo se basa en:
 ---
 
 ## 📸 Capturas (opcional)
-(Puedes añadirlas luego si deseas)
+![Vista del proyecto](https://copilot.microsoft.com/th/id/BCO.6c5ac29b-157b-45f0-ac86-5810992bc20e.png)
 
 ---
 
