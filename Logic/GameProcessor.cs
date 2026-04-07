@@ -1,6 +1,7 @@
 using POPSManager.Models;
 using POPSManager.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -46,28 +47,32 @@ namespace POPSManager.Logic
                 return;
             }
 
-            int index = 0;
+            // Agrupar multidisco
+            var groups = GroupMultiDisc(files);
 
-            foreach (var file in files)
+            int index = 0;
+            int total = groups.Count;
+
+            foreach (var group in groups)
             {
                 index++;
-                int progress = (int)((index / (double)files.Length) * 100);
+                int progress = (int)((index / (double)total) * 100);
 
                 updateProgress(progress);
-                updateSpinner($"Procesando {Path.GetFileName(file)}");
+                updateSpinner($"Procesando {group.Key}");
 
                 try
                 {
-                    if (file.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase))
-                        ProcessPS1(file);
-                    else if (file.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                        ProcessPS2(file);
+                    if (group.Value.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
+                        ProcessPS1Group(group.Key, group.Value);
+                    else
+                        ProcessPS2(group.Value.First());
                 }
                 catch (Exception ex)
                 {
-                    log($"Error procesando {file}: {ex.Message}");
+                    log($"Error procesando {group.Key}: {ex.Message}");
                     notify(new UiNotification(NotificationType.Error,
-                        $"Error procesando {Path.GetFileName(file)}"));
+                        $"Error procesando {group.Key}"));
                 }
             }
 
@@ -75,82 +80,113 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR PS1 (VCD)
+        //  AGRUPAR MULTIDISCO
         // ============================================================
-        private void ProcessPS1(string vcdPath)
+        private Dictionary<string, List<string>> GroupMultiDisc(string[] files)
         {
-            string originalName = Path.GetFileNameWithoutExtension(vcdPath);
-            log($"[PS1] Procesando: {originalName}");
+            var groups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-            if (!IntegrityValidator.Validate(vcdPath))
+            foreach (var file in files)
             {
-                notify(new UiNotification(NotificationType.Error,
-                    $"{originalName}.VCD está corrupto o incompleto."));
-                return;
+                string name = Path.GetFileNameWithoutExtension(file);
+                string baseName = NameCleaner.Clean(name, out _);
+
+                if (!groups.ContainsKey(baseName))
+                    groups[baseName] = new List<string>();
+
+                groups[baseName].Add(file);
             }
 
-            string? detectedId = GameIdDetector.DetectGameId(vcdPath);
-            string gameId = !string.IsNullOrWhiteSpace(detectedId)
-                ? detectedId
-                : GameIdDetector.DetectFromName(originalName);
+            return groups;
+        }
 
-            if (string.IsNullOrWhiteSpace(gameId))
+        // ============================================================
+        //  PROCESAR GRUPO PS1 (MULTIDISCO)
+        // ============================================================
+        private void ProcessPS1Group(string baseName, List<string> discs)
+        {
+            log($"[PS1] Procesando grupo: {baseName}");
+
+            // Ordenar discos por número
+            discs = discs.OrderBy(d =>
+            {
+                NameCleaner.Clean(Path.GetFileNameWithoutExtension(d), out string? cdTag);
+                return cdTag != null ? int.Parse(cdTag.Replace("CD", "")) : 1;
+            }).ToList();
+
+            // Detectar ID del primer disco
+            string firstDisc = discs.First();
+            string? detectedId = GameIdDetector.DetectGameId(firstDisc);
+
+            if (string.IsNullOrWhiteSpace(detectedId))
+                detectedId = GameIdDetector.DetectFromName(baseName);
+
+            if (string.IsNullOrWhiteSpace(detectedId))
             {
                 notify(new UiNotification(NotificationType.Warning,
-                    $"No se pudo detectar ID para {originalName}"));
+                    $"No se pudo detectar ID para {baseName}"));
                 return;
             }
 
-            string cleanTitle = NameCleaner.Clean(originalName, out string? cdTag);
-            int discNumber = cdTag != null ? int.Parse(cdTag.Replace("CD", "")) : 1;
+            // Procesar cada disco
+            int discNumber = 1;
+            List<string> discPaths = new();
 
-            if (string.IsNullOrWhiteSpace(cleanTitle))
-                cleanTitle = gameId;
-
-            string finalFileName = $"{gameId}.{cleanTitle}.VCD";
-
-            string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD{discNumber})");
-            Directory.CreateDirectory(popsDiscFolder);
-
-            string destVcd = Path.Combine(popsDiscFolder, finalFileName);
-            File.Copy(vcdPath, destVcd, true);
-
-            log($"[PS1] Copiado VCD → {destVcd}");
-
-            MultiDiscManager.ProcessMultiDisc(paths.PopsFolder, gameId, log);
-
-            if (discNumber == 1)
+            foreach (var disc in discs)
             {
-                if (string.IsNullOrWhiteSpace(paths.PopstarterElfPath))
-                {
-                    notify(new UiNotification(NotificationType.Error,
-                        "No se encontró POPSTARTER.ELF. Configúralo en Ajustes."));
-                    return;
-                }
+                string cleanTitle = NameCleaner.Clean(baseName, out _);
+                string finalFileName = $"{detectedId}.{cleanTitle} (CD{discNumber}).VCD";
 
-                string outputElf = Path.Combine(popsDiscFolder, $"{gameId}.ELF");
-                string vcdPopstarterPath =
-                    $"mass:/POPS/{gameId} (CD{discNumber})/{finalFileName}";
-                string displayTitle = $"{cleanTitle} (CD{discNumber})";
+                string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{detectedId} (CD{discNumber})");
+                Directory.CreateDirectory(popsDiscFolder);
 
-                bool ok = ElfGenerator.GenerateElf(
-                    paths.PopstarterElfPath,
-                    outputElf,
-                    gameId,
-                    vcdPopstarterPath,
-                    displayTitle,
-                    log
-                );
+                string destVcd = Path.Combine(popsDiscFolder, finalFileName);
+                File.Copy(disc, destVcd, true);
 
-                if (!ok)
-                {
-                    notify(new UiNotification(NotificationType.Error,
-                        $"Error generando ELF para {gameId}"));
-                }
+                discPaths.Add(destVcd);
+
+                log($"[PS1] Copiado disco {discNumber} → {destVcd}");
+
+                discNumber++;
             }
 
+            // Generar DISCS.TXT
+            MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, log);
+
+            // Generar ELF solo para CD1
+            GenerateElfForDisc1(detectedId, baseName);
+
             notify(new UiNotification(NotificationType.Success,
-                $"{originalName} procesado correctamente."));
+                $"{baseName} procesado correctamente."));
+        }
+
+        // ============================================================
+        //  GENERAR ELF PARA CD1
+        // ============================================================
+        private void GenerateElfForDisc1(string gameId, string baseName)
+        {
+            string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD1)");
+            string vcdName = Directory.GetFiles(popsDiscFolder, "*.VCD").First();
+
+            string vcdPopstarterPath =
+                $"mass:/POPS/{gameId} (CD1)/{Path.GetFileName(vcdName)}";
+
+            string outputElf = Path.Combine(popsDiscFolder, $"{gameId}.ELF");
+
+            bool ok = ElfGenerator.GenerateElf(
+                paths.PopstarterElfPath,
+                outputElf,
+                gameId,
+                vcdPopstarterPath,
+                $"{baseName} (CD1)",
+                log
+            );
+
+            if (!ok)
+            {
+                notify(new UiNotification(NotificationType.Error,
+                    $"Error generando ELF para {gameId}"));
+            }
         }
 
         // ============================================================
