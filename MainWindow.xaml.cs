@@ -12,23 +12,25 @@ namespace POPSManager
 {
     public partial class MainWindow : Window
     {
+        private readonly AppServices _services;
+
         public MainWindow()
         {
             InitializeComponent();
 
-            var services = App.Services;
+            _services = App.Services;
 
             // Notificaciones
-            services.Notifications.OnNotify = ShowNotification;
+            _services.Notifications.OnNotify = ShowNotification;
 
             // Logs
-            services.LogService.OnLog = AddLog;
+            _services.LogService.OnLog = AddLog;
 
             // Progreso global
-            services.Progress.OnStart = ProgressStart;
-            services.Progress.OnStop = ProgressStop;
-            services.Progress.OnProgress = ProgressUpdate;
-            services.Progress.OnStatus = ProgressStatus;
+            _services.Progress.OnStart = ProgressStart;
+            _services.Progress.OnStop = ProgressStop;
+            _services.Progress.OnProgress = ProgressUpdate;
+            _services.Progress.OnStatus = ProgressStatus;
 
             // Vista inicial
             LoadView(new Dashboard());
@@ -37,45 +39,29 @@ namespace POPSManager
         // ============================================================
         //  NAVEGACIÓN ENTRE VISTAS
         // ============================================================
-
         public void LoadView(UserControl view)
         {
             MainContent.Children.Clear();
             MainContent.Children.Add(view);
 
-            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250));
+            // Animación suave
+            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250))
+            {
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            };
+
             view.BeginAnimation(OpacityProperty, fade);
         }
 
-        private void Dashboard_Click(object sender, RoutedEventArgs e)
-        {
-            LoadView(new Dashboard());
-        }
-
-        private void Convert_Click(object sender, RoutedEventArgs e)
-        {
-            LoadView(new ConvertView());
-        }
-
-        private void ProcessPops_Click(object sender, RoutedEventArgs e)
-        {
-            LoadView(new ProcessPopsView());
-        }
-
-        private void Settings_Click(object sender, RoutedEventArgs e)
-        {
-            LoadView(new SettingsView());
-        }
-
-        private void About_Click(object sender, RoutedEventArgs e)
-        {
-            LoadView(new AboutView());
-        }
+        private void Dashboard_Click(object sender, RoutedEventArgs e) => LoadView(new Dashboard());
+        private void Convert_Click(object sender, RoutedEventArgs e) => LoadView(new ConvertView());
+        private void ProcessPops_Click(object sender, RoutedEventArgs e) => LoadView(new ProcessPopsView());
+        private void Settings_Click(object sender, RoutedEventArgs e) => LoadView(new SettingsView());
+        private void About_Click(object sender, RoutedEventArgs e) => LoadView(new AboutView());
 
         // ============================================================
         //  NOTIFICACIONES (TOASTS)
         // ============================================================
-
         private void ShowNotification(UiNotification notification)
         {
             Dispatcher.Invoke(() =>
@@ -89,7 +75,7 @@ namespace POPSManager
                     _ => "ToastInfoStyle"
                 };
 
-                Border toast = new Border
+                var toast = new Border
                 {
                     Style = (Style)FindResource(styleKey),
                     RenderTransform = new TranslateTransform()
@@ -105,14 +91,16 @@ namespace POPSManager
 
                 NotificationArea.Children.Insert(0, toast);
 
-                Storyboard show = (Storyboard)FindResource("ToastShowAnimation");
+                // Animación de entrada
+                var show = (Storyboard)FindResource("ToastShowAnimation");
                 show.Begin(toast);
 
+                // Animación de salida
                 _ = Task.Delay(3000).ContinueWith(_ =>
                 {
                     Dispatcher.Invoke(() =>
                     {
-                        Storyboard hide = (Storyboard)FindResource("ToastHideAnimation");
+                        var hide = (Storyboard)FindResource("ToastHideAnimation");
                         hide.Completed += (s, e) => NotificationArea.Children.Remove(toast);
                         hide.Begin(toast);
                     });
@@ -123,7 +111,6 @@ namespace POPSManager
         // ============================================================
         //  LOGS
         // ============================================================
-
         private void AddLog(string message)
         {
             Console.WriteLine(message);
@@ -132,7 +119,6 @@ namespace POPSManager
         // ============================================================
         //  PROGRESO GLOBAL
         // ============================================================
-
         private void ProgressStart()
         {
             Dispatcher.Invoke(() =>
@@ -173,7 +159,6 @@ namespace POPSManager
         // ============================================================
         //  DRAG & DROP GLOBAL
         // ============================================================
-
         private void Window_DragOver(object sender, DragEventArgs e)
         {
             e.Effects = DragDropEffects.Copy;
@@ -182,7 +167,7 @@ namespace POPSManager
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            App.Services.Notifications.Show(
+            _services.Notifications.Show(
                 new UiNotification(NotificationType.Info,
                 "Arrastra archivos dentro de la vista correspondiente."));
         }
