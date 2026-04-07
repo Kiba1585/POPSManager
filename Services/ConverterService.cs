@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using POPSManager.Models;
 using POPSManager.Logic;
 
@@ -13,6 +15,9 @@ namespace POPSManager.Services
         private readonly SettingsService _settings;
         private readonly Action<UiNotification> _notify;
         private readonly Action<string> _setStatus;
+
+        private const int SectorSize = 2352;
+        private const int UserDataSize = 2048;
 
         public ConverterService(
             Action<string> log,
@@ -29,7 +34,7 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERTIR CARPETA (PS1 → VCD) Y ENVIAR A GAMEPROCESSOR
+        //  CONVERTIR CARPETA COMPLETA (PS1 → VCD)
         // ============================================================
         public void ConvertFolder(string sourceFolder, string outputFolder)
         {
@@ -63,11 +68,11 @@ namespace POPSManager.Services
 
                 try
                 {
-                    string vcdPath = ConvertToVcd(file, outputFolder);
+                    var result = ConvertToVcd(file, outputFolder);
 
-                    if (!string.IsNullOrWhiteSpace(vcdPath))
+                    if (result != null)
                     {
-                        _log($"Convertido: {file} → {vcdPath}");
+                        _log($"Convertido: {file} → {result.VcdPath}");
                     }
                 }
                 catch (Exception ex)
@@ -82,45 +87,67 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERTIR UN ARCHIVO PS1 A VCD
+        //  CONVERTIR UN ARCHIVO PS1 A VCD (OPTIMIZADO + MULTIDISCO)
         // ============================================================
-        private string ConvertToVcd(string inputPath, string outputFolder)
+        private ConvertedGame? ConvertToVcd(string inputPath, string outputFolder)
         {
             string ext = Path.GetExtension(inputPath).ToLowerInvariant();
 
-            // Si es ISO, verificar si es PS1 o PS2
-            if (ext == ".iso")
+            // Detectar PS2
+            if (ext == ".iso" && IsPs2Iso(inputPath))
             {
-                if (IsPs2Iso(inputPath))
-                {
-                    _log($"Detectado PS2 ISO, no se convierte: {inputPath}");
-                    return "";
-                }
+                _log($"Detectado PS2 ISO, no se convierte: {inputPath}");
+                return null;
             }
 
-            // PS1 → convertir a VCD
-            string name = Path.GetFileNameWithoutExtension(inputPath);
-            string outputPath = Path.Combine(outputFolder, $"{name}.vcd");
+            // Detectar multidisco
+            var discInfo = DetectDiscNumber(inputPath);
 
+            // Nombre base limpio
+            string baseName = CleanBaseName(Path.GetFileNameWithoutExtension(inputPath));
+
+            // Nombre final del VCD
+            string vcdName = discInfo.IsDisc
+                ? $"{baseName} (CD{discInfo.DiscNumber}).vcd"
+                : $"{baseName}.vcd";
+
+            string outputPath = Path.Combine(outputFolder, vcdName);
+
+            // Conversión optimizada
+            ConvertPs1ToVcd(inputPath, outputPath, baseName);
+
+            return new ConvertedGame
+            {
+                VcdPath = outputPath,
+                BaseName = baseName,
+                DiscNumber = discInfo.DiscNumber,
+                IsMultiDisc = discInfo.IsDisc
+            };
+        }
+
+        // ============================================================
+        //  CONVERSIÓN PS1 → VCD (OPTIMIZADA)
+        // ============================================================
+        private void ConvertPs1ToVcd(string inputPath, string outputPath, string name)
+        {
             using var input = File.OpenRead(inputPath);
             using var output = File.Create(outputPath);
 
             // Header POPStarter
             byte[] header = new byte[0x800];
-            Array.Copy(System.Text.Encoding.ASCII.GetBytes("PSX"), header, 3);
+            Array.Copy(Encoding.ASCII.GetBytes("PSX"), header, 3);
             output.Write(header, 0, header.Length);
 
-            // Sector 2352 → 2048
-            byte[] sector = new byte[2352];
-            byte[] userData = new byte[2048];
+            byte[] sector = new byte[SectorSize];
+            byte[] userData = new byte[UserDataSize];
 
-            long totalSectors = input.Length / 2352;
+            long totalSectors = input.Length / SectorSize;
             long processed = 0;
 
-            while (input.Read(sector, 0, 2352) == 2352)
+            while (input.Read(sector, 0, SectorSize) == SectorSize)
             {
-                Array.Copy(sector, 24, userData, 0, 2048);
-                output.Write(userData, 0, 2048);
+                Buffer.BlockCopy(sector, 24, userData, 0, UserDataSize);
+                output.Write(userData, 0, UserDataSize);
 
                 processed++;
                 if (processed % 200 == 0)
@@ -129,12 +156,10 @@ namespace POPSManager.Services
                     _setStatus($"Convirtiendo {name}: {percent}%");
                 }
             }
-
-            return outputPath;
         }
 
         // ============================================================
-        //  DETECTAR SI UN ISO ES PS2
+        //  DETECTAR SI UN ISO ES PS2 (ROBUSTO)
         // ============================================================
         private bool IsPs2Iso(string isoPath)
         {
@@ -144,14 +169,65 @@ namespace POPSManager.Services
                 byte[] buffer = new byte[0x8000];
                 fs.Read(buffer, 0, buffer.Length);
 
-                string text = System.Text.Encoding.ASCII.GetString(buffer);
+                string text = Encoding.ASCII.GetString(buffer);
 
-                return text.Contains("PLAYSTATION 2", StringComparison.OrdinalIgnoreCase);
+                if (text.Contains("PLAYSTATION 2", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (text.Contains("BOOT2", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                return false;
             }
             catch
             {
                 return false;
             }
         }
+
+        // ============================================================
+        //  DETECTAR MULTIDISCO
+        // ============================================================
+        private (bool IsDisc, int DiscNumber) DetectDiscNumber(string path)
+        {
+            string name = Path.GetFileNameWithoutExtension(path).ToLower();
+
+            for (int i = 1; i <= 9; i++)
+            {
+                if (name.Contains($"disc {i}") ||
+                    name.Contains($"disc{i}") ||
+                    name.Contains($"cd{i}") ||
+                    name.Contains($"disk{i}"))
+                {
+                    return (true, i);
+                }
+            }
+
+            return (false, 1);
+        }
+
+        // ============================================================
+        //  LIMPIAR NOMBRE BASE
+        // ============================================================
+        private string CleanBaseName(string name)
+        {
+            name = name.Replace("(Disc 1)", "", StringComparison.OrdinalIgnoreCase)
+                       .Replace("(Disc 2)", "", StringComparison.OrdinalIgnoreCase)
+                       .Replace("(Disc 3)", "", StringComparison.OrdinalIgnoreCase)
+                       .Replace("(CD1)", "", StringComparison.OrdinalIgnoreCase)
+                       .Replace("(CD2)", "", StringComparison.OrdinalIgnoreCase)
+                       .Replace("(CD3)", "", StringComparison.OrdinalIgnoreCase)
+                       .Trim();
+
+            return name;
+        }
+    }
+
+    public class ConvertedGame
+    {
+        public string VcdPath { get; set; }
+        public string BaseName { get; set; }
+        public int DiscNumber { get; set; }
+        public bool IsMultiDisc { get; set; }
     }
 }
