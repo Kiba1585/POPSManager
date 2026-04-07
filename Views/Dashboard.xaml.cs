@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Dialogs; // Folder picker moderno
 using POPSManager.Services;
 using POPSManager.Models;
 
@@ -117,33 +117,22 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  CAMBIAR RUTA RAÍZ (versión correcta)
+        //  CAMBIAR RUTA RAÍZ (sin WinForms)
         // ============================================================
         private void ChangeRootPath_Click(object sender, RoutedEventArgs e)
         {
-            using var dialog = new FolderBrowserDialog
+            var dialog = new CommonOpenFileDialog
             {
-                Description = "Selecciona la carpeta raíz donde se crearán POPS, APPS, CFG, ART, DVD...",
-                UseDescriptionForTitle = true,
-                ShowNewFolderButton = true
+                Title = "Selecciona la carpeta raíz",
+                IsFolderPicker = true
             };
 
-            if (dialog.ShowDialog() == DialogResult.OK)
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                string newPath = dialog.SelectedPath;
+                string newPath = dialog.FileName;
 
-                if (!Directory.Exists(newPath))
-                {
-                    _services.Notifications.Show(
-                        new UiNotification(NotificationType.Error,
-                        "La carpeta seleccionada no existe."));
-                    return;
-                }
-
-                // Guardar en SettingsService (correcto)
                 _services.Settings.SetRootFolder(newPath);
 
-                // PathsService se actualiza automáticamente
                 LoadPaths();
                 LoadSystemInfo();
 
@@ -154,7 +143,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  SELECCIONAR POPSTARTER.ELF
+        //  SELECCIONAR POPSTARTER.ELF (WPF OpenFileDialog)
         // ============================================================
         private void SelectElf_Click(object sender, RoutedEventArgs e)
         {
@@ -166,15 +155,6 @@ namespace POPSManager.Views
 
             if (dialog.ShowDialog() == true)
             {
-                if (!File.Exists(dialog.FileName))
-                {
-                    _services.Notifications.Show(
-                        new UiNotification(NotificationType.Error,
-                        "El archivo seleccionado no existe."));
-                    return;
-                }
-
-                // Guardar correctamente
                 _services.Settings.SetCustomElfPath(dialog.FileName);
 
                 LoadPaths();
