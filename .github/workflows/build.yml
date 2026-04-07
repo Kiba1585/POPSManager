@@ -13,6 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Limpieza total del workspace (evita errores WPF y archivos viejos)
       - name: Clean workspace
         run: git clean -xfd
 
@@ -36,20 +37,40 @@ jobs:
           Copy-Item Installer\AppxManifest.xml msix\ -Force
           Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
-      - name: Locate MakeAppx.exe
+      # ================================
+      #   MAKEAPPX (solo versión x64)
+      # ================================
+      - name: Locate MakeAppx.exe (x64 only)
         id: makeappx
         run: |
-          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe | Select-Object -First 1
+          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe |
+            Where-Object { $_.FullName -match "x64" } |
+            Select-Object -First 1
+
+          if (-not $makeappx) {
+            Write-Error "No se encontró MakeAppx.exe x64"
+          }
+
           echo "MAKEAPPX=$($makeappx.FullName)" >> $env:GITHUB_ENV
 
       - name: Create MSIX package
         run: |
           & "$env:MAKEAPPX" pack /d msix /p "POPSManager_${{ github.ref_name }}.msix" /l
 
-      - name: Locate SignTool.exe
+      # ================================
+      #   SIGNTOOL (solo versión x64)
+      # ================================
+      - name: Locate SignTool.exe (x64 only)
         id: signtool
         run: |
-          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | Select-Object -First 1
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
+            Where-Object { $_.FullName -match "x64" } |
+            Select-Object -First 1
+
+          if (-not $signtool) {
+            Write-Error "No se encontró SignTool.exe x64"
+          }
+
           echo "SIGNTOOL=$($signtool.FullName)" >> $env:GITHUB_ENV
 
       - name: Sign MSIX package
