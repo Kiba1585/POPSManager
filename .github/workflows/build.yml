@@ -78,13 +78,18 @@ jobs:
 
       - name: Sign MSIX package
         run: |
-          $password = ConvertTo-SecureString "${{ secrets.PFX_PASSWORD }}" -AsPlainText -Force
           $certPath = "$env:RUNNER_TEMP\cert.pfx"
 
           # Guardar el PFX correctamente como archivo binario
           [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String("${{ secrets.PFX_FILE }}"))
 
-          & "$env:SIGNTOOL" sign /a /f $certPath /p $password "POPSManager_${{ github.ref_name }}.msix"
+          # Firmar el MSIX con SHA256 (obligatorio)
+          & "$env:SIGNTOOL" sign `
+            /fd SHA256 `
+            /a `
+            /f $certPath `
+            /p "${{ secrets.PFX_PASSWORD }}" `
+            "POPSManager_${{ github.ref_name }}.msix"
 
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v4
