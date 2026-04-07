@@ -5,43 +5,64 @@ namespace POPSManager.Services
 {
     public class PathsService
     {
-        public string PopsFolder { get; set; }
-        public string AppsFolder { get; set; }
-        public string BaseElfPath { get; private set; }
+        public string RootFolder { get; set; }
+        public string PopsFolder => Path.Combine(RootFolder, "POPS");
+        public string AppsFolder => Path.Combine(RootFolder, "APPS");
+        public string CfgFolder => Path.Combine(RootFolder, "CFG");
+        public string ArtFolder => Path.Combine(RootFolder, "ART");
+
+        public string PopstarterElfPath { get; set; }
 
         private readonly Action<string>? log;
+        private readonly SettingsService? settings;
 
         public PathsService(Action<string>? log = null, SettingsService? settings = null)
         {
             this.log = log;
+            this.settings = settings;
 
-            // POPS
-            PopsFolder = settings?.PopsFolder ??
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPS");
+            // ============================
+            //  RUTA RAÍZ
+            // ============================
+            RootFolder = settings?.RootFolder ??
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPSManager");
 
-            if (!Directory.Exists(PopsFolder))
-                Directory.CreateDirectory(PopsFolder);
+            EnsureFolderStructure();
 
-            // APPS
-            AppsFolder = settings?.AppsFolder ??
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "APPS");
-
-            if (!Directory.Exists(AppsFolder))
-                Directory.CreateDirectory(AppsFolder);
-
-            // POPSTARTER.ELF
+            // ============================
+            //  POPSTARTER.ELF
+            // ============================
             if (settings != null && !string.IsNullOrWhiteSpace(settings.CustomElfPath))
-                BaseElfPath = settings.CustomElfPath;
+            {
+                PopstarterElfPath = settings.CustomElfPath;
+            }
             else
-                BaseElfPath = FindPopstarterElf();
+            {
+                PopstarterElfPath = FindPopstarterElf();
+            }
         }
 
+        // ============================================================
+        //  CREAR ESTRUCTURA OPL AUTOMÁTICAMENTE
+        // ============================================================
+        private void EnsureFolderStructure()
+        {
+            Directory.CreateDirectory(RootFolder);
+            Directory.CreateDirectory(PopsFolder);
+            Directory.CreateDirectory(AppsFolder);
+            Directory.CreateDirectory(CfgFolder);
+            Directory.CreateDirectory(ArtFolder);
+        }
+
+        // ============================================================
+        //  BUSCAR POPSTARTER.ELF AUTOMÁTICAMENTE
+        // ============================================================
         private string FindPopstarterElf()
         {
             string[] searchPaths =
             {
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "POPSTARTER.ELF"),
-                Path.Combine(PopsFolder, "POPSTARTER.ELF"),
+                Path.Combine(RootFolder, "POPSTARTER.ELF"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPSTARTER.ELF")
             };
 
@@ -58,17 +79,35 @@ namespace POPSManager.Services
             return "";
         }
 
+        // ============================================================
+        //  CONFIGURAR POPSTARTER.ELF MANUALMENTE
+        // ============================================================
         public void SetCustomElfPath(string path)
         {
             if (File.Exists(path))
             {
-                BaseElfPath = path;
+                PopstarterElfPath = path;
                 log?.Invoke($"POPSTARTER.ELF configurado manualmente: {path}");
+                Save();
             }
             else
             {
                 log?.Invoke($"ERROR: Archivo no encontrado: {path}");
             }
+        }
+
+        // ============================================================
+        //  GUARDAR CONFIGURACIÓN
+        // ============================================================
+        public void Save()
+        {
+            if (settings == null)
+                return;
+
+            settings.RootFolder = RootFolder;
+            settings.CustomElfPath = PopstarterElfPath;
+
+            settings.Save();
         }
     }
 }
