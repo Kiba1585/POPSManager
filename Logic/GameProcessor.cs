@@ -96,7 +96,6 @@ namespace POPSManager.Logic
 
             // Obtener nombre limpio del juego
             string cleanTitle = ExtractCleanTitle(originalName, gameId);
-
             if (string.IsNullOrWhiteSpace(cleanTitle))
                 cleanTitle = gameId;
 
@@ -122,7 +121,7 @@ namespace POPSManager.Logic
 
             if (IsPs1(gameId) && discNumber == 1)
             {
-                if (string.IsNullOrWhiteSpace(paths.BaseElfPath))
+                if (string.IsNullOrWhiteSpace(paths.PopstarterElfPath))
                 {
                     notify(new UiNotification(NotificationType.Error,
                         "No se encontró POPSTARTER.ELF. Configúralo en Ajustes."));
@@ -139,7 +138,7 @@ namespace POPSManager.Logic
                 string displayTitle = $"{cleanTitle} (CD{discNumber})";
 
                 bool ok = ElfGenerator.GenerateElf(
-                    paths.BaseElfPath,
+                    paths.PopstarterElfPath,
                     outputElf,
                     gameId,
                     vcdPopstarterPath,
