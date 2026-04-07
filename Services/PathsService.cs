@@ -7,15 +7,18 @@ namespace POPSManager.Services
     {
         public string RootFolder { get; private set; }
 
-        public string PopsFolder => Path.Combine(RootFolder, "POPS");
-        public string AppsFolder => Path.Combine(RootFolder, "APPS");
+        // Rutas dinámicas (si el usuario no personaliza, se generan desde RootFolder)
+        public string PopsFolder => _customPopsFolder ?? Path.Combine(RootFolder, "POPS");
+        public string AppsFolder => _customAppsFolder ?? Path.Combine(RootFolder, "APPS");
+
         public string CfgFolder  => Path.Combine(RootFolder, "CFG");
         public string ArtFolder  => Path.Combine(RootFolder, "ART");
-
-        // ★ Carpeta necesaria para PS2
         public string DvdFolder  => Path.Combine(RootFolder, "DVD");
 
         public string PopstarterElfPath { get; private set; }
+
+        private string? _customPopsFolder;
+        private string? _customAppsFolder;
 
         private readonly Action<string>? log;
         private readonly SettingsService? settings;
@@ -27,6 +30,10 @@ namespace POPSManager.Services
 
             RootFolder = settings?.RootFolder ??
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPSManager");
+
+            // Cargar rutas personalizadas si existen
+            _customPopsFolder = settings?.CustomPopsFolder;
+            _customAppsFolder = settings?.CustomAppsFolder;
 
             EnsureFolderStructure();
 
@@ -40,8 +47,6 @@ namespace POPSManager.Services
             CreateFolder(AppsFolder);
             CreateFolder(CfgFolder);
             CreateFolder(ArtFolder);
-
-            // ★ Crear carpeta DVD para juegos PS2
             CreateFolder(DvdFolder);
         }
 
@@ -89,13 +94,33 @@ namespace POPSManager.Services
             return "";
         }
 
+        // ============================================================
+        //  MÉTODOS NUEVOS PARA SETTINGSVIEW
+        // ============================================================
+
+        public void SetCustomPopsFolder(string path)
+        {
+            _customPopsFolder = path;
+            CreateFolder(path);
+            Save();
+            log?.Invoke($"Ruta POPS personalizada: {path}");
+        }
+
+        public void SetCustomAppsFolder(string path)
+        {
+            _customAppsFolder = path;
+            CreateFolder(path);
+            Save();
+            log?.Invoke($"Ruta APPS personalizada: {path}");
+        }
+
         public void SetCustomElfPath(string path)
         {
             if (File.Exists(path))
             {
                 PopstarterElfPath = path;
-                log?.Invoke($"POPSTARTER.ELF configurado manualmente: {path}");
                 Save();
+                log?.Invoke($"POPSTARTER.ELF configurado manualmente: {path}");
             }
             else
             {
@@ -110,6 +135,11 @@ namespace POPSManager.Services
 
             settings.RootFolder = RootFolder;
             settings.CustomElfPath = PopstarterElfPath;
+
+            // Guardar rutas personalizadas
+            settings.CustomPopsFolder = _customPopsFolder;
+            settings.CustomAppsFolder = _customAppsFolder;
+
             settings.Save();
         }
     }
