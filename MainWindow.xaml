@@ -9,17 +9,6 @@
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource Brush.Background}">
 
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Styles/Theme.xaml"/>
-                <ResourceDictionary Source="Styles/SidebarStyles.xaml"/>
-                <ResourceDictionary Source="Styles/Toasts.xaml"/>
-                <ResourceDictionary Source="Styles/Shadows.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Window.Resources>
-
     <Grid>
 
         <Grid.RowDefinitions>
@@ -33,14 +22,16 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- HEADER -->
+        <!-- ========================================================= -->
+        <!--  HEADER -->
+        <!-- ========================================================= -->
         <Border Grid.Row="0" Grid.ColumnSpan="2"
                 Background="{StaticResource Brush.Panel}"
                 Padding="12"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="0,0,0,1">
 
-            <DockPanel>
+            <DockPanel LastChildFill="False">
 
                 <TextBlock Text="POPSManager"
                            FontSize="18"
@@ -49,11 +40,11 @@
                            VerticalAlignment="Center"/>
 
                 <StackPanel Orientation="Horizontal"
-                            DockPanel.Dock="Right">
+                            DockPanel.Dock="Right"
+                            Spacing="10">
 
                     <Button Content="⚙"
                             Width="32" Height="32"
-                            Margin="0 0 12 0"
                             Style="{StaticResource SecondaryButton}"
                             Click="Settings_Click"/>
 
@@ -67,37 +58,35 @@
             </DockPanel>
         </Border>
 
-        <!-- SIDEBAR -->
+        <!-- ========================================================= -->
+        <!--  SIDEBAR -->
+        <!-- ========================================================= -->
         <Border Grid.Row="1" Grid.Column="0"
                 Background="{StaticResource Brush.Panel}"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="0,0,1,0">
 
-            <StackPanel Margin="10">
+            <StackPanel Margin="10" Spacing="10">
 
                 <TextBlock Text="Menú"
                            Foreground="{StaticResource Brush.TextMuted}"
                            FontSize="14"
-                           Margin="4 0 0 8"/>
+                           Margin="4 0 0 4"/>
 
                 <Button Content="Dashboard"
                         Style="{StaticResource SidebarButtonStyle}"
-                        Margin="0 0 0 6"
                         Click="Dashboard_Click"/>
 
                 <Button Content="Convertir juegos"
                         Style="{StaticResource SidebarButtonStyle}"
-                        Margin="0 0 0 6"
                         Click="Convert_Click"/>
 
                 <Button Content="Procesar POPS"
                         Style="{StaticResource SidebarButtonStyle}"
-                        Margin="0 0 0 6"
                         Click="ProcessPops_Click"/>
 
                 <Button Content="Configuración"
                         Style="{StaticResource SidebarButtonStyle}"
-                        Margin="0 0 0 6"
                         Click="Settings_Click"/>
 
                 <Button Content="Acerca de"
@@ -107,10 +96,16 @@
             </StackPanel>
         </Border>
 
-        <!-- CONTENIDO -->
-        <Grid Grid.Row="1" Grid.Column="1" Margin="20" x:Name="MainContent"/>
+        <!-- ========================================================= -->
+        <!--  CONTENIDO PRINCIPAL -->
+        <!-- ========================================================= -->
+        <Grid Grid.Row="1" Grid.Column="1"
+              Margin="20"
+              x:Name="MainContent"/>
 
-        <!-- STATUS BAR -->
+        <!-- ========================================================= -->
+        <!--  STATUS BAR -->
+        <!-- ========================================================= -->
         <Border Grid.Row="2" Grid.ColumnSpan="2"
                 Background="{StaticResource Brush.Panel}"
                 BorderBrush="{StaticResource Brush.Border}"
@@ -125,7 +120,9 @@
 
         </Border>
 
-        <!-- NOTIFICACIONES -->
+        <!-- ========================================================= -->
+        <!--  NOTIFICACIONES -->
+        <!-- ========================================================= -->
         <StackPanel x:Name="NotificationArea"
                     Grid.Row="0"
                     Grid.ColumnSpan="2"
@@ -133,7 +130,9 @@
                     Margin="0 60 0 0"
                     IsHitTestVisible="False"/>
 
-        <!-- PROGRESS PANEL -->
+        <!-- ========================================================= -->
+        <!--  PROGRESS PANEL -->
+        <!-- ========================================================= -->
         <controls:ProgressPanel x:Name="ProgressPanelControl"
                                 Grid.Row="1"
                                 Grid.Column="1"
