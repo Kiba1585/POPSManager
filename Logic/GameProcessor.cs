@@ -1,5 +1,6 @@
 using POPSManager.Models;
-using POPSManager.Services;   // ← ESTE ERA EL QUE FALTABA
+using POPSManager.Services;
+using POPSManager.Logic.MultiDisc;   
 using System;
 using System.IO;
 
@@ -99,6 +100,11 @@ namespace POPSManager.Logic
             File.Copy(vcdPath, destVcd, true);
 
             log($"Copiado VCD → {destVcd}");
+
+            // ============================================================
+            //  MULTIDISCO (NUEVO)
+            // ============================================================
+            MultiDiscManager.ProcessMultiDisc(paths.PopsFolder, gameId, log);
 
             // Generar ELF si es PS1
             if (IsPs1(gameId))
