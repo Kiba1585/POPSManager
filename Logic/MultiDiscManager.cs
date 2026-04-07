@@ -9,14 +9,13 @@ namespace POPSManager.Logic
     {
         private static readonly Regex DiscRegex = new Regex(@"\(CD(\d+)\)", RegexOptions.IgnoreCase);
 
+        // popsRoot = carpeta POPS raíz
+        // gameId   = ID del juego (SCES_12345, etc.)
         public static void ProcessMultiDisc(string popsRoot, string gameId, Action<string> log)
         {
-            string gameFolder = Path.Combine(popsRoot, gameId);
-
-            if (!Directory.Exists(gameFolder))
-                return;
-
-            var discs = Directory.GetFiles(popsRoot, $"{gameId} (CD*).VCD", SearchOption.TopDirectoryOnly)
+            // Buscar todos los VCD de ese juego en subcarpetas:
+            // Ej: POPS/SCES_12345 (CD1)/SCES_12345.Final Fantasy IX (CD1).VCD
+            var discs = Directory.GetFiles(popsRoot, $"{gameId}.*.VCD", SearchOption.AllDirectories)
                 .Select(path => new
                 {
                     Path = path,
@@ -36,9 +35,7 @@ namespace POPSManager.Logic
 
             foreach (var disc in discs)
             {
-                string folder = Path.Combine(popsRoot, Path.GetFileNameWithoutExtension(disc.Name));
-                Directory.CreateDirectory(folder);
-
+                string folder = Path.GetDirectoryName(disc.Path)!;
                 File.WriteAllLines(Path.Combine(folder, "DISCS.TXT"), lines);
             }
 
