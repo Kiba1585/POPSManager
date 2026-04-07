@@ -94,33 +94,58 @@ namespace POPSManager.Logic
             // Detectar número de disco (por defecto 1)
             int discNumber = DetectDiscNumber(originalName);
 
-            // Obtener nombre limpio del juego (sin ID ni tags de disco)
+            // Obtener nombre limpio del juego
             string cleanTitle = ExtractCleanTitle(originalName, gameId);
 
-            // Si por alguna razón queda vacío, usamos el ID como fallback
             if (string.IsNullOrWhiteSpace(cleanTitle))
                 cleanTitle = gameId;
 
-            // Nombre final: ID.NombreLimpio (CDX).VCD
+            // Nombre final: ID.Nombre (CDX).VCD
             string finalFileName = $"{gameId}.{cleanTitle} (CD{discNumber}).VCD";
 
-            // Carpeta POPS por disco: POPS/ID (CDX)/
+            // Carpeta POPS por disco
             string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD{discNumber})");
             Directory.CreateDirectory(popsDiscFolder);
 
-            // Copiar VCD con el nombre final
+            // Copiar VCD
             string destVcd = Path.Combine(popsDiscFolder, finalFileName);
             File.Copy(vcdPath, destVcd, true);
 
             log($"Copiado VCD → {destVcd}");
 
-            // MULTIDISCO: genera DISCS.TXT en todas las carpetas de ese juego
+            // MULTIDISCO
             MultiDiscManager.ProcessMultiDisc(paths.PopsFolder, gameId, log);
 
-            // Generar ELF si es PS1 (lo dejamos en la carpeta del primer disco)
+            // ============================================================
+            //  GENERAR ELF SOLO PARA CD1
+            // ============================================================
+
             if (IsPs1(gameId) && discNumber == 1)
             {
-                GenerateElf(gameId, popsDiscFolder);
+                string baseElf = paths.BaseElfPath; // Debe existir en PathsService
+                string outputElf = Path.Combine(popsDiscFolder, $"{gameId}.ELF");
+
+                // Ruta POPStarter correcta
+                string vcdPopstarterPath =
+                    $"mass:/POPS/{gameId} (CD{discNumber})/{finalFileName}";
+
+                // Título visible en OPL
+                string displayTitle = $"{cleanTitle} (CD{discNumber})";
+
+                bool ok = ElfGenerator.GenerateElf(
+                    baseElf,
+                    outputElf,
+                    gameId,
+                    vcdPopstarterPath,
+                    displayTitle,
+                    log
+                );
+
+                if (!ok)
+                {
+                    notify(new UiNotification(NotificationType.Error,
+                        $"Error generando ELF para {gameId}"));
+                }
             }
 
             notify(new UiNotification(NotificationType.Success,
@@ -182,7 +207,6 @@ namespace POPSManager.Logic
 
         private int DetectDiscNumber(string name)
         {
-            // Soporta: (Disc 1), (Disk 1), (CD 1), (CD1), etc.
             var regex = new Regex(@"\((CD|DISC|DISK)\s*(\d+)\)", RegexOptions.IgnoreCase);
             var match = regex.Match(name);
             if (match.Success && int.TryParse(match.Groups[2].Value, out int num))
@@ -199,46 +223,19 @@ namespace POPSManager.Logic
         {
             string name = originalName;
 
-            // Quitar el ID si viene en el nombre
             int idx = name.IndexOf(gameId, StringComparison.OrdinalIgnoreCase);
             if (idx >= 0)
-            {
                 name = name.Remove(idx, gameId.Length);
-            }
 
-            // Quitar tags de disco: (Disc 1), (Disk 1), (CD 1), (CD1), etc.
             name = Regex.Replace(name, @"\((CD|DISC|DISK)\s*\d+\)", "", RegexOptions.IgnoreCase);
 
-            // Limpiar separadores raros
             name = name.Replace("_", " ")
                        .Replace(".", " ")
                        .Trim();
 
-            // Colapsar espacios múltiples
             name = Regex.Replace(name, @"\s{2,}", " ");
 
             return name;
-        }
-
-        // ============================================================
-        //  GENERAR ELF
-        // ============================================================
-
-        private void GenerateElf(string gameId, string folder)
-        {
-            string elfPath = Path.Combine(folder, $"{gameId}.ELF");
-
-            try
-            {
-                File.WriteAllText(elfPath, "ELF-DATA");
-                log($"ELF generado: {elfPath}");
-            }
-            catch (Exception ex)
-            {
-                log($"Error generando ELF: {ex.Message}");
-                notify(new UiNotification(NotificationType.Error,
-                    $"Error generando ELF para {gameId}"));
-            }
         }
     }
 }
