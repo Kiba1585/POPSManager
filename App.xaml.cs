@@ -10,7 +10,7 @@ namespace POPSManager
 
         public App()
         {
-            // Inicialización segura y sin warnings
+            // Inicialización temprana de servicios globales
             Services = new AppServices();
         }
 
@@ -18,8 +18,12 @@ namespace POPSManager
         {
             base.OnStartup(e);
 
-            // Aquí podrías agregar inicializaciones globales si lo necesitas
-            // Ejemplo: Services.Paths.EnsureFolderStructure();
+            // Inicializaciones globales opcionales
+            // Ejemplo: asegurar estructura de carpetas
+            // Services.Paths.EnsureFolderStructure();
+
+            // Si en el futuro deseas cargar temas dinámicos:
+            // ThemeManager.Apply(Services.Settings.DarkMode);
         }
     }
 }
