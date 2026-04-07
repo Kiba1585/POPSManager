@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Aplicación WPF -->
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
@@ -10,19 +11,26 @@
     <Prefer32Bit>false</Prefer32Bit>
 
     <!-- Publicación (MSIX NO permite self-contained) -->
-    <PublishSingleFile>false</PublishSingleFile>
     <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
 
-    <!-- Calidad -->
+    <!-- Calidad y seguridad -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <!-- Para MSIX -->
+    <!-- Para MSIX y compatibilidad -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!-- Evita warnings de recursos -->
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+
+    <!-- Icono del ejecutable (si lo agregas más adelante) -->
+    <!-- <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon> -->
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Librerías necesarias -->
     <PackageReference Include="WindowsAPICodePack-Core" Version="1.1.1" />
     <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
     <PackageReference Include="DiscUtils" Version="0.16.13" />
