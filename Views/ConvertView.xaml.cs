@@ -12,7 +12,8 @@ namespace POPSManager.Views
 {
     public partial class ConvertView : UserControl
     {
-        private AppServices Services => App.Services;
+        // Acceso seguro a los servicios globales
+        private AppServices Services => App.Services!;
 
         public ConvertView()
         {
