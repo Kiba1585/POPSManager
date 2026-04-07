@@ -5,8 +5,6 @@
              Background="{StaticResource Brush.Background}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-
-        <!-- StackPanel corregido -->
         <StackPanel Margin="20">
 
             <!-- TÍTULO -->
@@ -19,11 +17,9 @@
             <!-- ========================================================= -->
             <!--  TARJETAS DE ESTADÍSTICAS -->
             <!-- ========================================================= -->
-
             <UniformGrid Columns="3"
                          Margin="0 10 0 0"
-                         HorizontalAlignment="Stretch"
-                         VerticalAlignment="Top">
+                         HorizontalAlignment="Stretch">
 
                 <!-- Juegos procesados -->
                 <Border Style="{StaticResource Card}"
@@ -81,7 +77,6 @@
             <!-- ========================================================= -->
             <!--  ACCIONES RÁPIDAS -->
             <!-- ========================================================= -->
-
             <TextBlock Text="Acciones rápidas"
                        FontSize="20"
                        FontWeight="SemiBold"
@@ -104,25 +99,79 @@
                         Margin="0 0 20 0"
                         Click="OpenProcessPops_Click"/>
 
-                <Button Content="Abrir carpeta POPS"
+                <Button Content="Abrir carpeta raíz"
                         Width="180"
                         Height="42"
                         Style="{StaticResource SecondaryButton}"
                         Margin="0 0 20 0"
-                        Click="OpenPopsFolder_Click"/>
+                        Click="OpenRootFolder_Click"/>
 
-                <Button Content="Abrir carpeta APPS"
+                <Button Content="Abrir POPSTARTER.ELF"
                         Width="180"
                         Height="42"
                         Style="{StaticResource SecondaryButton}"
-                        Click="OpenAppsFolder_Click"/>
+                        Click="OpenElfFolder_Click"/>
 
             </StackPanel>
 
             <!-- ========================================================= -->
-            <!--  SECCIÓN DE INFORMACIÓN -->
+            <!--  CONFIGURACIÓN DE RUTAS -->
             <!-- ========================================================= -->
+            <Border Style="{StaticResource Card}"
+                    Margin="0 20 0 0"
+                    Effect="{StaticResource ShadowSoft}">
+                <StackPanel>
 
+                    <TextBlock Text="Configuración de rutas"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 10"/>
+
+                    <!-- Ruta raíz -->
+                    <StackPanel Orientation="Vertical" Margin="0 0 0 10">
+                        <TextBlock Text="Ruta raíz de destino:"
+                                   FontSize="14"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Margin="0 0 0 4"/>
+
+                        <TextBox x:Name="RootPath"
+                                 Text=""
+                                 Style="{StaticResource TextBoxStyle}"
+                                 Margin="0 0 10 0"/>
+
+                        <Button Content="Cambiar"
+                                Width="120"
+                                Height="32"
+                                Style="{StaticResource PrimaryButton}"
+                                Click="ChangeRootPath_Click"/>
+                    </StackPanel>
+
+                    <!-- ELF personalizado -->
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="POPSTARTER.ELF personalizado:"
+                                   FontSize="14"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Margin="0 0 0 4"/>
+
+                        <TextBox x:Name="ElfPath"
+                                 Text=""
+                                 Style="{StaticResource TextBoxStyle}"
+                                 Margin="0 0 10 0"/>
+
+                        <Button Content="Seleccionar ELF"
+                                Width="150"
+                                Height="32"
+                                Style="{StaticResource SecondaryButton}"
+                                Click="SelectElf_Click"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ========================================================= -->
+            <!--  INFORMACIÓN DEL SISTEMA -->
+            <!-- ========================================================= -->
             <Border Style="{StaticResource Card}"
                     Margin="0 20 0 0"
                     Effect="{StaticResource ShadowSoft}">
@@ -143,9 +192,8 @@
             </Border>
 
             <!-- ========================================================= -->
-            <!--  REGISTRO DE ACTIVIDAD (LOGS) -->
+            <!--  REGISTRO DE ACTIVIDAD -->
             <!-- ========================================================= -->
-
             <Border Style="{StaticResource Card}"
                     Margin="0 20 0 0"
                     Effect="{StaticResource ShadowSoft}">
@@ -163,6 +211,5 @@
             </Border>
 
         </StackPanel>
-
     </ScrollViewer>
 </UserControl>
