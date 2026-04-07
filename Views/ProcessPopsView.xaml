@@ -43,10 +43,12 @@
                 <!-- ========================= -->
                 <!--  Selección de carpeta -->
                 <!-- ========================= -->
-                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
+                <StackPanel Grid.Row="0" Grid.Column="0">
+
                     <TextBlock Text="Carpeta con juegos (VCD / ISO)"
                                FontSize="16"
-                               Foreground="{StaticResource Brush.TextSecondary}"/>
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
 
                     <TextBox x:Name="VcdPath"
                              Height="32"
@@ -75,11 +77,13 @@
                         Background="{StaticResource Brush.PanelAlt}"
                         Effect="{StaticResource ShadowSoft}">
 
-                    <StackPanel Spacing="10">
+                    <StackPanel>
+
                         <TextBlock Text="Juegos detectados (PS1 / PS2)"
                                    FontSize="16"
                                    FontWeight="SemiBold"
-                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                                   Foreground="{StaticResource Brush.TextPrimary}"
+                                   Margin="0 0 0 10"/>
 
                         <ListBox x:Name="GamesList"
                                  Height="260"
