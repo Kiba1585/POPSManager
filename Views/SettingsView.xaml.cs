@@ -11,23 +11,17 @@ namespace POPSManager.Views
 {
     public partial class SettingsView : UserControl
     {
-        // Acceso seguro a los servicios globales
         private AppServices Services => App.Services;
 
         public SettingsView()
         {
             InitializeComponent();
-
-            // Cargar valores iniciales
             LoadSettings();
         }
 
-        // ============================================================
-        //  CARGAR CONFIGURACIÓN INICIAL
-        // ============================================================
         private void LoadSettings()
         {
-            // Rutas desde PathsService (no SettingsService)
+            // Rutas reales desde PathsService
             PopsPath.Text = Services.Paths.PopsFolder;
             AppsPath.Text = Services.Paths.AppsFolder;
 
@@ -37,9 +31,6 @@ namespace POPSManager.Views
             ElfPathBox.Text = Services.Settings.CustomElfPath;
         }
 
-        // ============================================================
-        //  CAMBIAR RUTA POPS
-        // ============================================================
         private void ChangePopsPath_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog
@@ -58,9 +49,7 @@ namespace POPSManager.Views
                     return;
                 }
 
-                // Actualizar PathsService (la fuente real de rutas)
                 Services.Paths.SetCustomPopsFolder(dlg.FileName);
-
                 PopsPath.Text = dlg.FileName;
 
                 Services.Notifications.Show(
@@ -69,9 +58,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  CAMBIAR RUTA APPS
-        // ============================================================
         private void ChangeAppsPath_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog
@@ -91,7 +77,6 @@ namespace POPSManager.Views
                 }
 
                 Services.Paths.SetCustomAppsFolder(dlg.FileName);
-
                 AppsPath.Text = dlg.FileName;
 
                 Services.Notifications.Show(
@@ -100,9 +85,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  SELECCIONAR POPSTARTER.ELF
-        // ============================================================
         private void SelectElf_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog
@@ -121,11 +103,9 @@ namespace POPSManager.Views
                     return;
                 }
 
-                // Persistir en Settings
                 Services.Settings.CustomElfPath = dlg.FileName;
                 Services.Settings.Save();
 
-                // Actualizar PathsService
                 Services.Paths.SetCustomElfPath(dlg.FileName);
 
                 ElfPathBox.Text = dlg.FileName;
@@ -136,9 +116,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  MODO OSCURO
-        // ============================================================
         private void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.DarkMode = true;
@@ -159,9 +136,6 @@ namespace POPSManager.Views
                 "Modo oscuro desactivado"));
         }
 
-        // ============================================================
-        //  NOTIFICACIONES
-        // ============================================================
         private void NotificationsToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.NotificationsEnabled = true;
@@ -182,9 +156,6 @@ namespace POPSManager.Views
                 "Notificaciones desactivadas"));
         }
 
-        // ============================================================
-        //  ABRIR CARPETA DEL PROGRAMA
-        // ============================================================
         private void OpenProgramFolder_Click(object sender, RoutedEventArgs e)
         {
             var folder = Path.GetDirectoryName(
