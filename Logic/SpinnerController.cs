@@ -4,10 +4,6 @@ using System.Threading.Tasks;
 
 namespace POPSManager.Logic
 {
-    /// <summary>
-    /// Controlador de spinner asíncrono para la UI.
-    /// Seguro, cancelable y sin fugas de tareas.
-    /// </summary>
     public class SpinnerController
     {
         private readonly Action<string> update;
@@ -20,13 +16,9 @@ namespace POPSManager.Logic
             this.update = update ?? throw new ArgumentNullException(nameof(update));
         }
 
-        /// <summary>
-        /// Inicia la animación del spinner.
-        /// Si ya está corriendo, se reinicia limpiamente.
-        /// </summary>
         public void Start()
         {
-            Stop(); // Garantiza que no haya un spinner previo corriendo
+            Stop();
 
             cts = new CancellationTokenSource();
             var token = cts.Token;
@@ -42,13 +34,10 @@ namespace POPSManager.Logic
                     await Task.Delay(100, token).ConfigureAwait(false);
                 }
 
-                update(""); // Limpia el spinner al detenerse
+                update("");
             }, token);
         }
 
-        /// <summary>
-        /// Detiene la animación del spinner.
-        /// </summary>
         public void Stop()
         {
             if (cts != null && !cts.IsCancellationRequested)
