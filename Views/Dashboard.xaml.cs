@@ -11,8 +11,8 @@ namespace POPSManager.Views
 {
     public partial class Dashboard : UserControl
     {
-        private readonly PathsService _paths;
         private readonly AppServices _services;
+        private readonly PathsService _paths;
 
         public Dashboard()
         {
@@ -27,7 +27,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  ESTADÍSTICAS
+        //  ESTADÍSTICAS (placeholder por ahora)
         // ============================================================
         private void LoadStats()
         {
@@ -45,6 +45,8 @@ namespace POPSManager.Views
                 $"Versión: 1.0.0\n" +
                 $"Directorio base: {AppContext.BaseDirectory}\n" +
                 $"Ruta raíz: {_paths.RootFolder}\n" +
+                $"POPS: {_paths.PopsFolder}\n" +
+                $"DVD (PS2): {_paths.DvdFolder}\n" +
                 $"POPSTARTER.ELF: {_paths.PopstarterElfPath}";
         }
 
@@ -96,11 +98,13 @@ namespace POPSManager.Views
         // ============================================================
         private void OpenElfFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (File.Exists(_paths.PopstarterElfPath))
+            string elf = _paths.PopstarterElfPath;
+
+            if (File.Exists(elf))
             {
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = Path.GetDirectoryName(_paths.PopstarterElfPath),
+                    FileName = Path.GetDirectoryName(elf),
                     UseShellExecute = true
                 });
             }
@@ -113,13 +117,13 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  CAMBIAR RUTA RAÍZ
+        //  CAMBIAR RUTA RAÍZ (versión correcta)
         // ============================================================
         private void ChangeRootPath_Click(object sender, RoutedEventArgs e)
         {
             using var dialog = new FolderBrowserDialog
             {
-                Description = "Selecciona la carpeta raíz donde se crearán POPS, APPS, CFG, ART...",
+                Description = "Selecciona la carpeta raíz donde se crearán POPS, APPS, CFG, ART, DVD...",
                 UseDescriptionForTitle = true,
                 ShowNewFolderButton = true
             };
@@ -136,16 +140,11 @@ namespace POPSManager.Views
                     return;
                 }
 
-                _paths.RootFolder = newPath;
-                RootPath.Text = newPath;
+                // Guardar en SettingsService (correcto)
+                _services.Settings.SetRootFolder(newPath);
 
-                // Crear estructura OPL automáticamente
-                Directory.CreateDirectory(Path.Combine(newPath, "POPS"));
-                Directory.CreateDirectory(Path.Combine(newPath, "APPS"));
-                Directory.CreateDirectory(Path.Combine(newPath, "CFG"));
-                Directory.CreateDirectory(Path.Combine(newPath, "ART"));
-
-                _paths.Save();
+                // PathsService se actualiza automáticamente
+                LoadPaths();
                 LoadSystemInfo();
 
                 _services.Notifications.Show(
@@ -175,10 +174,10 @@ namespace POPSManager.Views
                     return;
                 }
 
-                _paths.PopstarterElfPath = dialog.FileName;
-                ElfPath.Text = dialog.FileName;
+                // Guardar correctamente
+                _services.Settings.SetCustomElfPath(dialog.FileName);
 
-                _paths.Save();
+                LoadPaths();
                 LoadSystemInfo();
 
                 _services.Notifications.Show(
