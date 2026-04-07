@@ -1,41 +1,63 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace POPSManager.Logic
 {
+    /// <summary>
+    /// Controlador de spinner asíncrono para la UI.
+    /// Seguro, cancelable y sin fugas de tareas.
+    /// </summary>
     public class SpinnerController
     {
         private readonly Action<string> update;
-        private bool running;
+        private CancellationTokenSource? cts;
+        private readonly string frames = "|/-\\";
+        private int index = 0;
 
         public SpinnerController(Action<string> update)
         {
-            this.update = update;
+            this.update = update ?? throw new ArgumentNullException(nameof(update));
         }
 
+        /// <summary>
+        /// Inicia la animación del spinner.
+        /// Si ya está corriendo, se reinicia limpiamente.
+        /// </summary>
         public void Start()
         {
-            running = true;
+            Stop(); // Garantiza que no haya un spinner previo corriendo
+
+            cts = new CancellationTokenSource();
+            var token = cts.Token;
 
             Task.Run(async () =>
             {
-                string frames = "|/-\\";
-                int i = 0;
+                index = 0;
 
-                while (running)
+                while (!token.IsCancellationRequested)
                 {
-                    update(frames[i % frames.Length].ToString());
-                    i++;
-                    await Task.Delay(100);
+                    update(frames[index % frames.Length].ToString());
+                    index++;
+                    await Task.Delay(100, token).ConfigureAwait(false);
                 }
 
-                update("");
-            });
+                update(""); // Limpia el spinner al detenerse
+            }, token);
         }
 
+        /// <summary>
+        /// Detiene la animación del spinner.
+        /// </summary>
         public void Stop()
         {
-            running = false;
+            if (cts != null && !cts.IsCancellationRequested)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
+
+            cts = null;
         }
     }
 }
