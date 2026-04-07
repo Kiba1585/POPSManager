@@ -1,8 +1,10 @@
 using POPSManager.Models;
+using POPSManager.Services;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
@@ -12,24 +14,27 @@ namespace POPSManager.Logic
         private readonly Action<string> updateSpinner;
         private readonly Action<string> log;
         private readonly Action<UiNotification> notify;
+        private readonly PathsService paths;
 
         public Converter(
             Action<int> updateProgress,
             Action<string> updateSpinner,
             Action<string> log,
-            Action<UiNotification> notify)
+            Action<UiNotification> notify,
+            PathsService paths)
         {
             this.updateProgress = updateProgress;
             this.updateSpinner = updateSpinner;
             this.log = log;
             this.notify = notify;
+            this.paths = paths;
         }
 
         // ============================================================
         //  CONVERTIR CARPETA COMPLETA
         // ============================================================
 
-        public void ConvertFolder(string sourceFolder, string outputFolder)
+        public void ConvertFolder(string sourceFolder)
         {
             var files = Directory.GetFiles(sourceFolder)
                                  .Where(f => f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) ||
@@ -58,7 +63,7 @@ namespace POPSManager.Logic
 
                 try
                 {
-                    ConvertSingle(file, outputFolder);
+                    ConvertSingle(file);
                 }
                 catch (Exception ex)
                 {
@@ -75,7 +80,7 @@ namespace POPSManager.Logic
         //  CONVERTIR UN SOLO ARCHIVO
         // ============================================================
 
-        private void ConvertSingle(string inputPath, string outputFolder)
+        private void ConvertSingle(string inputPath)
         {
             string fileName = Path.GetFileNameWithoutExtension(inputPath);
 
@@ -95,14 +100,14 @@ namespace POPSManager.Logic
                 fileName = Path.GetFileNameWithoutExtension(bin);
             }
 
-            // Ignorar ISOs de PS2
+            // Detectar si es PS1 o PS2
             if (IsPs2Iso(inputPath))
             {
                 log($"ISO ignorado (PS2): {inputPath}");
                 return;
             }
 
-            string outputPath = Path.Combine(outputFolder, fileName + ".VCD");
+            string outputPath = Path.Combine(paths.PopsFolder, fileName + ".VCD");
 
             log("-----------------------------------------");
             log($"Convirtiendo: {fileName}");
@@ -148,17 +153,26 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECTAR SI ES ISO DE PS2
+        //  DETECTAR SI ES ISO DE PS2 (CORREGIDO)
         // ============================================================
 
         private bool IsPs2Iso(string path)
         {
+            // PS1 usa SCES/SLES/SLUS/SCUS
+            // PS2 usa SLUS_2xxx, SCUS_9xxx, SLES_5xxx, etc.
+
             string name = Path.GetFileName(path).ToUpperInvariant();
 
-            return name.Contains("SLUS") ||
-                   name.Contains("SCUS") ||
-                   name.Contains("SLES") ||
-                   name.Contains("SCES");
+            // PS2 IDs típicos
+            string[] ps2Patterns =
+            {
+                "SLUS_2", "SLUS_3",
+                "SCUS_9",
+                "SLES_5", "SLES_6",
+                "SCES_5", "SCES_6"
+            };
+
+            return ps2Patterns.Any(p => name.Contains(p));
         }
 
         // ============================================================
