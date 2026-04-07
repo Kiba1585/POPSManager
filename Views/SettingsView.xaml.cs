@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using Microsoft.Win32;
 using POPSManager.Models;
 using POPSManager.Services;
 
@@ -21,6 +22,9 @@ namespace POPSManager.Views
 
             DarkModeToggle.IsChecked = Services.Settings.DarkMode;
             NotificationsToggle.IsChecked = Services.Settings.NotificationsEnabled;
+
+            // Mostrar ruta del POPSTARTER.ELF si existe
+            ElfPathBox.Text = Services.Settings.CustomElfPath;
         }
 
         // ============================
@@ -66,6 +70,34 @@ namespace POPSManager.Views
         }
 
         // ============================
+        //  SELECCIONAR POPSTARTER.ELF
+        // ============================
+        private void SelectElf_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "POPStarter ELF|POPSTARTER.ELF|Todos los archivos|*.*",
+                Title = "Seleccionar POPSTARTER.ELF"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                // Guardar en Settings
+                Services.Settings.CustomElfPath = dlg.FileName;
+                Services.Settings.Save();
+
+                // Actualizar PathsService
+                Services.Paths.SetCustomElfPath(dlg.FileName);
+
+                // Mostrar en UI
+                ElfPathBox.Text = dlg.FileName;
+
+                Services.Notifications.Show(
+                    new UiNotification(NotificationType.Success, "POPSTARTER.ELF configurado correctamente"));
+            }
+        }
+
+        // ============================
         //  MODO OSCURO
         // ============================
         private void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
@@ -107,7 +139,6 @@ namespace POPSManager.Views
             var folder = System.IO.Path.GetDirectoryName(
                 System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            // Corrección del warning CS8604
             if (!string.IsNullOrWhiteSpace(folder))
                 System.Diagnostics.Process.Start("explorer.exe", folder);
             else
