@@ -2,27 +2,21 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 
 namespace POPSManager.Logic
 {
     public static class MultiDiscManager
     {
-        // Detecta nombres como (CD1), (CD2), (CD3)...
         private static readonly Regex DiscRegex = new Regex(@"\(CD(\d+)\)", RegexOptions.IgnoreCase);
 
-        /// <summary>
-        /// Procesa un juego y genera DISCS.TXT si es multidisco.
-        /// </summary>
-        /// <param name="folder">Carpeta donde están los VCD renombrados</param>
-        /// <param name="popsFolder">Carpeta POPS donde se copiarán los discos</param>
-        public static void ProcessMultiDisc(string folder, string popsFolder)
+        public static void ProcessMultiDisc(string popsRoot, string gameId, Action<string> log)
         {
-            if (!Directory.Exists(folder))
+            string gameFolder = Path.Combine(popsRoot, gameId);
+
+            if (!Directory.Exists(gameFolder))
                 return;
 
-            // Buscar todos los VCD que tengan (CDX)
-            var discs = Directory.GetFiles(folder, "*.VCD")
+            var discs = Directory.GetFiles(popsRoot, $"{gameId} (CD*).VCD", SearchOption.TopDirectoryOnly)
                 .Select(path => new
                 {
                     Path = path,
@@ -33,29 +27,22 @@ namespace POPSManager.Logic
                 .OrderBy(x => int.Parse(x.Match.Groups[1].Value))
                 .ToList();
 
-            // Si no es multidisco, no hacemos nada
             if (discs.Count <= 1)
                 return;
 
-            // Crear contenido del DISCS.TXT
-            var lines = discs.Select(d => d.Name).ToArray();
+            log($"Juego multidisco detectado: {gameId} ({discs.Count} discos)");
 
-            // Guardar DISCS.TXT en la carpeta original
-            File.WriteAllLines(Path.Combine(folder, "DISCS.TXT"), lines);
+            string[] lines = discs.Select(d => d.Name).ToArray();
 
-            // Copiar DISCS.TXT a cada carpeta POPS del juego
             foreach (var disc in discs)
             {
-                string discFolder = Path.Combine(popsFolder,
-                    Path.GetFileNameWithoutExtension(disc.Name));
+                string folder = Path.Combine(popsRoot, Path.GetFileNameWithoutExtension(disc.Name));
+                Directory.CreateDirectory(folder);
 
-                Directory.CreateDirectory(discFolder);
-
-                File.WriteAllLines(
-                    Path.Combine(discFolder, "DISCS.TXT"),
-                    lines
-                );
+                File.WriteAllLines(Path.Combine(folder, "DISCS.TXT"), lines);
             }
+
+            log("DISCS.TXT generado correctamente para multidisco.");
         }
     }
 }
