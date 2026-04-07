@@ -3,48 +3,24 @@ namespace POPSManager.Logic
     public static class ElfOffsets
     {
         // ------------------------------------------------------------
-        //  GAME ID (SCES-XXXXX)
-        //  Ubicado en el header del ELF, siempre en offset 0x2C
+        // GAME ID (SCES-XXXXX)
+        // POPStarter lo almacena en offset 0x2C
         // ------------------------------------------------------------
         public const int GameId = 0x2C;
+        public const int GameIdMaxLength = 11; // SCES-XXXXX (11 chars)
 
         // ------------------------------------------------------------
-        //  VCD PATH (ruta interna que POPStarter usa)
-        //  Siempre en offset 0x100 (256)
+        // VCD PATH (ruta interna del VCD)
+        // POPStarter lo almacena en offset 0x100
         // ------------------------------------------------------------
         public const int VcdPath = 0x100;
+        public const int VcdPathMaxLength = 128;
 
         // ------------------------------------------------------------
-        //  TITLE (lo que OPL muestra)
-        //  POPStarter usa un bloque de 48 bytes en offset 0x220
-        //  Compatible con r13, r14 y builds modernas
+        // TITLE (lo que OPL muestra)
+        // POPStarter usa un bloque de 48 bytes en offset 0x220
         // ------------------------------------------------------------
         public const int Title = 0x220;
         public const int TitleMaxLength = 48;
-
-        // ------------------------------------------------------------
-        //  MULTIDISC FLAG
-        //  POPStarter usa 0x01 para multidisco
-        //  Offset estándar: 0x1F0
-        // ------------------------------------------------------------
-        public const int MultiDiscFlag = 0x1F0;
-
-        // ------------------------------------------------------------
-        //  DISC NUMBER (1, 2, 3...)
-        //  Offset estándar: 0x1F1
-        // ------------------------------------------------------------
-        public const int DiscNumber = 0x1F1;
-
-        // ------------------------------------------------------------
-        //  REGION (NTSC-U, NTSC-J, PAL)
-        //  Offset estándar: 0x1F2
-        // ------------------------------------------------------------
-        public const int Region = 0x1F2;
-
-        // ------------------------------------------------------------
-        //  BOOT MODE (normal, fastboot, debug)
-        //  Offset estándar: 0x1F3
-        // ------------------------------------------------------------
-        public const int BootMode = 0x1F3;
     }
 }
