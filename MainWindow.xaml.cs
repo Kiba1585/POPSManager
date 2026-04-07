@@ -18,7 +18,8 @@ namespace POPSManager
         {
             InitializeComponent();
 
-            _services = App.Services;
+            // CORRECCIÓN: App.Services es nullable → usar !
+            _services = App.Services!;
 
             // Notificaciones
             _services.Notifications.OnNotify = ShowNotification;
