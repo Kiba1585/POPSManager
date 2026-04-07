@@ -16,9 +16,9 @@ namespace POPSManager.Services
         public bool DarkMode { get; set; } = false;
         public bool NotificationsEnabled { get; set; } = true;
 
+        // NUEVA ARQUITECTURA
+        public string RootFolder { get; set; } = "";
         public string CustomElfPath { get; set; } = "";
-        public string PopsFolder { get; set; } = "";
-        public string AppsFolder { get; set; } = "";
 
         public SettingsService(Action<string> log)
         {
@@ -56,9 +56,9 @@ namespace POPSManager.Services
                 {
                     DarkMode = data.DarkMode;
                     NotificationsEnabled = data.NotificationsEnabled;
+
+                    RootFolder = data.RootFolder ?? "";
                     CustomElfPath = data.CustomElfPath ?? "";
-                    PopsFolder = data.PopsFolder ?? "";
-                    AppsFolder = data.AppsFolder ?? "";
                 }
 
                 log("Settings cargados correctamente.");
@@ -81,9 +81,9 @@ namespace POPSManager.Services
                 {
                     DarkMode = DarkMode,
                     NotificationsEnabled = NotificationsEnabled,
-                    CustomElfPath = CustomElfPath,
-                    PopsFolder = PopsFolder,
-                    AppsFolder = AppsFolder
+
+                    RootFolder = RootFolder,
+                    CustomElfPath = CustomElfPath
                 };
 
                 var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -101,21 +101,15 @@ namespace POPSManager.Services
         //  SETTERS ESPECÍFICOS
         // ============================
 
+        public void SetRootFolder(string path)
+        {
+            RootFolder = path;
+            Save();
+        }
+
         public void SetCustomElfPath(string path)
         {
             CustomElfPath = path;
-            Save();
-        }
-
-        public void SetPopsFolder(string path)
-        {
-            PopsFolder = path;
-            Save();
-        }
-
-        public void SetAppsFolder(string path)
-        {
-            AppsFolder = path;
             Save();
         }
 
@@ -127,9 +121,9 @@ namespace POPSManager.Services
         {
             public bool DarkMode { get; set; }
             public bool NotificationsEnabled { get; set; }
+
+            public string? RootFolder { get; set; }
             public string? CustomElfPath { get; set; }
-            public string? PopsFolder { get; set; }
-            public string? AppsFolder { get; set; }
         }
     }
 }
