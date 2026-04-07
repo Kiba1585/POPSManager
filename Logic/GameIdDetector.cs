@@ -2,37 +2,51 @@ using DiscUtils.Iso9660;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
     public static class GameIdDetector
     {
-        private static readonly string[] ValidPrefixes =
-        {
-            "SLUS_", "SCUS_", "SLES_", "SCES_", "SLPS_", "SLPM_", "SCPS_"
-        };
+        private static readonly Regex IdRegex =
+            new Regex(@"(SLUS|SCUS|SLES|SCES|SLPS|SLPM|SCPS)[\-_\.]?(\d{3,5})",
+                      RegexOptions.IgnoreCase);
 
         public static string? DetectGameId(string vcdPath)
         {
             if (!File.Exists(vcdPath))
                 throw new FileNotFoundException("El archivo VCD no existe.", vcdPath);
 
-            using var stream = File.OpenRead(vcdPath);
-            using var cd = new CDReader(stream, true);
+            try
+            {
+                using var stream = File.OpenRead(vcdPath);
+                using var cd = new CDReader(stream, true);
 
-            var files = cd.GetFiles("/", "*.*", SearchOption.AllDirectories);
+                var files = cd.GetFiles("/", "*.*", SearchOption.AllDirectories);
 
-            var exe = files.FirstOrDefault(f =>
-                ValidPrefixes.Any(prefix =>
-                    Path.GetFileName(f).StartsWith(prefix, StringComparison.OrdinalIgnoreCase)));
+                // Buscar cualquier archivo que contenga un ID válido
+                foreach (var file in files)
+                {
+                    string name = Path.GetFileName(file);
 
-            if (exe == null)
+                    var match = IdRegex.Match(name);
+                    if (match.Success)
+                    {
+                        string prefix = match.Groups[1].Value.ToUpperInvariant();
+                        string number = match.Groups[2].Value.PadLeft(5, '0');
+
+                        // Formato final: SCES-01234
+                        return $"{prefix}-{number}";
+                    }
+                }
+
                 return null;
-
-            string fileName = Path.GetFileNameWithoutExtension(exe);
-
-            // Normaliza: SCES_01234 → SCES-01234
-            return fileName.Replace("_", "-").Replace(".", "");
+            }
+            catch
+            {
+                // Si el VCD está corrupto o no es ISO9660 válido
+                return null;
+            }
         }
     }
 }
