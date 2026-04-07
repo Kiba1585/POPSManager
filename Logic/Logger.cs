@@ -2,10 +2,6 @@ using System;
 
 namespace POPSManager.Logic
 {
-    /// <summary>
-    /// Logger interno para módulos de Logic.
-    /// Se integra con LoggingService mediante inyección de Action<string>.
-    /// </summary>
     public class Logger
     {
         private readonly Action<string> logAction;
@@ -30,9 +26,6 @@ namespace POPSManager.Logic
             logAction($"[ERROR] [{DateTime.Now:HH:mm:ss}] {message}");
         }
 
-        /// <summary>
-        /// Log genérico (INFO por defecto).
-        /// </summary>
         public void Log(string message)
         {
             Info(message);
