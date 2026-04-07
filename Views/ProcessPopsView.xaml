@@ -14,7 +14,7 @@
         <!-- ========================================================= -->
         <!--  TÍTULO -->
         <!-- ========================================================= -->
-        <TextBlock Text="Procesar POPS"
+        <TextBlock Text="Procesar juegos"
                    FontSize="28"
                    FontWeight="SemiBold"
                    Foreground="{StaticResource Brush.TextPrimary}"
@@ -41,10 +41,10 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ========================= -->
-                <!--  Selección de carpeta VCD -->
+                <!--  Selección de carpeta -->
                 <!-- ========================= -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
-                    <TextBlock Text="Carpeta con archivos VCD"
+                    <TextBlock Text="Carpeta con juegos (VCD / ISO)"
                                FontSize="16"
                                Foreground="{StaticResource Brush.TextSecondary}"/>
 
@@ -76,7 +76,7 @@
                         Effect="{StaticResource ShadowSoft}">
 
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Juegos detectados"
+                        <TextBlock Text="Juegos detectados (PS1 / PS2)"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
@@ -98,7 +98,7 @@
         <!--  BOTÓN DE PROCESAR -->
         <!-- ========================================================= -->
         <Button Grid.Row="2"
-                Content="Procesar POPS"
+                Content="Procesar juegos"
                 Height="42"
                 Width="220"
                 HorizontalAlignment="Right"
