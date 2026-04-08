@@ -17,6 +17,9 @@ namespace POPSManager
         {
             InitializeComponent();
 
+            // Inicializar contenedor de notificaciones
+            Notifier.Initialize(ToastContainer);
+
             _services = App.Services!;
 
             // Notificaciones ULTRA PRO (nuevo sistema)
