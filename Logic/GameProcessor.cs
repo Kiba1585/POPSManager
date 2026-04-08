@@ -10,28 +10,25 @@ namespace POPSManager.Logic
 {
     public class GameProcessor
     {
-        private readonly Action<int> updateProgress;
-        private readonly Action<string> updateSpinner;
-        private readonly Action<string> log;
-        private readonly Action<UiNotification> notify;
+        private readonly ProgressService progress;
+        private readonly LoggingService logService;
+        private readonly NotificationService notifications;
         private readonly PathsService paths;
 
-        private readonly bool useDatabase = false;
-        private readonly bool useCovers = false;
+        private readonly bool useDatabase;
+        private readonly bool useCovers;
 
         public GameProcessor(
-            Action<int> updateProgress,
-            Action<string> updateSpinner,
-            Action<string> log,
-            Action<UiNotification> notify,
+            ProgressService progress,
+            LoggingService logService,
+            NotificationService notifications,
             PathsService paths,
             bool useDatabase = false,
             bool useCovers = false)
         {
-            this.updateProgress = updateProgress;
-            this.updateSpinner = updateSpinner;
-            this.log = log;
-            this.notify = notify;
+            this.progress = progress;
+            this.logService = logService;
+            this.notifications = notifications;
             this.paths = paths;
             this.useDatabase = useDatabase;
             this.useCovers = useCovers;
@@ -50,8 +47,7 @@ namespace POPSManager.Logic
 
             if (files.Length == 0)
             {
-                notify(new UiNotification(NotificationType.Warning,
-                    "No se encontraron archivos VCD o ISO."));
+                notifications.Warning("No se encontraron archivos VCD o ISO.");
                 return;
             }
 
@@ -63,23 +59,22 @@ namespace POPSManager.Logic
             foreach (var group in groups)
             {
                 index++;
-                int progress = (int)((index / (double)total) * 100);
+                int progressValue = (int)((index / (double)total) * 100);
 
-                updateProgress(progress);
-                updateSpinner($"Procesando {group.Key}");
+                progress.SetProgress(progressValue);
+                progress.SetStatus($"Procesando {group.Key}");
 
                 try
                 {
                     var discs = group.Value;
 
-                    // Validación previa por tipo
+                    // PS1
                     if (discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
                     {
-                        // PS1 (VCD)
                         discs = discs.Where(ValidateVcd).ToList();
                         if (discs.Count == 0)
                         {
-                            log($"[PS1] Todos los VCD de {group.Key} fueron inválidos.");
+                            logService.Warn($"[PS1] Todos los VCD de {group.Key} fueron inválidos.");
                             continue;
                         }
 
@@ -87,11 +82,11 @@ namespace POPSManager.Logic
                     }
                     else
                     {
-                        // PS2 (ISO)
+                        // PS2
                         var iso = discs.First();
                         if (!ValidateIso(iso))
                         {
-                            log($"[PS2] ISO inválido: {iso}");
+                            logService.Warn($"[PS2] ISO inválido: {iso}");
                             continue;
                         }
 
@@ -100,13 +95,12 @@ namespace POPSManager.Logic
                 }
                 catch (Exception ex)
                 {
-                    log($"Error procesando {group.Key}: {ex.Message}");
-                    notify(new UiNotification(NotificationType.Error,
-                        $"Error procesando {group.Key}"));
+                    logService.Error($"Error procesando {group.Key}: {ex.Message}");
+                    notifications.Error($"Error procesando {group.Key}");
                 }
             }
 
-            updateSpinner("Completado");
+            progress.SetStatus("Completado");
         }
 
         // ============================================================
@@ -116,9 +110,8 @@ namespace POPSManager.Logic
         {
             if (!IntegrityValidator.Validate(vcdPath))
             {
-                log($"[PS1] VCD inválido: {vcdPath}");
-                notify(new UiNotification(NotificationType.Warning,
-                    $"VCD inválido: {Path.GetFileName(vcdPath)}"));
+                logService.Warn($"[PS1] VCD inválido: {vcdPath}");
+                notifications.Warning($"VCD inválido: {Path.GetFileName(vcdPath)}");
                 return false;
             }
 
@@ -132,8 +125,7 @@ namespace POPSManager.Logic
                 var info = new FileInfo(isoPath);
                 if (!info.Exists || info.Length < 100_000_000)
                 {
-                    notify(new UiNotification(NotificationType.Warning,
-                        $"ISO sospechoso o demasiado pequeño: {Path.GetFileName(isoPath)}"));
+                    notifications.Warning($"ISO sospechoso o demasiado pequeño: {Path.GetFileName(isoPath)}");
                     return false;
                 }
 
@@ -141,13 +133,13 @@ namespace POPSManager.Logic
             }
             catch (Exception ex)
             {
-                log($"[PS2] Error validando ISO: {ex.Message}");
+                logService.Error($"[PS2] Error validando ISO: {ex.Message}");
                 return false;
             }
         }
 
         // ============================================================
-        //  AGRUPAR MULTIDISCO
+        //  AGRUPAR MULTIDISCO (ULTRA PRO)
         // ============================================================
         private Dictionary<string, List<string>> GroupMultiDisc(string[] files)
         {
@@ -172,13 +164,13 @@ namespace POPSManager.Logic
         // ============================================================
         private void ProcessPS1Group(string baseName, List<string> discs)
         {
-            log($"[PS1] Procesando grupo: {baseName}");
+            logService.Info($"[PS1] Procesando grupo: {baseName}");
 
             // Ordenar discos por número usando NameCleaner
             discs = discs.OrderBy(d =>
             {
                 NameCleaner.Clean(Path.GetFileNameWithoutExtension(d), out string? cdTag);
-                return cdTag != null ? int.Parse(cdTag.Replace("CD", "")) : 1;
+                return MultiDiscManager.ExtractDiscNumber(cdTag);
             }).ToList();
 
             // Detectar ID real desde el VCD
@@ -190,13 +182,12 @@ namespace POPSManager.Logic
 
             if (string.IsNullOrWhiteSpace(detectedId))
             {
-                notify(new UiNotification(NotificationType.Warning,
-                    $"No se pudo detectar ID para {baseName}"));
+                notifications.Warning($"No se pudo detectar ID para {baseName}");
                 return;
             }
 
             // Obtener nombre del juego
-            string cleanTitle = NameCleaner.Clean(baseName, out _);
+            string cleanTitle = NameCleaner.CleanTitleOnly(baseName);
 
             // ============================================================
             //  BASE DE DATOS
@@ -209,7 +200,7 @@ namespace POPSManager.Logic
                 if (!string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
-                    log($"[DB] Nombre oficial encontrado: {cleanTitle}");
+                    logService.Info($"[DB] Nombre oficial encontrado: {cleanTitle}");
                 }
             }
 
@@ -221,10 +212,10 @@ namespace POPSManager.Logic
                 string artFolder = Path.Combine(paths.PopsFolder, "ART");
                 Directory.CreateDirectory(artFolder);
 
-                string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, log);
+                string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, logService.Info);
 
                 if (art != null)
-                    log($"[COVER] PS1 ART generado → {art}");
+                    logService.Info($"[COVER] PS1 ART generado → {art}");
             }
 
             // ============================================================
@@ -238,16 +229,23 @@ namespace POPSManager.Logic
 
             foreach (var disc in discs)
             {
-                string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
-                Directory.CreateDirectory(discFolder);
+                try
+                {
+                    string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
+                    Directory.CreateDirectory(discFolder);
 
-                string finalFileName = $"{detectedId}.{cleanTitle} (CD{discNumber}).VCD";
-                string destVcd = Path.Combine(discFolder, finalFileName);
+                    string finalFileName = $"{detectedId}.{cleanTitle} (CD{discNumber}).VCD";
+                    string destVcd = Path.Combine(discFolder, finalFileName);
 
-                File.Copy(disc, destVcd, true);
-                discPaths.Add(destVcd);
+                    File.Copy(disc, destVcd, true);
+                    discPaths.Add(destVcd);
 
-                log($"[PS1] Copiado disco {discNumber} → {destVcd}");
+                    logService.Info($"[PS1] Copiado disco {discNumber} → {destVcd}");
+                }
+                catch (Exception ex)
+                {
+                    logService.Error($"[PS1] Error copiando disco {discNumber}: {ex.Message}");
+                }
 
                 discNumber++;
             }
@@ -255,7 +253,7 @@ namespace POPSManager.Logic
             // ============================================================
             //  DISCS.TXT
             // ============================================================
-            MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, log);
+            MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, logService.Info);
 
             // ============================================================
             //  CHEAT.TXT (solo PAL)
@@ -263,7 +261,7 @@ namespace POPSManager.Logic
             if (GameIdDetector.IsPalRegion(detectedId))
             {
                 string cd1Folder = Path.Combine(gameRootFolder, "CD1");
-                CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, log);
+                CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, logService.Info);
             }
 
             // ============================================================
@@ -271,8 +269,7 @@ namespace POPSManager.Logic
             // ============================================================
             GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder);
 
-            notify(new UiNotification(NotificationType.Success,
-                $"{cleanTitle} procesado correctamente."));
+            notifications.Success($"{cleanTitle} procesado correctamente.");
         }
 
         // ============================================================
@@ -285,7 +282,7 @@ namespace POPSManager.Logic
             string vcdName = Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault();
             if (vcdName == null)
             {
-                log($"[PS1] No se encontró VCD en {cd1Folder}");
+                logService.Warn($"[PS1] No se encontró VCD en {cd1Folder}");
                 return;
             }
 
@@ -300,13 +297,12 @@ namespace POPSManager.Logic
                 gameId,
                 vcdPopstarterPath,
                 $"{title} (CD1)",
-                log
+                logService.Info
             );
 
             if (!ok)
             {
-                notify(new UiNotification(NotificationType.Error,
-                    $"Error generando ELF para {gameId}"));
+                notifications.Error($"Error generando ELF para {gameId}");
                 return;
             }
 
@@ -314,7 +310,7 @@ namespace POPSManager.Logic
             string appsElf = Path.Combine(paths.AppsFolder, $"{gameId}.ELF");
             File.Copy(outputElf, appsElf, true);
 
-            log($"[PS1] ELF copiado a APPS → {appsElf}");
+            logService.Info($"[PS1] ELF copiado a APPS → {appsElf}");
         }
 
         // ============================================================
@@ -323,7 +319,7 @@ namespace POPSManager.Logic
         private void ProcessPS2(string isoPath)
         {
             string originalName = Path.GetFileNameWithoutExtension(isoPath);
-            log($"[PS2] Procesando: {originalName}");
+            logService.Info($"[PS2] Procesando: {originalName}");
 
             string? detectedId = GameIdDetector.DetectGameId(isoPath);
 
@@ -332,8 +328,7 @@ namespace POPSManager.Logic
 
             if (string.IsNullOrWhiteSpace(detectedId))
             {
-                notify(new UiNotification(NotificationType.Warning,
-                    $"No se pudo detectar ID para {originalName}. Se copiará sin renombrar."));
+                notifications.Warning($"No se pudo detectar ID para {originalName}. Se copiará sin renombrar.");
                 detectedId = originalName.Replace(" ", "_");
             }
 
@@ -350,7 +345,7 @@ namespace POPSManager.Logic
                 if (!string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
-                    log($"[DB] Nombre oficial PS2 encontrado: {cleanTitle}");
+                    logService.Info($"[DB] Nombre oficial PS2 encontrado: {cleanTitle}");
                 }
 
                 // COVER PS2
@@ -359,10 +354,10 @@ namespace POPSManager.Logic
                     string artFolder = Path.Combine(paths.DvdFolder, "ART");
                     Directory.CreateDirectory(artFolder);
 
-                    string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, log);
+                    string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, logService.Info);
 
                     if (art != null)
-                        log($"[COVER] PS2 ART generado → {art}");
+                        logService.Info($"[COVER] PS2 ART generado → {art}");
                 }
             }
 
@@ -373,10 +368,9 @@ namespace POPSManager.Logic
 
             File.Copy(isoPath, dest, true);
 
-            log($"[PS2] Copiado ISO → {dest}");
+            logService.Info($"[PS2] Copiado ISO → {dest}");
 
-            notify(new UiNotification(NotificationType.Success,
-                $"{cleanTitle} copiado a DVD correctamente."));
+            notifications.Success($"{cleanTitle} copiado a DVD correctamente.");
         }
     }
 }
