@@ -12,7 +12,6 @@ namespace POPSManager.Views
 {
     public partial class ProcessPopsView : UserControl
     {
-        // Acceso seguro a los servicios globales
         private AppServices Services => App.Services!;
 
         public ProcessPopsView()
@@ -34,32 +33,47 @@ namespace POPSManager.Views
             if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 VcdPath.Text = dlg.FileName;
-                LoadGames();
+                _ = LoadGamesAsync();
             }
         }
 
         // ============================================================
-        //  CARGAR LISTA DE JUEGOS (PS1 + PS2)
+        //  CARGAR LISTA DE JUEGOS (PS1 + PS2) — ASYNC ULTRA PRO
         // ============================================================
-        private void LoadGames()
+        private async Task LoadGamesAsync()
         {
             GamesList.Items.Clear();
 
-            if (!Directory.Exists(VcdPath.Text))
+            string folder = VcdPath.Text;
+
+            if (!Directory.Exists(folder))
+            {
+                Services.Notifications.Warning("La carpeta seleccionada no existe.");
                 return;
+            }
 
-            var files = Directory.GetFiles(VcdPath.Text)
-                                 .Where(f =>
-                                     f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
-                                     f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                                 .OrderBy(f => f);
+            try
+            {
+                var files = await Task.Run(() =>
+                    Directory.GetFiles(folder)
+                             .Where(f =>
+                                 f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
+                                 f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                             .OrderBy(f => f)
+                             .ToArray()
+                );
 
-            foreach (var file in files)
-                GamesList.Items.Add(Path.GetFileName(file));
+                foreach (var file in files)
+                    GamesList.Items.Add(Path.GetFileName(file));
 
-            Services.Notifications.Show(
-                new UiNotification(NotificationType.Info,
-                $"Se detectaron {GamesList.Items.Count} juegos (PS1/PS2)."));
+                Services.Notifications.Info(
+                    $"Se detectaron {GamesList.Items.Count} juegos (PS1/PS2).");
+            }
+            catch (Exception ex)
+            {
+                Services.Notifications.Error("No se pudieron cargar los juegos.");
+                Services.LogService.Error($"[ProcessPopsView] Error cargando juegos: {ex.Message}");
+            }
         }
 
         // ============================================================
@@ -67,42 +81,37 @@ namespace POPSManager.Views
         // ============================================================
         private async void Process_Click(object sender, RoutedEventArgs e)
         {
-            if (!Directory.Exists(VcdPath.Text))
+            string folder = VcdPath.Text;
+
+            if (!Directory.Exists(folder))
             {
-                Services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    "Debes seleccionar una carpeta válida."));
+                Services.Notifications.Error("Debes seleccionar una carpeta válida.");
                 return;
             }
 
             if (GamesList.Items.Count == 0)
             {
-                Services.Notifications.Show(
-                    new UiNotification(NotificationType.Warning,
-                    "No hay archivos VCD o ISO para procesar."));
+                Services.Notifications.Warning("No hay archivos VCD o ISO para procesar.");
                 return;
             }
 
+            Services.Progress.Reset();
             Services.Progress.Start("Procesando juegos...");
 
             try
             {
                 await Task.Run(() =>
                 {
-                    Services.GameProcessor.ProcessFolder(VcdPath.Text);
+                    Services.GameProcessor.ProcessFolder(folder);
                 });
 
                 Services.Progress.SetStatus("Listo");
-
-                Services.Notifications.Show(
-                    new UiNotification(NotificationType.Success,
-                    "Procesamiento completado."));
+                Services.Notifications.Success("Procesamiento completado.");
             }
             catch (Exception ex)
             {
-                Services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    $"Error durante el procesamiento: {ex.Message}"));
+                Services.Notifications.Error($"Error durante el procesamiento: {ex.Message}");
+                Services.LogService.Error($"[ProcessPopsView] Error procesando juegos: {ex}");
             }
             finally
             {
