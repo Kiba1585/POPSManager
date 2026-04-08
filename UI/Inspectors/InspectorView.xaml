@@ -14,99 +14,105 @@
 
         <!-- TÍTULO -->
         <TextBlock Text="Inspector de Archivo"
-                   FontSize="26"
+                   FontSize="28"
                    FontWeight="Bold"
                    Foreground="White"
                    Margin="0 0 0 20"/>
 
         <!-- CONTENIDO -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Orientation="Vertical" Spacing="20">
+            <StackPanel Orientation="Vertical" Spacing="18">
 
                 <!-- INFO GENERAL -->
-                <Border Background="#222" Padding="15" CornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="Información General"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="#4FC3F7"/>
+                <Expander Header="Información General"
+                          Background="#222"
+                          Foreground="White"
+                          FontWeight="Bold"
+                          Padding="10"
+                          IsExpanded="True">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Ruta:" Foreground="#4FC3F7"/>
+                        <TextBlock Text="{Binding FilePath}" Foreground="White" Margin="0 0 0 10"/>
 
-                        <TextBlock Text="{Binding FilePath}" Foreground="White" Margin="0 5 0 0"/>
-                        <TextBlock Text="{Binding FileSize}" Foreground="White"/>
+                        <TextBlock Text="Tamaño:" Foreground="#4FC3F7"/>
+                        <TextBlock Text="{Binding FileSize}" Foreground="White" Margin="0 0 0 10"/>
+
+                        <TextBlock Text="Tipo:" Foreground="#4FC3F7"/>
                         <TextBlock Text="{Binding FileType}" Foreground="White"/>
                     </StackPanel>
-                </Border>
+                </Expander>
 
                 <!-- ID + REGIÓN -->
-                <Border Background="#222" Padding="15" CornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="Identificación"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="#81C784"/>
+                <Expander Header="Identificación"
+                          Background="#222"
+                          Foreground="White"
+                          FontWeight="Bold"
+                          Padding="10"
+                          IsExpanded="True">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Game ID:" Foreground="#81C784"/>
+                        <TextBlock Text="{Binding GameId}" Foreground="#FFEB3B" FontWeight="Bold" Margin="0 0 0 10"/>
 
-                        <TextBlock Text="Game ID:" Foreground="White"/>
-                        <TextBlock Text="{Binding GameId}" Foreground="#FFEB3B" FontWeight="Bold"/>
-
-                        <TextBlock Text="Región:" Foreground="White" Margin="0 10 0 0"/>
+                        <TextBlock Text="Región:" Foreground="#81C784"/>
                         <TextBlock Text="{Binding Region}" Foreground="#FFEB3B" FontWeight="Bold"/>
                     </StackPanel>
-                </Border>
+                </Expander>
 
                 <!-- SYSTEM.CNF -->
-                <Border Background="#222" Padding="15" CornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="SYSTEM.CNF"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="#F06292"/>
-
+                <Expander Header="SYSTEM.CNF"
+                          Background="#222"
+                          Foreground="White"
+                          FontWeight="Bold"
+                          Padding="10"
+                          IsExpanded="True">
+                    <Border Background="#111" CornerRadius="6" Margin="10">
                         <TextBox Text="{Binding SystemCnf}"
                                  Foreground="White"
                                  Background="#111"
                                  FontFamily="Consolas"
                                  FontSize="14"
-                                 Height="150"
+                                 Height="180"
                                  TextWrapping="Wrap"
+                                 BorderThickness="0"
                                  VerticalScrollBarVisibility="Auto"/>
-                    </StackPanel>
-                </Border>
+                    </Border>
+                </Expander>
 
                 <!-- ARCHIVOS INTERNOS -->
-                <Border Background="#222" Padding="15" CornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="Archivos Internos"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="#BA68C8"/>
-
+                <Expander Header="Archivos Internos"
+                          Background="#222"
+                          Foreground="White"
+                          FontWeight="Bold"
+                          Padding="10"
+                          IsExpanded="False">
+                    <Border Background="#111" CornerRadius="6" Margin="10">
                         <ListView ItemsSource="{Binding InternalFiles}"
                                   Background="#111"
                                   Foreground="White"
                                   BorderThickness="0"
-                                  Height="200">
+                                  Height="250">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="Nombre" Width="200" DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="Nombre" Width="250" DisplayMemberBinding="{Binding Name}"/>
                                     <GridViewColumn Header="LBA" Width="80" DisplayMemberBinding="{Binding Lba}"/>
-                                    <GridViewColumn Header="Tamaño" Width="100" DisplayMemberBinding="{Binding Size}"/>
+                                    <GridViewColumn Header="Tamaño" Width="120" DisplayMemberBinding="{Binding Size}"/>
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                    </StackPanel>
-                </Border>
+                    </Border>
+                </Expander>
 
                 <!-- PVD -->
-                <Border Background="#222" Padding="15" CornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="Primary Volume Descriptor (PVD)"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="#FFD54F"/>
-
+                <Expander Header="Primary Volume Descriptor (PVD)"
+                          Background="#222"
+                          Foreground="White"
+                          FontWeight="Bold"
+                          Padding="10"
+                          IsExpanded="False">
+                    <StackPanel Margin="10">
                         <TextBlock Text="{Binding PvdInfo}" Foreground="White"/>
                     </StackPanel>
-                </Border>
+                </Expander>
 
             </StackPanel>
         </ScrollViewer>
