@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:POPSManager.Controls"
         xmlns:views="clr-namespace:POPSManager.Views"
+        xmlns:ui="clr-namespace:POPSManager.UI.Notifications"
         Title="POPSManager"
         Width="1200"
         Height="720"
@@ -39,7 +40,6 @@
                            Foreground="{StaticResource Brush.TextPrimary}"
                            VerticalAlignment="Center"/>
 
-                <!-- FIX: Spacing eliminado, reemplazado por Margin en hijos -->
                 <StackPanel Orientation="Horizontal"
                             DockPanel.Dock="Right">
 
@@ -67,7 +67,6 @@
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="0,0,1,0">
 
-            <!-- FIX: Spacing eliminado, usando Margin en cada botón -->
             <StackPanel Margin="10">
 
                 <TextBlock Text="Menú"
@@ -127,14 +126,14 @@
         </Border>
 
         <!-- ========================================================= -->
-        <!--  NOTIFICACIONES -->
+        <!--  NOTIFICACIONES ULTRA PRO -->
         <!-- ========================================================= -->
-        <StackPanel x:Name="NotificationArea"
-                    Grid.Row="0"
-                    Grid.ColumnSpan="2"
-                    VerticalAlignment="Top"
-                    Margin="0 60 0 0"
-                    IsHitTestVisible="False"/>
+        <ui:NotificationManager x:Name="Notifier"
+                                Grid.Row="0"
+                                Grid.ColumnSpan="2"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Right"
+                                Margin="0 60 20 0"/>
 
         <!-- ========================================================= -->
         <!--  PROGRESS PANEL -->
