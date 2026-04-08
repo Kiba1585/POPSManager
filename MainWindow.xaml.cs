@@ -1,12 +1,11 @@
 using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.Views;
+using POPSManager.UI.Notifications;
 using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
-using System.Windows.Media;
-using System.Threading.Tasks;
 
 namespace POPSManager
 {
@@ -18,10 +17,9 @@ namespace POPSManager
         {
             InitializeComponent();
 
-            // CORRECCIÓN: App.Services es nullable → usar !
             _services = App.Services!;
 
-            // Notificaciones
+            // Notificaciones ULTRA PRO
             _services.Notifications.OnNotify = ShowNotification;
 
             // Logs
@@ -61,51 +59,19 @@ namespace POPSManager
         private void About_Click(object sender, RoutedEventArgs e) => LoadView(new AboutView());
 
         // ============================================================
-        //  NOTIFICACIONES (TOASTS)
+        //  NOTIFICACIONES ULTRA PRO
         // ============================================================
         private void ShowNotification(UiNotification notification)
         {
             Dispatcher.Invoke(() =>
             {
-                string styleKey = notification.Type switch
-                {
-                    NotificationType.Success => "ToastSuccessStyle",
-                    NotificationType.Info => "ToastInfoStyle",
-                    NotificationType.Warning => "ToastWarningStyle",
-                    NotificationType.Error => "ToastErrorStyle",
-                    _ => "ToastInfoStyle"
-                };
+                var toast = new NotificationToast(
+                    title: notification.Type.ToString(),
+                    message: notification.Message,
+                    type: notification.Type
+                );
 
-                var toast = new Border
-                {
-                    Style = (Style)FindResource(styleKey),
-                    RenderTransform = new TranslateTransform()
-                };
-
-                toast.Child = new TextBlock
-                {
-                    Text = notification.Message,
-                    Foreground = Brushes.White,
-                    FontSize = 14,
-                    TextWrapping = TextWrapping.Wrap
-                };
-
-                NotificationArea.Children.Insert(0, toast);
-
-                // Animación de entrada
-                var show = (Storyboard)FindResource("ToastShowAnimation");
-                show.Begin(toast);
-
-                // Animación de salida
-                _ = Task.Delay(3000).ContinueWith(_ =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        var hide = (Storyboard)FindResource("ToastHideAnimation");
-                        hide.Completed += (s, e) => NotificationArea.Children.Remove(toast);
-                        hide.Begin(toast);
-                    });
-                });
+                Notifier.ShowToast(toast);
             });
         }
 
