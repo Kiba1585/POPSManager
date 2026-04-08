@@ -1,0 +1,37 @@
+{
+  "SCES_02105": {
+    "name": "Crash Team Racing",
+    "discNumber": 1,
+    "coverUrl": "https://gamefaqs.gamespot.com/a/box/0/5/0/1050_front.jpg"
+  },
+  "SLES_00972": {
+    "name": "Resident Evil 2",
+    "discNumber": 1,
+    "coverUrl": "https://gamefaqs.gamespot.com/a/box/0/2/3/223_front.jpg"
+  },
+  "SCUS_94154": {
+    "name": "Metal Gear Solid",
+    "discNumber": 1,
+    "coverUrl": "https://gamefaqs.gamespot.com/a/box/0/1/7/217_front.jpg"
+  },
+  "SCES_00867": {
+    "name": "Final Fantasy VII",
+    "discNumber": 1,
+    "coverUrl": "https://gamefaqs.gamespot.com/a/box/0/3/8/238_front.jpg"
+  },
+  "SCES_02013": {
+    "name": "Final Fantasy VIII",
+    "discNumber": 1,
+    "coverUrl": "https://gamefaqs.gamespot.com/a/box/0/4/0/240_front.jpg"
+  },
+  "SCES_02565": {
+    "name": "Final Fantasy IX",
+    "discNumber": 1,
+    "coverUrl": "https://gamefaqs.gamespot.com/a/box/0/4/2/242_front.jpg"
+  },
+  "SLUS_00664": {
+    "name": "Castlevania: Symphony of the Night",
+    "discNumber": 1,
+    "coverUrl": "https://gamefaqs.gamespot.com/a/box/0/1/8/218_front.jpg"
+  }
+}
