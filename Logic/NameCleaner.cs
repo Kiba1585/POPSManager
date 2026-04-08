@@ -14,32 +14,32 @@ namespace POPSManager.Logic
         {
             cdTag = DetectDisc(name);
 
-            // Eliminar tag de disco del nombre
+            // Eliminar tag de disco
             name = Regex.Replace(name, @"(\(|\[|\{)?(Disc|Disk|CD|D)\s*0?([1-9])(\\)?(\)|\]|\})?", "", RegexOptions.IgnoreCase);
 
-            // Eliminar región
+            // Región
             name = Regex.Replace(name, @"\[(PAL|NTSC|NTSC-U|NTSC-J)\]", "", RegexOptions.IgnoreCase);
             name = Regex.Replace(name, @"\((PAL|NTSC|NTSC-U|NTSC-J)\)", "", RegexOptions.IgnoreCase);
 
-            // Eliminar idiomas
+            // Idiomas
             name = Regex.Replace(name, @"\((ESP|ES|EN|ENG|FRA|GER|ITA|MULTI|MULTI5)\)", "", RegexOptions.IgnoreCase);
 
-            // Eliminar versiones
+            // Versiones
             name = Regex.Replace(name, @"\(v\d+\.\d+\)", "", RegexOptions.IgnoreCase);
             name = Regex.Replace(name, @"\(Rev\s*\d+\)", "", RegexOptions.IgnoreCase);
             name = Regex.Replace(name, @"\(Beta\)", "", RegexOptions.IgnoreCase);
             name = Regex.Replace(name, @"\(Demo\)", "", RegexOptions.IgnoreCase);
 
-            // Eliminar tracks
+            // Tracks
             name = Regex.Replace(name, @"\(Track\s*\d+\)", "", RegexOptions.IgnoreCase);
 
-            // Eliminar IDs incrustados
+            // IDs incrustados
             name = Regex.Replace(name, @"(SCES|SLES|SCUS|SLUS|SLPS|SLPM|SCPS)[-_]?\d+", "", RegexOptions.IgnoreCase);
 
-            // Eliminar símbolos basura
+            // Símbolos basura
             name = Regex.Replace(name, @"[\[\]\{\}#@%!&]+", "", RegexOptions.IgnoreCase);
 
-            // Normalizar espacios y guiones
+            // Normalización
             name = Regex.Replace(name, @"[_\.]+", " ");
             name = Regex.Replace(name, @"\s{2,}", " ");
 
