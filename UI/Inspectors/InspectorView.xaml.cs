@@ -26,10 +26,10 @@ namespace POPSManager.UI.Inspectors
         public string FileSize { get; }
         public string FileType { get; }
 
-        public string? GameId { get; }
+        public string GameId { get; }
         public string Region { get; }
 
-        public string? SystemCnf { get; }
+        public string SystemCnf { get; }
         public string PvdInfo { get; }
 
         public ObservableCollection<InternalFileInfo> InternalFiles { get; } = new();
@@ -50,32 +50,42 @@ namespace POPSManager.UI.Inspectors
                     var info = VcdInspector.Inspect(filePath);
 
                     GameId = info.GameId ?? "No detectado";
-                    Region = info.Region;
+                    Region = info.Region ?? "Desconocida";
 
                     SystemCnf = info.SystemCnf != null
                         ? SafeDecode(info.SystemCnf)
                         : "No encontrado";
 
-                    PvdInfo = FormatPvd(info.Pvd);
+                    PvdInfo = info.Pvd != null
+                        ? FormatPvd(info.Pvd)
+                        : "PVD no disponible";
 
-                    foreach (var f in info.Files.OrderBy(f => f.Key))
-                        InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                    if (info.Files != null)
+                    {
+                        foreach (var f in info.Files.OrderBy(f => f.Key))
+                            InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                    }
                 }
                 else
                 {
                     var info = IsoInspector.Inspect(filePath);
 
                     GameId = info.GameId ?? "No detectado";
-                    Region = info.Region;
+                    Region = info.Region ?? "Desconocida";
 
                     SystemCnf = info.SystemCnf != null
                         ? SafeDecode(info.SystemCnf)
                         : "No encontrado";
 
-                    PvdInfo = FormatPvd(info.Pvd);
+                    PvdInfo = info.Pvd != null
+                        ? FormatPvd(info.Pvd)
+                        : "PVD no disponible";
 
-                    foreach (var f in info.Files.OrderBy(f => f.Key))
-                        InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                    if (info.Files != null)
+                    {
+                        foreach (var f in info.Files.OrderBy(f => f.Key))
+                            InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                    }
                 }
             }
             catch (Exception ex)
@@ -94,11 +104,7 @@ namespace POPSManager.UI.Inspectors
         private string DetectFileType(string path)
         {
             string ext = Path.GetExtension(path).ToLowerInvariant();
-
-            if (ext == ".vcd")
-                return "PS1 VCD";
-
-            return "ISO";
+            return ext == ".vcd" ? "PS1 VCD" : "ISO";
         }
 
         private string FormatSize(long bytes)
