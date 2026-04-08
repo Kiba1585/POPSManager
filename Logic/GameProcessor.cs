@@ -1,5 +1,7 @@
 using POPSManager.Models;
 using POPSManager.Services;
+using POPSManager.Logic.Database;
+using POPSManager.Logic.Covers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,8 +17,8 @@ namespace POPSManager.Logic
         private readonly Action<UiNotification> notify;
         private readonly PathsService paths;
 
-        // Activar o desactivar base de datos externa
         private readonly bool useDatabase = false;
+        private readonly bool useCovers = false;
 
         public GameProcessor(
             Action<int> updateProgress,
@@ -24,7 +26,8 @@ namespace POPSManager.Logic
             Action<string> log,
             Action<UiNotification> notify,
             PathsService paths,
-            bool useDatabase = false)
+            bool useDatabase = false,
+            bool useCovers = false)
         {
             this.updateProgress = updateProgress;
             this.updateSpinner = updateSpinner;
@@ -32,6 +35,7 @@ namespace POPSManager.Logic
             this.notify = notify;
             this.paths = paths;
             this.useDatabase = useDatabase;
+            this.useCovers = useCovers;
         }
 
         // ============================================================
@@ -135,11 +139,29 @@ namespace POPSManager.Logic
             // Obtener nombre del juego
             string cleanTitle = NameCleaner.Clean(baseName, out _);
 
+            // ============================================================
+            //  INTEGRACIÓN CON BASE DE DATOS (OPCIONAL)
+            // ============================================================
+            GameInfo? dbInfo = null;
+
             if (useDatabase)
             {
-                string? dbName = GameDatabase.LookupName(detectedId);
-                if (!string.IsNullOrWhiteSpace(dbName))
-                    cleanTitle = dbName;
+                dbInfo = GameDatabase.Lookup(detectedId);
+
+                if (dbInfo != null && !string.IsNullOrWhiteSpace(dbInfo.Name))
+                {
+                    cleanTitle = dbInfo.Name;
+                    log($"[DB] Nombre oficial encontrado: {cleanTitle}");
+                }
+            }
+
+            // ============================================================
+            //  DESCARGA DE COVER (OPCIONAL)
+            // ============================================================
+            if (useCovers && dbInfo?.CoverUrl != null)
+            {
+                string coversFolder = Path.Combine(paths.PopsFolder, "COVERS");
+                CoverDownloader.DownloadCover(detectedId, dbInfo.CoverUrl, coversFolder, log);
             }
 
             // Procesar cada disco
