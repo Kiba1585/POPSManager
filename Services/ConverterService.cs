@@ -12,7 +12,10 @@ namespace POPSManager.Services
         private readonly Action<string> _log;
         private readonly PathsService _paths;
         private readonly SettingsService _settings;
-        private readonly Action<UiNotification> _notify;
+
+        // Nuevo sistema de notificaciones
+        private readonly Action<string, NotificationType> _notify;
+
         private readonly Action<string> _setStatus;
 
         private const int SectorSize = 2352;
@@ -22,7 +25,7 @@ namespace POPSManager.Services
             Action<string> log,
             PathsService paths,
             SettingsService settings,
-            Action<UiNotification> notify,
+            Action<string, NotificationType> notify,
             Action<string> setStatus)
         {
             _log = log;
@@ -39,7 +42,7 @@ namespace POPSManager.Services
         {
             if (!Directory.Exists(sourceFolder))
             {
-                _notify(new UiNotification(NotificationType.Error, "Carpeta de origen inválida."));
+                _notify("Carpeta de origen inválida.", NotificationType.Error);
                 return;
             }
 
@@ -54,7 +57,7 @@ namespace POPSManager.Services
 
             if (files.Length == 0)
             {
-                _notify(new UiNotification(NotificationType.Warning, "No se encontraron archivos BIN/CUE/ISO."));
+                _notify("No se encontraron archivos BIN/CUE/ISO.", NotificationType.Warning);
                 return;
             }
 
@@ -75,11 +78,11 @@ namespace POPSManager.Services
                 catch (Exception ex)
                 {
                     _log($"ERROR al convertir {file}: {ex.Message}");
-                    _notify(new UiNotification(NotificationType.Error, $"Error con {Path.GetFileName(file)}"));
+                    _notify($"Error con {Path.GetFileName(file)}", NotificationType.Error);
                 }
             }
 
-            _notify(new UiNotification(NotificationType.Success, "Conversión completada."));
+            _notify("Conversión completada.", NotificationType.Success);
             _setStatus("Conversión finalizada.");
         }
 
@@ -173,7 +176,6 @@ namespace POPSManager.Services
             {
                 using var fs = File.OpenRead(isoPath);
 
-                // Leer SYSTEM.CNF
                 byte[] buffer = new byte[0x20000];
                 fs.Read(buffer, 0, buffer.Length);
 
@@ -198,7 +200,6 @@ namespace POPSManager.Services
         {
             string name = Path.GetFileNameWithoutExtension(path).ToLower();
 
-            // Regex profesional
             for (int i = 1; i <= 9; i++)
             {
                 if (name.Contains($"disc {i}") ||
