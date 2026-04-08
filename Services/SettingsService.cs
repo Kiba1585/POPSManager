@@ -17,8 +17,8 @@ namespace POPSManager.Services
 
         public string RootFolder { get; set; } = "";
         public string CustomElfPath { get; set; } = "";
+        public string CustomPs2ElfPath { get; set; } = "";
 
-        // ★ NUEVO: rutas personalizadas
         public string? CustomPopsFolder { get; set; }
         public string? CustomAppsFolder { get; set; }
 
@@ -32,54 +32,57 @@ namespace POPSManager.Services
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string folder = Path.Combine(appData, "POPSManager");
 
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
+            Directory.CreateDirectory(folder);
 
             settingsPath = Path.Combine(folder, "settings.json");
 
             Load();
             NormalizeValues();
+            EnsureDefaults();
         }
 
-        // ============================
+        // ============================================================
         //  CARGAR SETTINGS
-        // ============================
+        // ============================================================
         public void Load()
         {
             try
             {
                 if (!File.Exists(settingsPath))
                 {
-                    log("No existe settings.json, usando valores por defecto.");
+                    log("[Settings] No existe settings.json, usando valores por defecto.");
                     return;
                 }
 
                 var json = File.ReadAllText(settingsPath);
                 var data = JsonSerializer.Deserialize<SettingsData>(json);
 
-                if (data != null)
+                if (data == null)
                 {
-                    DarkMode = data.DarkMode;
-                    NotificationsEnabled = data.NotificationsEnabled;
-                    RootFolder = data.RootFolder ?? "";
-                    CustomElfPath = data.CustomElfPath ?? "";
-
-                    // ★ NUEVO
-                    CustomPopsFolder = data.CustomPopsFolder;
-                    CustomAppsFolder = data.CustomAppsFolder;
+                    log("[Settings] Archivo corrupto, regenerando settings.");
+                    return;
                 }
 
-                log("Settings cargados correctamente.");
+                DarkMode = data.DarkMode;
+                NotificationsEnabled = data.NotificationsEnabled;
+                RootFolder = data.RootFolder ?? "";
+                CustomElfPath = data.CustomElfPath ?? "";
+                CustomPs2ElfPath = data.CustomPs2ElfPath ?? "";
+
+                CustomPopsFolder = data.CustomPopsFolder;
+                CustomAppsFolder = data.CustomAppsFolder;
+
+                log("[Settings] Settings cargados correctamente.");
             }
             catch (Exception ex)
             {
-                log($"ERROR cargando settings: {ex.Message}");
+                log($"[Settings] ERROR cargando settings: {ex.Message}");
             }
         }
 
-        // ============================
+        // ============================================================
         //  GUARDAR SETTINGS
-        // ============================
+        // ============================================================
         public void Save()
         {
             try
@@ -92,8 +95,7 @@ namespace POPSManager.Services
                     NotificationsEnabled = NotificationsEnabled,
                     RootFolder = RootFolder,
                     CustomElfPath = CustomElfPath,
-
-                    // ★ NUEVO
+                    CustomPs2ElfPath = CustomPs2ElfPath,
                     CustomPopsFolder = CustomPopsFolder,
                     CustomAppsFolder = CustomAppsFolder
                 };
@@ -101,45 +103,75 @@ namespace POPSManager.Services
                 var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(settingsPath, json);
 
-                log("Settings guardados correctamente.");
+                log("[Settings] Settings guardados correctamente.");
                 OnSettingsChanged?.Invoke();
             }
             catch (Exception ex)
             {
-                log($"ERROR guardando settings: {ex.Message}");
+                log($"[Settings] ERROR guardando settings: {ex.Message}");
             }
         }
 
-        // ============================
+        // ============================================================
         //  NORMALIZAR VALORES
-        // ============================
+        // ============================================================
         private void NormalizeValues()
         {
-            if (!string.IsNullOrWhiteSpace(RootFolder))
-                RootFolder = RootFolder.Trim().TrimEnd('\\', '/');
-
-            if (!string.IsNullOrWhiteSpace(CustomElfPath))
-                CustomElfPath = CustomElfPath.Trim();
+            RootFolder = Normalize(RootFolder);
+            CustomElfPath = Normalize(CustomElfPath);
+            CustomPs2ElfPath = Normalize(CustomPs2ElfPath);
 
             if (!string.IsNullOrWhiteSpace(CustomPopsFolder))
-                CustomPopsFolder = CustomPopsFolder.Trim().TrimEnd('\\', '/');
+                CustomPopsFolder = Normalize(CustomPopsFolder);
 
             if (!string.IsNullOrWhiteSpace(CustomAppsFolder))
-                CustomAppsFolder = CustomAppsFolder.Trim().TrimEnd('\\', '/');
+                CustomAppsFolder = Normalize(CustomAppsFolder);
         }
 
-        // ============================
+        private string Normalize(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return "";
+
+            try
+            {
+                return Path.GetFullPath(path.Trim().TrimEnd('\\', '/'));
+            }
+            catch
+            {
+                log($"[Settings] Ruta inválida: {path}");
+                return path;
+            }
+        }
+
+        // ============================================================
+        //  ASEGURAR VALORES POR DEFECTO
+        // ============================================================
+        private void EnsureDefaults()
+        {
+            if (string.IsNullOrWhiteSpace(RootFolder))
+            {
+                RootFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "POPSManager"
+                );
+
+                log("[Settings] RootFolder vacío → asignado valor por defecto.");
+            }
+        }
+
+        // ============================================================
         //  SETTERS SEGUROS
-        // ============================
+        // ============================================================
         public void SetRootFolder(string path)
         {
             if (!Directory.Exists(path))
             {
-                log($"ERROR: Carpeta inválida: {path}");
+                log($"[Settings] ERROR: Carpeta inválida: {path}");
                 return;
             }
 
-            RootFolder = path;
+            RootFolder = Normalize(path);
             Save();
         }
 
@@ -147,25 +179,36 @@ namespace POPSManager.Services
         {
             if (!File.Exists(path))
             {
-                log($"ERROR: Archivo no encontrado: {path}");
+                log($"[Settings] ERROR: Archivo no encontrado: {path}");
                 return;
             }
 
-            CustomElfPath = path;
+            CustomElfPath = Normalize(path);
             Save();
         }
 
-        // ============================
+        public void SetCustomPs2ElfPath(string path)
+        {
+            if (!File.Exists(path))
+            {
+                log($"[Settings] ERROR: Archivo no encontrado: {path}");
+                return;
+            }
+
+            CustomPs2ElfPath = Normalize(path);
+            Save();
+        }
+
+        // ============================================================
         //  CLASE INTERNA PARA JSON
-        // ============================
+        // ============================================================
         private class SettingsData
         {
             public bool DarkMode { get; set; }
             public bool NotificationsEnabled { get; set; }
             public string? RootFolder { get; set; }
             public string? CustomElfPath { get; set; }
-
-            // ★ NUEVO
+            public string? CustomPs2ElfPath { get; set; }
             public string? CustomPopsFolder { get; set; }
             public string? CustomAppsFolder { get; set; }
         }
