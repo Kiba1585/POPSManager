@@ -161,17 +161,12 @@ namespace POPSManager.Logic
             if (useCovers && dbInfo?.CoverUrl != null)
             {
                 string artFolder = Path.Combine(paths.PopsFolder, "ART");
-                string artPath = Path.Combine(artFolder, $"{detectedId}.ART");
-
                 Directory.CreateDirectory(artFolder);
 
-                string? jpg = CoverDownloader.DownloadCover(detectedId, dbInfo.CoverUrl, artFolder, log);
+                string? art = ArtDownloader.DownloadArt(detectedId, dbInfo.CoverUrl, artFolder, log);
 
-                if (jpg != null)
-                {
-                    File.Move(jpg, artPath, true);
-                    log($"[COVER] Convertido a ART → {artPath}");
-                }
+                if (art != null)
+                    log($"[COVER] ART generado → {art}");
             }
 
             // Procesar cada disco
@@ -280,17 +275,12 @@ namespace POPSManager.Logic
                     if (useCovers && dbInfo.CoverUrl != null)
                     {
                         string artFolder = Path.Combine(paths.DvdFolder, "ART");
-                        string artPath = Path.Combine(artFolder, $"{detectedId}.ART");
-
                         Directory.CreateDirectory(artFolder);
 
-                        string? jpg = CoverDownloader.DownloadCover(detectedId, dbInfo.CoverUrl, artFolder, log);
+                        string? art = ArtDownloader.DownloadArt(detectedId, dbInfo.CoverUrl, artFolder, log);
 
-                        if (jpg != null)
-                        {
-                            File.Move(jpg, artPath, true);
-                            log($"[COVER] PS2 convertido a ART → {artPath}");
-                        }
+                        if (art != null)
+                            log($"[COVER] PS2 ART generado → {art}");
                     }
                 }
             }
