@@ -7,7 +7,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   CanContentScroll="True">
 
-        <StackPanel Margin="20" Spacing="20">
+        <StackPanel Margin="20">
 
             <!-- ========================================================= -->
             <!--  TÍTULO -->
@@ -15,14 +15,15 @@
             <TextBlock Text="Dashboard"
                        FontSize="28"
                        FontWeight="SemiBold"
-                       Foreground="{StaticResource Brush.TextPrimary}"/>
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       Margin="0 0 0 20"/>
 
             <!-- ========================================================= -->
             <!--  TARJETAS DE ESTADÍSTICAS -->
             <!-- ========================================================= -->
             <UniformGrid Columns="3"
                          HorizontalAlignment="Stretch"
-                         Margin="0 0 0 10">
+                         Margin="0 0 0 20">
 
                 <!-- Juegos procesados -->
                 <Border Style="{StaticResource Card}"
@@ -83,31 +84,35 @@
             <!-- ========================================================= -->
             <!--  ACCIONES RÁPIDAS -->
             <!-- ========================================================= -->
-            <StackPanel Spacing="10">
+            <StackPanel Margin="0 0 0 20">
 
                 <TextBlock Text="Acciones rápidas"
                            FontSize="20"
                            FontWeight="SemiBold"
-                           Foreground="{StaticResource Brush.TextPrimary}"/>
+                           Foreground="{StaticResource Brush.TextPrimary}"
+                           Margin="0 0 0 10"/>
 
-                <StackPanel Orientation="Horizontal" Spacing="20">
+                <StackPanel Orientation="Horizontal">
 
                     <Button Content="Convertir juegos (PS1)"
                             Width="200"
                             Height="42"
                             Style="{StaticResource PrimaryButton}"
+                            Margin="0 0 20 0"
                             Click="OpenConvert_Click"/>
 
                     <Button Content="Procesar juegos (PS1 / PS2)"
                             Width="220"
                             Height="42"
                             Style="{StaticResource PrimaryButton}"
+                            Margin="0 0 20 0"
                             Click="OpenProcessPops_Click"/>
 
                     <Button Content="Abrir carpeta raíz"
                             Width="180"
                             Height="42"
                             Style="{StaticResource SecondaryButton}"
+                            Margin="0 0 20 0"
                             Click="OpenRootFolder_Click"/>
 
                     <Button Content="Abrir POPSTARTER.ELF"
@@ -124,20 +129,23 @@
             <!-- ========================================================= -->
             <Border Style="{StaticResource Card}"
                     Padding="16"
-                    Effect="{StaticResource ShadowSoft}">
+                    Effect="{StaticResource ShadowSoft}"
+                    Margin="0 0 0 20">
 
-                <StackPanel Spacing="16">
+                <StackPanel>
 
                     <TextBlock Text="Configuración de rutas"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.TextPrimary}"/>
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 16"/>
 
                     <!-- Ruta raíz -->
-                    <StackPanel Spacing="6">
+                    <StackPanel Margin="0 0 0 16">
                         <TextBlock Text="Ruta raíz de destino:"
                                    FontSize="14"
-                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Margin="0 0 0 6"/>
 
                         <TextBox x:Name="RootPath"
                                  Height="32"
@@ -145,7 +153,8 @@
                                  Foreground="{StaticResource Brush.TextPrimary}"
                                  BorderBrush="{StaticResource Brush.Border}"
                                  BorderThickness="1"
-                                 Padding="6"/>
+                                 Padding="6"
+                                 Margin="0 0 0 6"/>
 
                         <Button Content="Cambiar"
                                 Width="120"
@@ -155,10 +164,11 @@
                     </StackPanel>
 
                     <!-- ELF personalizado -->
-                    <StackPanel Spacing="6">
+                    <StackPanel>
                         <TextBlock Text="POPSTARTER.ELF personalizado:"
                                    FontSize="14"
-                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Margin="0 0 0 6"/>
 
                         <TextBox x:Name="ElfPath"
                                  Height="32"
@@ -166,7 +176,8 @@
                                  Foreground="{StaticResource Brush.TextPrimary}"
                                  BorderBrush="{StaticResource Brush.Border}"
                                  BorderThickness="1"
-                                 Padding="6"/>
+                                 Padding="6"
+                                 Margin="0 0 0 6"/>
 
                         <Button Content="Seleccionar ELF"
                                 Width="150"
@@ -183,14 +194,16 @@
             <!-- ========================================================= -->
             <Border Style="{StaticResource Card}"
                     Padding="16"
-                    Effect="{StaticResource ShadowSoft}">
+                    Effect="{StaticResource ShadowSoft}"
+                    Margin="0 0 0 20">
 
-                <StackPanel Spacing="10">
+                <StackPanel>
 
                     <TextBlock Text="Información del sistema"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.TextPrimary}"/>
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 10"/>
 
                     <TextBlock x:Name="SystemInfo"
                                Text="Cargando..."
@@ -206,12 +219,13 @@
                     Padding="16"
                     Effect="{StaticResource ShadowSoft}">
 
-                <StackPanel Spacing="10">
+                <StackPanel>
 
                     <TextBlock Text="Registro de actividad"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.TextPrimary}"/>
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 10"/>
 
                     <local:LogsPanel Margin="0 0 0 10"/>
 
