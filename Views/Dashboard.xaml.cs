@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using Microsoft.WindowsAPICodePack.Dialogs; // Folder picker moderno
+using Microsoft.WindowsAPICodePack.Dialogs;
 using POPSManager.Services;
 using POPSManager.Models;
 
@@ -18,7 +18,6 @@ namespace POPSManager.Views
         {
             InitializeComponent();
 
-            // CORRECCIÓN: App.Services es nullable → usar !
             _services = App.Services!;
             _paths = _services.Paths;
 
@@ -28,7 +27,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  ESTADÍSTICAS (placeholder por ahora)
+        //  ESTADÍSTICAS (placeholder)
         // ============================================================
         private void LoadStats()
         {
@@ -48,7 +47,8 @@ namespace POPSManager.Views
                 $"Ruta raíz: {_paths.RootFolder}\n" +
                 $"POPS: {_paths.PopsFolder}\n" +
                 $"DVD (PS2): {_paths.DvdFolder}\n" +
-                $"POPSTARTER.ELF: {_paths.PopstarterElfPath}";
+                $"POPSTARTER.ELF: {_paths.PopstarterElfPath}\n" +
+                $"POPS2.ELF: {_paths.PopstarterPs2ElfPath}";
         }
 
         // ============================================================
@@ -65,12 +65,14 @@ namespace POPSManager.Views
         // ============================================================
         private void OpenConvert_Click(object sender, RoutedEventArgs e)
         {
-            ((MainWindow)Application.Current.MainWindow).LoadView(new ConvertView());
+            if (Application.Current.MainWindow is MainWindow main)
+                main.LoadView(new ConvertView());
         }
 
         private void OpenProcessPops_Click(object sender, RoutedEventArgs e)
         {
-            ((MainWindow)Application.Current.MainWindow).LoadView(new ProcessPopsView());
+            if (Application.Current.MainWindow is MainWindow main)
+                main.LoadView(new ProcessPopsView());
         }
 
         // ============================================================
@@ -78,7 +80,13 @@ namespace POPSManager.Views
         // ============================================================
         private void OpenRootFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (Directory.Exists(_paths.RootFolder))
+            if (!Directory.Exists(_paths.RootFolder))
+            {
+                _services.Notifications.Error("La carpeta raíz no existe.");
+                return;
+            }
+
+            try
             {
                 Process.Start(new ProcessStartInfo
                 {
@@ -86,11 +94,9 @@ namespace POPSManager.Views
                     UseShellExecute = true
                 });
             }
-            else
+            catch
             {
-                _services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    "La carpeta raíz no está configurada o no existe."));
+                _services.Notifications.Error("No se pudo abrir la carpeta raíz.");
             }
         }
 
@@ -101,19 +107,31 @@ namespace POPSManager.Views
         {
             string elf = _paths.PopstarterElfPath;
 
-            if (File.Exists(elf))
+            if (!File.Exists(elf))
+            {
+                _services.Notifications.Error("POPSTARTER.ELF no está configurado o no existe.");
+                return;
+            }
+
+            string? folder = Path.GetDirectoryName(elf);
+
+            if (folder == null || !Directory.Exists(folder))
+            {
+                _services.Notifications.Error("No se pudo determinar la carpeta del ELF.");
+                return;
+            }
+
+            try
             {
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = Path.GetDirectoryName(elf),
+                    FileName = folder,
                     UseShellExecute = true
                 });
             }
-            else
+            catch
             {
-                _services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    "El archivo POPSTARTER.ELF no está configurado o no existe."));
+                _services.Notifications.Error("No se pudo abrir la carpeta del ELF.");
             }
         }
 
@@ -128,19 +146,23 @@ namespace POPSManager.Views
                 IsFolderPicker = true
             };
 
-            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            if (dialog.ShowDialog() != CommonFileDialogResult.Ok)
+                return;
+
+            string newPath = dialog.FileName;
+
+            if (!Directory.Exists(newPath))
             {
-                string newPath = dialog.FileName;
-
-                _services.Settings.SetRootFolder(newPath);
-
-                LoadPaths();
-                LoadSystemInfo();
-
-                _services.Notifications.Show(
-                    new UiNotification(NotificationType.Success,
-                    "Ruta raíz actualizada correctamente."));
+                _services.Notifications.Error("La carpeta seleccionada no existe.");
+                return;
             }
+
+            _services.Settings.SetRootFolder(newPath);
+
+            LoadPaths();
+            LoadSystemInfo();
+
+            _services.Notifications.Success("Ruta raíz actualizada correctamente.");
         }
 
         // ============================================================
@@ -154,17 +176,23 @@ namespace POPSManager.Views
                 Filter = "ELF files (*.ELF)|*.ELF|Todos los archivos (*.*)|*.*"
             };
 
-            if (dialog.ShowDialog() == true)
+            if (dialog.ShowDialog() != true)
+                return;
+
+            string path = dialog.FileName;
+
+            if (!File.Exists(path))
             {
-                _services.Settings.SetCustomElfPath(dialog.FileName);
-
-                LoadPaths();
-                LoadSystemInfo();
-
-                _services.Notifications.Show(
-                    new UiNotification(NotificationType.Success,
-                    "POPSTARTER.ELF actualizado correctamente."));
+                _services.Notifications.Error("El archivo seleccionado no existe.");
+                return;
             }
+
+            _services.Settings.SetCustomElfPath(path);
+
+            LoadPaths();
+            LoadSystemInfo();
+
+            _services.Notifications.Success("POPSTARTER.ELF actualizado correctamente.");
         }
     }
 }
