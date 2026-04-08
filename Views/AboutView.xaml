@@ -26,28 +26,30 @@
                 VerticalAlignment="Top"
                 Effect="{StaticResource ShadowSoft}">
 
-            <StackPanel HorizontalAlignment="Center"
-                        Spacing="20">
+            <StackPanel HorizontalAlignment="Center">
 
                 <!-- Logo opcional -->
                 <Ellipse Width="100" Height="100"
                          Fill="{StaticResource Brush.Accent}"
                          Opacity="0.15"
                          Stroke="#888"
-                         StrokeThickness="1"/>
+                         StrokeThickness="1"
+                         Margin="0 0 0 20"/>
 
                 <!-- Nombre del programa -->
                 <TextBlock Text="POPSManager"
                            FontSize="32"
                            FontWeight="Bold"
                            Foreground="{StaticResource Brush.TextPrimary}"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center"
+                           Margin="0 0 0 20"/>
 
                 <!-- Versión -->
                 <TextBlock Text="Versión 1.0.0"
                            FontSize="16"
                            Foreground="{StaticResource Brush.TextSecondary}"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center"
+                           Margin="0 0 0 20"/>
 
                 <!-- Descripción -->
                 <TextBlock Text="Herramienta profesional para convertir, procesar y gestionar juegos POPS para PlayStation 2."
@@ -55,18 +57,20 @@
                            Foreground="{StaticResource Brush.TextMuted}"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
-                           Width="480"/>
+                           Width="480"
+                           Margin="0 0 0 20"/>
 
                 <Separator Margin="0 10"/>
 
                 <!-- Créditos -->
                 <StackPanel HorizontalAlignment="Center"
-                            Spacing="4">
+                            Margin="0 10">
 
                     <TextBlock Text="Desarrollado por:"
                                FontSize="14"
                                Foreground="{StaticResource Brush.TextSecondary}"
-                               HorizontalAlignment="Center"/>
+                               HorizontalAlignment="Center"
+                               Margin="0 0 0 4"/>
 
                     <TextBlock Text="Raidel"
                                FontSize="18"
@@ -79,11 +83,12 @@
 
                 <!-- Enlaces -->
                 <StackPanel HorizontalAlignment="Center"
-                            Spacing="10">
+                            Margin="0 10">
 
                     <Button Content="Repositorio en GitHub"
                             Style="{StaticResource SecondaryButton}"
                             Width="200"
+                            Margin="0 0 0 10"
                             Click="OpenGitHub_Click"/>
 
                     <Button Content="Página del proyecto"
@@ -98,7 +103,9 @@
                 <TextBlock Text="© 2026 Raidel — Todos los derechos reservados."
                            FontSize="12"
                            Foreground="{StaticResource Brush.TextMuted}"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center"
+                           Margin="0 10 0 0"/>
+
             </StackPanel>
 
         </Border>
