@@ -6,13 +6,6 @@ namespace POPSManager.Logic
 {
     public static class ElfGenerator
     {
-        /// <summary>
-        /// Genera un ELF específico para un juego a partir del POPSTARTER.ELF base.
-        /// Escribe:
-        /// - Game ID
-        /// - Ruta del VCD
-        /// - Título mostrado
-        /// </summary>
         public static bool GenerateElf(
             string baseElf,
             string outputElf,
@@ -23,72 +16,103 @@ namespace POPSManager.Logic
         {
             try
             {
+                // ============================
+                // Validaciones iniciales
+                // ============================
                 if (!File.Exists(baseElf))
                 {
-                    log($"[ELF] POPSTARTER.ELF base no encontrado: {baseElf}");
+                    log($"[ELF] ERROR: POPSTARTER.ELF base no encontrado: {baseElf}");
                     return false;
                 }
 
-                // Copiar ELF base
                 Directory.CreateDirectory(Path.GetDirectoryName(outputElf)!);
+
+                // Copiar ELF base
                 File.Copy(baseElf, outputElf, true);
 
                 // Normalizar valores
-                string safeGameId = (gameId ?? string.Empty).Trim();
-                string safeVcdPath = (vcdPath ?? string.Empty).Trim();
-                string safeTitle = (title ?? string.Empty).Trim();
+                string safeGameId = NormalizeAscii(gameId);
+                string safeVcdPath = NormalizeAscii(vcdPath);
+                string safeTitle = NormalizeAscii(title);
 
+                // Validar longitudes
+                safeGameId = TruncateWithLog(safeGameId, ElfOffsets.GameIdMaxLength, log, "GameID");
+                safeVcdPath = TruncateWithLog(safeVcdPath, ElfOffsets.VcdPathMaxLength, log, "VCD Path");
+                safeTitle = TruncateWithLog(safeTitle, ElfOffsets.TitleMaxLength, log, "Title");
+
+                // ============================
+                // Escritura binaria
+                // ============================
                 using var stream = new FileStream(outputElf, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                 using var writer = new BinaryWriter(stream, Encoding.ASCII, leaveOpen: true);
 
-                // Escribir Game ID
-                WriteAsciiFixed(writer,
-                    ElfOffsets.GameId,
-                    safeGameId,
-                    ElfOffsets.GameIdMaxLength);
+                // Validar tamaño del ELF
+                if (stream.Length < ElfOffsets.MinimumElfSize)
+                {
+                    log("[ELF] ERROR: ELF base demasiado pequeño o corrupto.");
+                    return false;
+                }
 
-                // Escribir ruta del VCD
-                WriteAsciiFixed(writer,
-                    ElfOffsets.VcdPath,
-                    safeVcdPath,
-                    ElfOffsets.VcdPathMaxLength);
+                // Escribir campos
+                WriteAsciiFixed(writer, ElfOffsets.GameId, safeGameId, ElfOffsets.GameIdMaxLength);
+                WriteAsciiFixed(writer, ElfOffsets.VcdPath, safeVcdPath, ElfOffsets.VcdPathMaxLength);
+                WriteAsciiFixed(writer, ElfOffsets.Title, safeTitle, ElfOffsets.TitleMaxLength);
 
-                // Escribir título
-                WriteAsciiFixed(writer,
-                    ElfOffsets.Title,
-                    safeTitle,
-                    ElfOffsets.TitleMaxLength);
-
+                // ============================
+                // Logs finales
+                // ============================
                 log($"[ELF] Generado ELF → {outputElf}");
-                log($"[ELF]   ID:   {safeGameId}");
-                log($"[ELF]   VCD:  {safeVcdPath}");
+                log($"[ELF]   ID:     {safeGameId}");
+                log($"[ELF]   VCD:    {safeVcdPath}");
                 log($"[ELF]   Título: {safeTitle}");
 
                 return true;
             }
             catch (Exception ex)
             {
-                log($"[ELF] Error generando ELF: {ex.Message}");
+                log($"[ELF] ERROR generando ELF: {ex.Message}");
                 return false;
             }
         }
 
-        /// <summary>
-        /// Escribe una cadena ASCII en un offset fijo, truncando o rellenando con 0x00.
-        /// </summary>
+        // ============================================================
+        // Helpers
+        // ============================================================
+
+        private static string NormalizeAscii(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "";
+
+            // Reemplazar caracteres no ASCII
+            var sb = new StringBuilder();
+            foreach (char c in value)
+            {
+                sb.Append(c <= 127 ? c : '_');
+            }
+            return sb.ToString().Trim();
+        }
+
+        private static string TruncateWithLog(string value, int max, Action<string> log, string field)
+        {
+            if (value.Length > max)
+            {
+                log($"[ELF] Aviso: {field} truncado a {max} caracteres.");
+                return value.Substring(0, max);
+            }
+            return value;
+        }
+
         private static void WriteAsciiFixed(BinaryWriter writer, int offset, string value, int maxLength)
         {
             writer.BaseStream.Seek(offset, SeekOrigin.Begin);
 
-            // Convertir a ASCII, truncar si es necesario
             var bytes = Encoding.ASCII.GetBytes(value);
             if (bytes.Length > maxLength)
                 Array.Resize(ref bytes, maxLength);
 
-            // Escribir bytes
             writer.Write(bytes);
 
-            // Rellenar con 0x00 hasta completar el bloque
             int remaining = maxLength - bytes.Length;
             if (remaining > 0)
                 writer.Write(new byte[remaining]);
