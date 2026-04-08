@@ -21,37 +21,33 @@
         <Border Grid.Row="1"
                 Style="{StaticResource Card}"
                 Padding="30"
+                Width="600"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Width="600">
+                Effect="{StaticResource ShadowSoft}">
 
-            <!-- StackPanel corregido -->
-            <StackPanel HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center"
+                        Spacing="20">
 
                 <!-- Logo opcional -->
                 <Ellipse Width="100" Height="100"
                          Fill="{StaticResource Brush.Accent}"
                          Opacity="0.15"
-                         Margin="0 0 0 20">
-                    <Ellipse.Stroke>
-                        <SolidColorBrush Color="#888"/>
-                    </Ellipse.Stroke>
-                </Ellipse>
+                         Stroke="#888"
+                         StrokeThickness="1"/>
 
                 <!-- Nombre del programa -->
                 <TextBlock Text="POPSManager"
                            FontSize="32"
                            FontWeight="Bold"
                            Foreground="{StaticResource Brush.TextPrimary}"
-                           HorizontalAlignment="Center"
-                           Margin="0 0 0 20"/>
+                           HorizontalAlignment="Center"/>
 
                 <!-- Versión -->
                 <TextBlock Text="Versión 1.0.0"
                            FontSize="16"
                            Foreground="{StaticResource Brush.TextSecondary}"
-                           HorizontalAlignment="Center"
-                           Margin="0 0 0 20"/>
+                           HorizontalAlignment="Center"/>
 
                 <!-- Descripción -->
                 <TextBlock Text="Herramienta profesional para convertir, procesar y gestionar juegos POPS para PlayStation 2."
@@ -59,20 +55,18 @@
                            Foreground="{StaticResource Brush.TextMuted}"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
-                           Width="480"
-                           Margin="0 0 0 20"/>
+                           Width="480"/>
 
-                <!-- Línea divisoria -->
                 <Separator Margin="0 10"/>
 
                 <!-- Créditos -->
-                <StackPanel HorizontalAlignment="Center" Margin="0 10">
+                <StackPanel HorizontalAlignment="Center"
+                            Spacing="4">
 
                     <TextBlock Text="Desarrollado por:"
                                FontSize="14"
                                Foreground="{StaticResource Brush.TextSecondary}"
-                               HorizontalAlignment="Center"
-                               Margin="0 0 0 4"/>
+                               HorizontalAlignment="Center"/>
 
                     <TextBlock Text="Raidel"
                                FontSize="18"
@@ -81,35 +75,30 @@
                                HorizontalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Línea divisoria -->
                 <Separator Margin="0 10"/>
 
                 <!-- Enlaces -->
-                <StackPanel HorizontalAlignment="Center" Margin="0 10">
+                <StackPanel HorizontalAlignment="Center"
+                            Spacing="10">
 
                     <Button Content="Repositorio en GitHub"
                             Style="{StaticResource SecondaryButton}"
                             Width="200"
-                            Margin="0 0 0 10"
                             Click="OpenGitHub_Click"/>
 
                     <Button Content="Página del proyecto"
                             Style="{StaticResource SecondaryButton}"
                             Width="200"
                             Click="OpenWebsite_Click"/>
-
                 </StackPanel>
 
-                <!-- Línea divisoria -->
                 <Separator Margin="0 10"/>
 
                 <!-- Derechos -->
                 <TextBlock Text="© 2026 Raidel — Todos los derechos reservados."
                            FontSize="12"
                            Foreground="{StaticResource Brush.TextMuted}"
-                           HorizontalAlignment="Center"
-                           Margin="0 10 0 0"/>
-
+                           HorizontalAlignment="Center"/>
             </StackPanel>
 
         </Border>
