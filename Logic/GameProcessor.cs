@@ -1,6 +1,7 @@
 using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.Logic;
+using POPSManager.Logic.Covers;   // ← NECESARIO PARA ArtDownloader
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -279,7 +280,7 @@ namespace POPSManager.Logic
         {
             string cd1Folder = Path.Combine(gameRootFolder, "CD1");
 
-            string vcdName = Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault();
+            string? vcdName = Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault();
             if (vcdName == null)
             {
                 logService.Warn($"[PS1] No se encontró VCD en {cd1Folder}");
