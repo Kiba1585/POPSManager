@@ -198,7 +198,8 @@ namespace POPSManager.Logic
             if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
                 dbEntry = entry;
-                if (!string.IsNullOrWhiteSpace(dbEntry.Name))
+
+                if (dbEntry != null && !string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
                     logService.Info($"[DB] Nombre oficial encontrado: {cleanTitle}");
@@ -343,14 +344,15 @@ namespace POPSManager.Logic
             if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
                 dbEntry = entry;
-                if (!string.IsNullOrWhiteSpace(dbEntry.Name))
+
+                if (dbEntry != null && !string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
                     logService.Info($"[DB] Nombre oficial PS2 encontrado: {cleanTitle}");
                 }
 
                 // COVER PS2
-                if (useCovers && dbEntry.CoverUrl != null)
+                if (useCovers && dbEntry?.CoverUrl != null)
                 {
                     string artFolder = Path.Combine(paths.DvdFolder, "ART");
                     Directory.CreateDirectory(artFolder);
