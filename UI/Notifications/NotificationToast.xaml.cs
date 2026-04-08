@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using POPSManager.Models;
 
@@ -69,9 +70,10 @@ namespace POPSManager.UI.Notifications
             var anim = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(250));
             anim.Completed += (s, e) =>
             {
-                var parent = this.Parent as Panel;
-                parent?.Children.Remove(this);
+                if (this.Parent is Panel parent)
+                    parent.Children.Remove(this);
             };
+
             BeginAnimation(OpacityProperty, anim);
         }
     }
