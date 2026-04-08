@@ -1,7 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
+using POPSManager.Models;
 
-namespace POPSManager.Logic
+namespace POPSManager.Logic.Database
 {
     public static class GameDatabase
     {
@@ -31,16 +32,16 @@ namespace POPSManager.Logic
             if (string.IsNullOrWhiteSpace(gameId))
                 return null;
 
-            // 1. Buscar en JSON local
+            // 1. JSON local
             if (localDb != null && localDb.TryGetValue(gameId, out var info))
                 return info;
 
-            // 2. Buscar en Redump
+            // 2. Redump
             info = RedumpClient.Lookup(gameId);
             if (info != null)
                 return info;
 
-            // 3. Buscar en GameFAQs
+            // 3. GameFAQs
             info = GameFaqsClient.Lookup(gameId);
             if (info != null)
                 return info;
@@ -52,12 +53,5 @@ namespace POPSManager.Logic
         {
             return Lookup(gameId)?.Name;
         }
-    }
-
-    public class GameInfo
-    {
-        public string Name { get; set; } = "";
-        public int DiscNumber { get; set; } = 1;
-        public string? CoverUrl { get; set; }
     }
 }
