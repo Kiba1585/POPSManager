@@ -1,46 +1,41 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
-using POPSManager.Models;
 
-namespace POPSManager.Logic.Database
+namespace POPSManager.Logic
 {
     public static class GameDatabase
     {
-        private static Dictionary<string, GameInfo>? ps1Db;
-        private static Dictionary<string, GameInfo>? ps2Db;
+        private static readonly Dictionary<string, GameEntry> Cache = new(StringComparer.OrdinalIgnoreCase);
 
+        private static Dictionary<string, GameEntry>? ps1Db;
+        private static Dictionary<string, GameEntry>? ps2Db;
+
+        // ============================================================
+        //  CARGA DE BASES DE DATOS EMBEBIDAS
+        // ============================================================
         static GameDatabase()
         {
-            LoadEmbeddedJson();
+            ps1Db = LoadJson("POPSManager.Data.ps1db.json");
+            ps2Db = LoadJson("POPSManager.Data.ps2db.json");
         }
 
-        private static void LoadEmbeddedJson()
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-
-            // ============================
-            // Cargar PS1
-            // ============================
-            ps1Db = LoadDbFromResource(assembly, "POPSManager.Data.ps1db.json");
-
-            // ============================
-            // Cargar PS2
-            // ============================
-            ps2Db = LoadDbFromResource(assembly, "POPSManager.Data.ps2db.json");
-        }
-
-        private static Dictionary<string, GameInfo>? LoadDbFromResource(Assembly assembly, string resourceName)
+        private static Dictionary<string, GameEntry>? LoadJson(string resourceName)
         {
             try
             {
-                using var stream = assembly.GetManifestResourceStream(resourceName);
+                var asm = Assembly.GetExecutingAssembly();
+                using var stream = asm.GetManifestResourceStream(resourceName);
                 if (stream == null)
                     return null;
 
                 using var reader = new StreamReader(stream);
                 string json = reader.ReadToEnd();
 
-                return JsonSerializer.Deserialize<Dictionary<string, GameInfo>>(json);
+                return JsonSerializer.Deserialize<Dictionary<string, GameEntry>>(json);
             }
             catch
             {
@@ -48,73 +43,130 @@ namespace POPSManager.Logic.Database
             }
         }
 
-        // ============================
-        // DETECCIÓN PS1 / PS2 REAL
-        // ============================
-        private static bool IsPs1(string id)
+        // ============================================================
+        //  MÉTODO PRINCIPAL
+        // ============================================================
+        public static bool TryGetEntry(string gameId, out GameEntry entry)
         {
-            // PS1 → 4 dígitos
-            // Ej: SCES_02105
-            return id.Length == 10;
-        }
+            entry = null!;
 
-        private static bool IsPs2(string id)
-        {
-            // PS2 → 5 dígitos
-            // Ej: SLUS_20946
-            return id.Length == 11;
-        }
-
-        // ============================
-        // LOOKUP PRINCIPAL
-        // ============================
-        public static GameInfo? Lookup(string gameId)
-        {
             if (string.IsNullOrWhiteSpace(gameId))
+                return false;
+
+            // Cache
+            if (Cache.TryGetValue(gameId, out entry))
+                return true;
+
+            // PS1
+            if (ps1Db != null && ps1Db.TryGetValue(gameId, out entry))
+            {
+                Cache[gameId] = entry;
+                return true;
+            }
+
+            // PS2
+            if (ps2Db != null && ps2Db.TryGetValue(gameId, out entry))
+            {
+                Cache[gameId] = entry;
+                return true;
+            }
+
+            // Online lookup (opcional)
+            entry = TryOnlineLookup(gameId);
+            if (entry != null)
+            {
+                Cache[gameId] = entry;
+                return true;
+            }
+
+            return false;
+        }
+
+        // ============================================================
+        //  LOOKUP ONLINE (Redump / GameFAQs / PSXDatacenter)
+        // ============================================================
+        private static GameEntry? TryOnlineLookup(string gameId)
+        {
+            try
+            {
+                // Aquí no hacemos llamadas reales.
+                // POPSManager puede implementar un plugin opcional.
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // ============================================================
+        //  OBTENER COVER
+        // ============================================================
+        public static string? TryGetCover(string gameId)
+        {
+            if (!TryGetEntry(gameId, out var entry))
                 return null;
 
-            // Normalizar
-            gameId = gameId.Trim().ToUpper();
-
-            bool ps1 = IsPs1(gameId);
-            bool ps2 = IsPs2(gameId);
-
-            // ============================
-            // 1. JSON local
-            // ============================
-            if (ps1 && ps1Db != null && ps1Db.TryGetValue(gameId, out var info1))
-                return info1;
-
-            if (ps2 && ps2Db != null && ps2Db.TryGetValue(gameId, out var info2))
-                return info2;
-
-            // Fallback cruzado (por si un ID está en la otra DB)
-            if (ps1Db != null && ps1Db.TryGetValue(gameId, out var infoCross1))
-                return infoCross1;
-
-            if (ps2Db != null && ps2Db.TryGetValue(gameId, out var infoCross2))
-                return infoCross2;
-
-            // ============================
-            // 2. Redump
-            // ============================
-            var info = RedumpClient.Lookup(gameId);
-            if (info != null)
-                return info;
-
-            // ============================
-            // 3. GameFAQs
-            // ============================
-            info = GameFaqsClient.Lookup(gameId);
-            if (info != null)
-                return info;
-
-            return null;
+            return entry.CoverUrl;
         }
 
-        public static string? LookupName(string gameId)
+        // ============================================================
+        //  OBTENER FIXES PARA CHEAT.TXT
+        // ============================================================
+        public static IEnumerable<string>? TryGetFixes(string gameId)
         {
-            return Lookup(gameId)?.Name;
+            if (!TryGetEntry(gameId, out var entry))
+                return null;
+
+            return entry.CheatFixes;
         }
+
+        // ============================================================
+        //  OBTENER METADATA
+        // ============================================================
+        public static GameEntry? TryGetMetadata(string gameId)
+        {
+            if (!TryGetEntry(gameId, out var entry))
+                return null;
+
+            return entry;
+        }
+    }
+
+    // ============================================================
+    //  MODELO DE DATOS ULTRA PRO
+    // ============================================================
+    public class GameEntry
+    {
+        public string GameId { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Region { get; set; } = "";
+        public string Publisher { get; set; } = "";
+        public int Year { get; set; }
+
+        // MultiDisc
+        public int DiscCount { get; set; }
+        public string[]? DiscNames { get; set; }
+
+        // Covers
+        public string? CoverUrl { get; set; }
+
+        // Tags
+        public string[]? Tags { get; set; }
+
+        // Fixes
+        public string[]? CheatFixes { get; set; }
+        public string[]? GraphicsFixes { get; set; }
+        public string[]? VideoFixes { get; set; }
+        public string[]? SoundFixes { get; set; }
+
+        // Flags
+        public bool HasFmvIssues { get; set; }
+        public bool HasTimingIssues { get; set; }
+        public bool RequiresPal60 { get; set; }
+        public bool RequiresSkipVideos { get; set; }
+        public bool RequiresFixCdda { get; set; }
+        public bool RequiresFixGraphics { get; set; }
+        public bool RequiresFixSound { get; set; }
     }
 }
