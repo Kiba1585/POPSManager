@@ -29,8 +29,10 @@ namespace POPSManager.Services
             this.log = log;
             this.settings = settings;
 
-            RootFolder = settings?.RootFolder ??
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPSManager");
+            // RootFolder seguro
+            RootFolder = !string.IsNullOrWhiteSpace(settings?.RootFolder)
+                ? NormalizePath(settings.RootFolder)
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "POPSManager");
 
             // Cargar rutas personalizadas
             _customPopsFolder = settings?.CustomPopsFolder;
@@ -38,6 +40,7 @@ namespace POPSManager.Services
 
             EnsureFolderStructure();
 
+            // Resolver ELF PS1 y PS2
             PopstarterElfPath = ResolveElf("POPSTARTER.ELF");
             PopstarterPs2ElfPath = ResolveElf("POPS2.ELF");
         }
@@ -109,7 +112,7 @@ namespace POPSManager.Services
                 if (!string.IsNullOrWhiteSpace(custom) && File.Exists(custom))
                 {
                     log?.Invoke($"[Paths] Usando {elfName} personalizado: {custom}");
-                    return custom;
+                    return NormalizePath(custom);
                 }
             }
 
@@ -132,7 +135,7 @@ namespace POPSManager.Services
                 if (File.Exists(path))
                 {
                     log?.Invoke($"[Paths] {elfName} encontrado en: {path}");
-                    return path;
+                    return NormalizePath(path);
                 }
             }
 
