@@ -53,22 +53,21 @@ namespace POPSManager.Services
                 LogService.Write,
                 Paths,
                 Settings,
-                Notifications.Show,
+                msg => Notifications.Info(msg),   // ✔ Callback actualizado
                 Progress.SetStatus
             );
 
             // ============================
             //  GAME PROCESSOR (PS1 + PS2)
-            //  Lazy → solo se crea cuando se usa
             // ============================
             _gameProcessor = new Lazy<GameProcessor>(() =>
                 new GameProcessor(
-                    Progress,        // ✔ ProgressService
-                    LogService,      // ✔ LoggingService
-                    Notifications,   // ✔ NotificationService
-                    Paths,           // ✔ PathsService
-                    Settings.UseDatabase, // ✔ bool
-                    Settings.UseCovers    // ✔ bool
+                    Progress,
+                    LogService,
+                    Notifications,
+                    Paths,
+                    Settings.UseDatabase,
+                    Settings.UseCovers
                 ));
         }
     }
