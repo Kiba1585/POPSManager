@@ -45,6 +45,7 @@
                 <!--  Selección de carpeta origen -->
                 <!-- ========================= -->
                 <StackPanel Grid.Row="0" Grid.Column="0">
+
                     <TextBlock Text="Carpeta de origen"
                                FontSize="16"
                                Foreground="{StaticResource Brush.TextSecondary}"
@@ -70,7 +71,9 @@
                 <!-- ========================= -->
                 <!--  Selección de carpeta destino -->
                 <!-- ========================= -->
-                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0 15 0 0">
+                <StackPanel Grid.Row="1" Grid.Column="0"
+                            Margin="0 15 0 0">
+
                     <TextBlock Text="Carpeta de destino"
                                FontSize="16"
                                Foreground="{StaticResource Brush.TextSecondary}"
@@ -104,6 +107,7 @@
                         Effect="{StaticResource ShadowSoft}">
 
                     <StackPanel>
+
                         <TextBlock Text="Archivos detectados"
                                    FontSize="16"
                                    FontWeight="SemiBold"
