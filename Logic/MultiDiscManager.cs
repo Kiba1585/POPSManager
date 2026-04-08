@@ -13,13 +13,34 @@ namespace POPSManager.Logic
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
-        /// Genera DISCS.TXT usando detección real de multidisco:
-        /// - Nombre del archivo
-        /// - Nombre de la carpeta
-        /// - SYSTEM.CNF real
-        /// - IOPRP.IMG real (PS2)
-        /// - DISCS.TXT existente
-        /// - GameDatabase (si aplica)
+        /// Método requerido por GameProcessor.
+        /// Extrae el número de disco desde un nombre como:
+        /// - CD1
+        /// - (CD2)
+        /// - Disc 3
+        /// - Disk-4
+        /// - D2
+        /// </summary>
+        public static int ExtractDiscNumber(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return 1;
+
+            var m = DiscRegex.Match(name);
+            if (m.Success)
+            {
+                if (m.Groups[1].Success)
+                    return int.Parse(m.Groups[1].Value);
+
+                if (m.Groups[2].Success)
+                    return int.Parse(m.Groups[2].Value);
+            }
+
+            return 1;
+        }
+
+        /// <summary>
+        /// Genera DISCS.TXT usando detección real de multidisco.
         /// </summary>
         public static void GenerateDiscsTxt(
             string popsFolder,
@@ -148,7 +169,6 @@ namespace POPSManager.Logic
             var id = GameIdDetector.DetectGameId(path);
             if (!string.IsNullOrWhiteSpace(id))
             {
-                // Algunos dumps incluyen "BOOT = cdrom:\SLUS_00594;1" con sufijos
                 if (id.EndsWith("1") || id.EndsWith("2") || id.EndsWith("3") || id.EndsWith("4"))
                 {
                     int n = int.Parse(id[^1].ToString());
