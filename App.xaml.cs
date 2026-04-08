@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using POPSManager.Services;
+using POPSManager.Models; // ← Necesario para NotificationType
 
 namespace POPSManager
 {
@@ -35,10 +36,10 @@ namespace POPSManager
             try
             {
                 Services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    $"Error inesperado: {e.Exception.Message}"));
+                    $"Error inesperado: {e.Exception.Message}",
+                    NotificationType.Error);
 
-                Services.LogService.Log($"[ERROR] {e.Exception}");
+                Services.LogService.Error($"[ERROR] {e.Exception}");
             }
             catch { }
 
@@ -52,10 +53,10 @@ namespace POPSManager
                 if (e.ExceptionObject is Exception ex)
                 {
                     Services.Notifications.Show(
-                        new UiNotification(NotificationType.Error,
-                        $"Error crítico: {ex.Message}"));
+                        $"Error crítico: {ex.Message}",
+                        NotificationType.Error);
 
-                    Services.LogService.Log($"[CRITICAL] {ex}");
+                    Services.LogService.Error($"[CRITICAL] {ex}");
                 }
             }
             catch { }
