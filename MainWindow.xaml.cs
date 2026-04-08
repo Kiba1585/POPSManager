@@ -19,8 +19,8 @@ namespace POPSManager
 
             _services = App.Services!;
 
-            // Notificaciones ULTRA PRO
-            _services.Notifications.OnNotify = ShowNotification;
+            // Notificaciones ULTRA PRO (nuevo sistema)
+            _services.Notifications.OnShowToast = ShowNotification;
 
             // Logs
             _services.LogService.OnLog = AddLog;
@@ -43,7 +43,6 @@ namespace POPSManager
             MainContent.Children.Clear();
             MainContent.Children.Add(view);
 
-            // Animación suave
             var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250))
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
@@ -59,16 +58,16 @@ namespace POPSManager
         private void About_Click(object sender, RoutedEventArgs e) => LoadView(new AboutView());
 
         // ============================================================
-        //  NOTIFICACIONES ULTRA PRO
+        //  NOTIFICACIONES ULTRA PRO (NUEVO SISTEMA)
         // ============================================================
-        private void ShowNotification(UiNotification notification)
+        private void ShowNotification(string message, NotificationType type)
         {
             Dispatcher.Invoke(() =>
             {
                 var toast = new NotificationToast(
-                    title: notification.Type.ToString(),
-                    message: notification.Message,
-                    type: notification.Type
+                    title: type.ToString(),
+                    message: message,
+                    type: type
                 );
 
                 Notifier.ShowToast(toast);
@@ -135,8 +134,9 @@ namespace POPSManager
         private void Window_Drop(object sender, DragEventArgs e)
         {
             _services.Notifications.Show(
-                new UiNotification(NotificationType.Info,
-                "Arrastra archivos dentro de la vista correspondiente."));
+                "Arrastra archivos dentro de la vista correspondiente.",
+                NotificationType.Info
+            );
         }
     }
 }
