@@ -1,6 +1,9 @@
 using POPSManager.Logic.Inspectors;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows.Controls;
 
 namespace POPSManager.UI.Inspectors
@@ -16,6 +19,9 @@ namespace POPSManager.UI.Inspectors
 
     public class InspectorViewModel
     {
+        // ============================
+        //  PROPIEDADES BÁSICAS
+        // ============================
         public string FilePath { get; }
         public string FileSize { get; }
         public string FileType { get; }
@@ -28,42 +34,97 @@ namespace POPSManager.UI.Inspectors
 
         public ObservableCollection<InternalFileInfo> InternalFiles { get; } = new();
 
+        // ============================
+        //  CONSTRUCTOR
+        // ============================
         public InspectorViewModel(string filePath)
         {
             FilePath = filePath;
-            FileSize = $"{new FileInfo(filePath).Length / 1024 / 1024} MB";
-            FileType = filePath.EndsWith(".vcd", System.StringComparison.OrdinalIgnoreCase) ? "PS1 VCD" : "ISO";
+            FileSize = FormatSize(new FileInfo(filePath).Length);
+            FileType = DetectFileType(filePath);
 
-            if (FileType == "PS1 VCD")
+            try
             {
-                var info = VcdInspector.Inspect(filePath);
+                if (FileType == "PS1 VCD")
+                {
+                    var info = VcdInspector.Inspect(filePath);
 
-                GameId = info.GameId;
-                Region = info.Region;
-                SystemCnf = info.SystemCnf != null ? System.Text.Encoding.ASCII.GetString(info.SystemCnf) : "No encontrado";
+                    GameId = info.GameId ?? "No detectado";
+                    Region = info.Region;
 
-                PvdInfo = $"ID: {info.Pvd.Identifier}\n" +
-                          $"Volume: {info.Pvd.VolumeName}\n" +
-                          $"System: {info.Pvd.SystemId}";
+                    SystemCnf = info.SystemCnf != null
+                        ? SafeDecode(info.SystemCnf)
+                        : "No encontrado";
 
-                foreach (var f in info.Files)
-                    InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                    PvdInfo = FormatPvd(info.Pvd);
+
+                    foreach (var f in info.Files.OrderBy(f => f.Key))
+                        InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                }
+                else
+                {
+                    var info = IsoInspector.Inspect(filePath);
+
+                    GameId = info.GameId ?? "No detectado";
+                    Region = info.Region;
+
+                    SystemCnf = info.SystemCnf != null
+                        ? SafeDecode(info.SystemCnf)
+                        : "No encontrado";
+
+                    PvdInfo = FormatPvd(info.Pvd);
+
+                    foreach (var f in info.Files.OrderBy(f => f.Key))
+                        InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var info = IsoInspector.Inspect(filePath);
-
-                GameId = info.GameId;
-                Region = info.Region;
-                SystemCnf = info.SystemCnf != null ? System.Text.Encoding.ASCII.GetString(info.SystemCnf) : "No encontrado";
-
-                PvdInfo = $"ID: {info.Pvd.Identifier}\n" +
-                          $"Volume: {info.Pvd.VolumeName}\n" +
-                          $"System: {info.Pvd.SystemId}";
-
-                foreach (var f in info.Files)
-                    InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
+                SystemCnf = $"Error leyendo archivo:\n{ex.Message}";
+                Region = "Desconocida";
+                GameId = "Error";
+                PvdInfo = "Error";
             }
+        }
+
+        // ============================
+        //  HELPERS
+        // ============================
+
+        private string DetectFileType(string path)
+        {
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+
+            if (ext == ".vcd")
+                return "PS1 VCD";
+
+            return "ISO";
+        }
+
+        private string FormatSize(long bytes)
+        {
+            double mb = bytes / 1024d / 1024d;
+            return $"{mb:F2} MB";
+        }
+
+        private string SafeDecode(byte[] data)
+        {
+            try
+            {
+                return Encoding.ASCII.GetString(data);
+            }
+            catch
+            {
+                return "(No se pudo decodificar SYSTEM.CNF)";
+            }
+        }
+
+        private string FormatPvd(PvdInfo pvd)
+        {
+            return
+                $"Identificador: {pvd.Identifier}\n" +
+                $"Volume Name: {pvd.VolumeName}\n" +
+                $"System ID: {pvd.SystemId}";
         }
     }
 
