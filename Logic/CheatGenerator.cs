@@ -89,7 +89,11 @@ namespace POPSManager.Logic
         // ============================================================
         private static bool IsMultiDiscFolder(string folder)
         {
-            return Directory.GetFiles(Path.GetDirectoryName(folder)!)
+            string? parent = Path.GetDirectoryName(folder);
+            if (parent == null)
+                return false;
+
+            return Directory.GetFiles(parent)
                 .Any(f => f.EndsWith("DISCS.TXT", StringComparison.OrdinalIgnoreCase));
         }
 
@@ -206,12 +210,15 @@ namespace POPSManager.Logic
         // ============================================================
         private static void ApplyDatabaseFixes(string gameId, List<string> lines, Action<string> log)
         {
-            if (!GameDatabase.TryGetEntry(gameId, out var entry))
+            if (!GameDatabase.TryGetEntry(gameId, out var entry) || entry == null)
                 return;
 
-            if (entry.CheatFixes != null)
+            if (entry.CheatFixes == null)
+                return;
+
+            foreach (var fix in entry.CheatFixes)
             {
-                foreach (var fix in entry.CheatFixes)
+                if (!string.IsNullOrWhiteSpace(fix))
                 {
                     lines.Add(fix);
                     log($"[PS1] Fix desde GameDatabase: {fix}");
