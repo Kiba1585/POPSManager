@@ -39,22 +39,34 @@ namespace POPSManager.Logic.Inspectors
 
         private static string DetectRegion(string? id)
         {
-            if (id == null) return "Unknown";
+            if (string.IsNullOrWhiteSpace(id))
+                return "Unknown";
 
-            if (id.StartsWith("SLUS") || id.StartsWith("SCUS")) return "NTSC-U";
-            if (id.StartsWith("SLES") || id.StartsWith("SCES")) return "PAL";
-            if (id.StartsWith("SLPM") || id.StartsWith("SLPS") || id.StartsWith("SCPS")) return "NTSC-J";
+            if (id.StartsWith("SLUS", StringComparison.OrdinalIgnoreCase) ||
+                id.StartsWith("SCUS", StringComparison.OrdinalIgnoreCase))
+                return "NTSC-U";
+
+            if (id.StartsWith("SLES", StringComparison.OrdinalIgnoreCase) ||
+                id.StartsWith("SCES", StringComparison.OrdinalIgnoreCase))
+                return "PAL";
+
+            if (id.StartsWith("SLPM", StringComparison.OrdinalIgnoreCase) ||
+                id.StartsWith("SLPS", StringComparison.OrdinalIgnoreCase) ||
+                id.StartsWith("SCPS", StringComparison.OrdinalIgnoreCase))
+                return "NTSC-J";
 
             return "Unknown";
         }
 
         private static string? ExtractId(byte[]? data)
         {
-            if (data == null) return null;
+            if (data == null)
+                return null;
 
             string text = Encoding.ASCII.GetString(data);
             var m = IdRegex.Match(text);
-            if (!m.Success) return null;
+            if (!m.Success)
+                return null;
 
             return $"{m.Groups[1].Value}_{m.Groups[2].Value}{m.Groups[3].Value}";
         }
@@ -62,8 +74,12 @@ namespace POPSManager.Logic.Inspectors
         private static PvdInfo ReadPvd(FileStream fs)
         {
             fs.Seek(16 * SectorSize, SeekOrigin.Begin);
+
             byte[] pvd = new byte[SectorSize];
-            fs.Read(pvd, 0, SectorSize);
+            int read = fs.Read(pvd, 0, SectorSize);
+
+            if (read < SectorSize)
+                return new PvdInfo();
 
             return new PvdInfo
             {
@@ -79,19 +95,29 @@ namespace POPSManager.Logic.Inspectors
 
             fs.Seek(16 * SectorSize, SeekOrigin.Begin);
             byte[] pvd = new byte[SectorSize];
-            fs.Read(pvd, 0, SectorSize);
+            int read = fs.Read(pvd, 0, SectorSize);
+
+            if (read < SectorSize)
+                return files;
 
             int rootLba = BitConverter.ToInt32(pvd, 156 + 2);
 
             byte[] sector = ReadSector(fs, rootLba);
-
             int pos = 0;
+
             while (pos < sector.Length)
             {
                 int len = sector[pos];
-                if (len == 0) break;
+                if (len == 0)
+                    break;
+
+                if (pos + 33 >= sector.Length)
+                    break;
 
                 int nameLen = sector[pos + 32];
+                if (pos + 33 + nameLen > sector.Length)
+                    break;
+
                 string name = Encoding.ASCII.GetString(sector, pos + 33, nameLen)
                     .TrimEnd(';', '1');
 
@@ -121,7 +147,16 @@ namespace POPSManager.Logic.Inspectors
         {
             byte[] buffer = new byte[count * SectorSize];
             fs.Seek(lba * SectorSize, SeekOrigin.Begin);
-            fs.Read(buffer, 0, buffer.Length);
+            int read = fs.Read(buffer, 0, buffer.Length);
+
+            if (read < buffer.Length)
+            {
+                // Truncado → devolver solo lo leído
+                byte[] trimmed = new byte[read];
+                Array.Copy(buffer, trimmed, read);
+                return trimmed;
+            }
+
             return buffer;
         }
     }
