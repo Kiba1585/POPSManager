@@ -1,95 +1,153 @@
+using System;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
     public static class NameCleaner
     {
+        // Palabras menores que deben ir en minúsculas
         private static readonly string[] MinorWords =
         {
             "of", "the", "and", "to", "in", "on", "at", "for", "from", "a", "an"
         };
 
+        // Regex profesional para detectar discos
+        private static readonly Regex DiscRegex =
+            new(@"(?:DISC|DISK|CD)[\s\-_]*0?(\d{1,2})|(?:D)(\d{1,2})",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        // Regex para eliminar tags comunes
+        private static readonly Regex RegionRegex =
+            new(@"\b(PAL|NTSC|NTSC-U|NTSC-J)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex LanguageRegex =
+            new(@"\b(ESP|ES|EN|ENG|FRA|GER|ITA|MULTI|MULTI\d?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex VersionRegex =
+            new(@"\b(v\d+\.\d+|Rev\s*\d+|Beta|Demo)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex TrackRegex =
+            new(@"\bTrack\s*\d+\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex EmbeddedIdRegex =
+            new(@"\b(SCES|SLES|SCUS|SLUS|SLPS|SLPM|SCPS)[-_]?\d+\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex BadSymbolsRegex =
+            new(@"[\[\]\{\}#@%&]+", RegexOptions.Compiled);
+
+        private static readonly Regex SpaceNormalizer =
+            new(@"\s{2,}", RegexOptions.Compiled);
+
+        private static readonly Regex UnderscoreDotNormalizer =
+            new(@"[_\.]+", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Limpieza completa del nombre, con detección de disco.
+        /// </summary>
         public static string Clean(string name, out string? cdTag)
         {
             cdTag = DetectDisc(name);
 
-            // Eliminar tag de disco
-            name = Regex.Replace(name, @"(\(|\[|\{)?(Disc|Disk|CD|D)\s*0?([1-9])(\\)?(\)|\]|\})?", "", RegexOptions.IgnoreCase);
+            // 1. Eliminar tag de disco
+            name = DiscRegex.Replace(name, "");
 
-            // Región
-            name = Regex.Replace(name, @"\[(PAL|NTSC|NTSC-U|NTSC-J)\]", "", RegexOptions.IgnoreCase);
-            name = Regex.Replace(name, @"\((PAL|NTSC|NTSC-U|NTSC-J)\)", "", RegexOptions.IgnoreCase);
+            // 2. Eliminar región
+            name = RegionRegex.Replace(name, "");
 
-            // Idiomas
-            name = Regex.Replace(name, @"\((ESP|ES|EN|ENG|FRA|GER|ITA|MULTI|MULTI5)\)", "", RegexOptions.IgnoreCase);
+            // 3. Eliminar idiomas
+            name = LanguageRegex.Replace(name, "");
 
-            // Versiones
-            name = Regex.Replace(name, @"\(v\d+\.\d+\)", "", RegexOptions.IgnoreCase);
-            name = Regex.Replace(name, @"\(Rev\s*\d+\)", "", RegexOptions.IgnoreCase);
-            name = Regex.Replace(name, @"\(Beta\)", "", RegexOptions.IgnoreCase);
-            name = Regex.Replace(name, @"\(Demo\)", "", RegexOptions.IgnoreCase);
+            // 4. Eliminar versiones
+            name = VersionRegex.Replace(name, "");
 
-            // Tracks
-            name = Regex.Replace(name, @"\(Track\s*\d+\)", "", RegexOptions.IgnoreCase);
+            // 5. Eliminar tracks
+            name = TrackRegex.Replace(name, "");
 
-            // IDs incrustados
-            name = Regex.Replace(name, @"(SCES|SLES|SCUS|SLUS|SLPS|SLPM|SCPS)[-_]?\d+", "", RegexOptions.IgnoreCase);
+            // 6. Eliminar IDs incrustados
+            name = EmbeddedIdRegex.Replace(name, "");
 
-            // Símbolos basura
-            name = Regex.Replace(name, @"[\[\]\{\}#@%!&]+", "", RegexOptions.IgnoreCase);
+            // 7. Eliminar símbolos basura
+            name = BadSymbolsRegex.Replace(name, "");
 
-            // Normalización
-            name = Regex.Replace(name, @"[_\.]+", " ");
-            name = Regex.Replace(name, @"\s{2,}", " ");
+            // 8. Normalizar separadores
+            name = UnderscoreDotNormalizer.Replace(name, " ");
 
-            return ToTitleCaseSmart(name.Trim());
+            // 9. Normalizar espacios
+            name = SpaceNormalizer.Replace(name, " ");
+
+            // 10. Limpieza final
+            name = name.Trim();
+
+            // 11. Title Case inteligente
+            return ToTitleCaseSmart(name);
         }
 
+        /// <summary>
+        /// Limpieza sin detección de disco (para títulos).
+        /// </summary>
         public static string CleanTitleOnly(string name)
         {
-            name = Regex.Replace(name, @"\[(PAL|NTSC|NTSC-U|NTSC-J)\]", "", RegexOptions.IgnoreCase);
-            name = Regex.Replace(name, @"\((PAL|NTSC|NTSC-U|NTSC-J)\)", "", RegexOptions.IgnoreCase);
-
-            name = Regex.Replace(name, @"\((ESP|ES|EN|ENG|FRA|GER|ITA|MULTI|MULTI5)\)", "", RegexOptions.IgnoreCase);
-
-            name = Regex.Replace(name, @"\(v\d+\.\d+\)", "", RegexOptions.IgnoreCase);
-            name = Regex.Replace(name, @"\(Rev\s*\d+\)", "", RegexOptions.IgnoreCase);
-
-            name = Regex.Replace(name, @"(SCES|SLES|SCUS|SLUS|SLPS|SLPM|SCPS)[-_]?\d+", "", RegexOptions.IgnoreCase);
-
-            name = Regex.Replace(name, @"[\[\]\{\}#@%!&]+", "", RegexOptions.IgnoreCase);
-
-            name = Regex.Replace(name, @"[_\.]+", " ");
-            name = Regex.Replace(name, @"\s{2,}", " ");
+            name = RegionRegex.Replace(name, "");
+            name = LanguageRegex.Replace(name, "");
+            name = VersionRegex.Replace(name, "");
+            name = EmbeddedIdRegex.Replace(name, "");
+            name = BadSymbolsRegex.Replace(name, "");
+            name = UnderscoreDotNormalizer.Replace(name, " ");
+            name = SpaceNormalizer.Replace(name, " ");
 
             return ToTitleCaseSmart(name.Trim());
         }
 
+        /// <summary>
+        /// Detección avanzada del número de disco.
+        /// </summary>
         private static string? DetectDisc(string name)
         {
-            var match = Regex.Match(name, @"(Disc|Disk|CD|D)\s*0?([1-9])", RegexOptions.IgnoreCase);
-            if (match.Success)
-                return $"CD{match.Groups[2].Value}";
+            var m = DiscRegex.Match(name);
+            if (!m.Success)
+                return null;
+
+            if (m.Groups[1].Success)
+                return $"CD{m.Groups[1].Value}";
+
+            if (m.Groups[2].Success)
+                return $"CD{m.Groups[2].Value}";
 
             return null;
         }
 
+        /// <summary>
+        /// Title Case inteligente con preservación de símbolos válidos.
+        /// </summary>
         private static string ToTitleCaseSmart(string input)
         {
+            if (string.IsNullOrWhiteSpace(input))
+                return "";
+
             var words = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
             for (int i = 0; i < words.Length; i++)
             {
                 string w = words[i].ToLowerInvariant();
 
+                // Palabras menores en minúsculas (excepto la primera)
                 if (i > 0 && MinorWords.Contains(w))
                 {
                     words[i] = w;
+                    continue;
                 }
-                else
+
+                // Preservar símbolos válidos
+                if (w.Contains(':') || w.Contains('-') || w.Contains('!') || w.Contains('?'))
                 {
                     words[i] = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(w);
+                    continue;
                 }
+
+                // Title Case normal
+                words[i] = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(w);
             }
 
             return string.Join(" ", words);
