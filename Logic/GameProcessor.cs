@@ -1,7 +1,7 @@
 using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.Logic;
-using POPSManager.Logic.Covers;   // ← NECESARIO PARA ArtDownloader
+using POPSManager.Logic.Covers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -140,7 +140,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  AGRUPAR MULTIDISCO (ULTRA PRO)
+        //  AGRUPAR MULTIDISCO
         // ============================================================
         private Dictionary<string, List<string>> GroupMultiDisc(string[] files)
         {
@@ -149,7 +149,7 @@ namespace POPSManager.Logic
             foreach (var file in files)
             {
                 string name = Path.GetFileNameWithoutExtension(file);
-                string baseName = NameCleaner.Clean(name, out _);
+                string baseName = NameCleaner.Clean(name, out _) ?? name;
 
                 if (!groups.ContainsKey(baseName))
                     groups[baseName] = new List<string>();
@@ -171,7 +171,7 @@ namespace POPSManager.Logic
             discs = discs.OrderBy(d =>
             {
                 NameCleaner.Clean(Path.GetFileNameWithoutExtension(d), out string? cdTag);
-                return MultiDiscManager.ExtractDiscNumber(cdTag);
+                return MultiDiscManager.ExtractDiscNumber(cdTag ?? "");
             }).ToList();
 
             // Detectar ID real desde el VCD
@@ -266,7 +266,7 @@ namespace POPSManager.Logic
             }
 
             // ============================================================
-            //  ELF (PS1) — CD1 + APPS
+            //  ELF (PS1)
             // ============================================================
             GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder);
 
@@ -274,7 +274,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  GENERAR ELF PARA CD1 (PS1) + COPIA A APPS
+        //  GENERAR ELF PARA CD1 (PS1)
         // ============================================================
         private void GenerateElfForDisc1(string gameId, string title, string gameRootFolder)
         {
@@ -307,7 +307,7 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // COPIA A APPS (OPL)
+            // COPIA A APPS
             string appsElf = Path.Combine(paths.AppsFolder, $"{gameId}.ELF");
             File.Copy(outputElf, appsElf, true);
 
