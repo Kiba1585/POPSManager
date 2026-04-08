@@ -11,19 +11,31 @@ namespace POPSManager.UI
             InitializeComponent();
         }
 
-        public void LoadCover(string gameId, string title, string popsFolder)
+        /// <summary>
+        /// Carga una portada .ART compatible con OPL.
+        /// baseFolder = paths.PopsFolder o paths.DvdFolder
+        /// </summary>
+        public void LoadCover(string gameId, string title, string baseFolder)
         {
             GameTitle.Text = title;
             GameId.Text = gameId;
 
-            string coverPath = Path.Combine(popsFolder, "COVERS", $"{gameId}.jpg");
+            // Ruta OPL: /ART/{GAMEID}.ART
+            string artPath = Path.Combine(baseFolder, "ART", $"{gameId}.ART");
 
-            if (File.Exists(coverPath))
+            if (File.Exists(artPath))
             {
-                CoverImage.Source = new BitmapImage(new Uri(coverPath));
+                var img = new BitmapImage();
+                img.BeginInit();
+                img.UriSource = new Uri(artPath);
+                img.CacheOption = BitmapCacheOption.OnLoad;
+                img.EndInit();
+
+                CoverImage.Source = img;
             }
             else
             {
+                // Placeholder si no existe ART
                 CoverImage.Source = new BitmapImage(
                     new Uri("pack://application:,,,/POPSManager;component/Assets/placeholder.jpg"));
             }
