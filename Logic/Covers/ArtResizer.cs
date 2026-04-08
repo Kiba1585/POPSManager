@@ -1,6 +1,7 @@
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
+using System;
+using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace POPSManager.Logic.Covers
 {
@@ -8,18 +9,30 @@ namespace POPSManager.Logic.Covers
     {
         public static void ResizeToArt(string inputPath, string outputArtPath)
         {
-            using var original = Image.FromFile(inputPath);
-            using var bmp = new Bitmap(140, 200);
+            // Cargar imagen original
+            BitmapImage original = new BitmapImage();
+            original.BeginInit();
+            original.UriSource = new Uri(inputPath, UriKind.Absolute);
+            original.CacheOption = BitmapCacheOption.OnLoad;
+            original.EndInit();
 
-            using (var g = Graphics.FromImage(bmp))
+            // Crear un transform para redimensionar
+            var scale = new ScaleTransform(
+                scaleX: 140.0 / original.PixelWidth,
+                scaleY: 200.0 / original.PixelHeight
+            );
+
+            var transformed = new TransformedBitmap(original, scale);
+
+            // Codificar como JPG (renombrado a .ART)
+            JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+            encoder.QualityLevel = 90;
+            encoder.Frames.Add(BitmapFrame.Create(transformed));
+
+            using (var fs = new FileStream(outputArtPath, FileMode.Create, FileAccess.Write))
             {
-                g.CompositingQuality = CompositingQuality.HighQuality;
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.SmoothingMode = SmoothingMode.HighQuality;
-                g.DrawImage(original, 0, 0, 140, 200);
+                encoder.Save(fs);
             }
-
-            bmp.Save(outputArtPath, ImageFormat.Jpeg);
         }
     }
 }
