@@ -156,12 +156,22 @@ namespace POPSManager.Logic
             }
 
             // ============================================================
-            //  DESCARGA DE COVER (OPCIONAL)
+            //  DESCARGA DE COVER (OPCIONAL) — OPL COMPATIBLE
             // ============================================================
             if (useCovers && dbInfo?.CoverUrl != null)
             {
-                string coversFolder = Path.Combine(paths.PopsFolder, "COVERS");
-                CoverDownloader.DownloadCover(detectedId, dbInfo.CoverUrl, coversFolder, log);
+                string artFolder = Path.Combine(paths.PopsFolder, "ART");
+                string artPath = Path.Combine(artFolder, $"{detectedId}.ART");
+
+                Directory.CreateDirectory(artFolder);
+
+                string? jpg = CoverDownloader.DownloadCover(detectedId, dbInfo.CoverUrl, artFolder, log);
+
+                if (jpg != null)
+                {
+                    File.Move(jpg, artPath, true);
+                    log($"[COVER] Convertido a ART → {artPath}");
+                }
             }
 
             // Procesar cada disco
@@ -232,7 +242,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR PS2 (ISO)
+        //  PROCESAR PS2 (ISO) — AHORA CON COVERS OPL
         // ============================================================
         private void ProcessPS2(string isoPath)
         {
@@ -250,6 +260,41 @@ namespace POPSManager.Logic
 
             string cleanTitle = NameCleaner.CleanTitleOnly(originalName);
 
+            // ============================================================
+            //  BASE DE DATOS PS2
+            // ============================================================
+            GameInfo? dbInfo = null;
+
+            if (useDatabase)
+            {
+                dbInfo = GameDatabase.Lookup(detectedId);
+
+                if (dbInfo != null)
+                {
+                    cleanTitle = dbInfo.Name;
+                    log($"[DB] Nombre oficial PS2 encontrado: {cleanTitle}");
+
+                    // ============================================================
+                    //  DESCARGA DE COVER PS2 — OPL COMPATIBLE
+                    // ============================================================
+                    if (useCovers && dbInfo.CoverUrl != null)
+                    {
+                        string artFolder = Path.Combine(paths.DvdFolder, "ART");
+                        string artPath = Path.Combine(artFolder, $"{detectedId}.ART");
+
+                        Directory.CreateDirectory(artFolder);
+
+                        string? jpg = CoverDownloader.DownloadCover(detectedId, dbInfo.CoverUrl, artFolder, log);
+
+                        if (jpg != null)
+                        {
+                            File.Move(jpg, artPath, true);
+                            log($"[COVER] PS2 convertido a ART → {artPath}");
+                        }
+                    }
+                }
+            }
+
             string finalName = $"{detectedId}.{cleanTitle}.iso";
 
             string dest = Path.Combine(paths.DvdFolder, finalName);
@@ -260,7 +305,7 @@ namespace POPSManager.Logic
             log($"[PS2] Copiado ISO → {dest}");
 
             notify(new UiNotification(NotificationType.Success,
-                $"{originalName} copiado a DVD correctamente."));
+                $"{cleanTitle} copiado a DVD correctamente."));
         }
     }
 }
