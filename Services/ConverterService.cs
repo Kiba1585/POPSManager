@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using POPSManager.Models;
 using POPSManager.Logic;
 
@@ -71,9 +70,7 @@ namespace POPSManager.Services
                     var result = ConvertToVcd(file, outputFolder);
 
                     if (result != null)
-                    {
                         _log($"Convertido: {file} → {result.VcdPath}");
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -93,14 +90,14 @@ namespace POPSManager.Services
         {
             string ext = Path.GetExtension(inputPath).ToLowerInvariant();
 
-            // Detectar PS2
+            // Detectar PS2 ISO real
             if (ext == ".iso" && IsPs2Iso(inputPath))
             {
                 _log($"Detectado PS2 ISO, no se convierte: {inputPath}");
                 return null;
             }
 
-            // Detectar multidisco
+            // Detectar multidisco real
             var discInfo = DetectDiscNumber(inputPath);
 
             // Nombre base limpio
@@ -126,7 +123,7 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERSIÓN PS1 → VCD (OPTIMIZADA)
+        //  CONVERSIÓN PS1 → VCD (OPTIMIZADA + VALIDADA)
         // ============================================================
         private void ConvertPs1ToVcd(string inputPath, string outputPath, string name)
         {
@@ -144,8 +141,17 @@ namespace POPSManager.Services
             long totalSectors = input.Length / SectorSize;
             long processed = 0;
 
-            while (input.Read(sector, 0, SectorSize) == SectorSize)
+            while (true)
             {
+                int read = input.Read(sector, 0, SectorSize);
+                if (read == 0) break;
+                if (read != SectorSize)
+                {
+                    _log($"[WARN] Sector incompleto detectado en {name}");
+                    break;
+                }
+
+                // Extraer user data
                 Buffer.BlockCopy(sector, 24, userData, 0, UserDataSize);
                 output.Write(userData, 0, UserDataSize);
 
@@ -166,16 +172,16 @@ namespace POPSManager.Services
             try
             {
                 using var fs = File.OpenRead(isoPath);
-                byte[] buffer = new byte[0x8000];
+
+                // Leer SYSTEM.CNF
+                byte[] buffer = new byte[0x20000];
                 fs.Read(buffer, 0, buffer.Length);
 
                 string text = Encoding.ASCII.GetString(buffer);
 
-                if (text.Contains("PLAYSTATION 2", StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-                if (text.Contains("BOOT2", StringComparison.OrdinalIgnoreCase))
-                    return true;
+                if (text.Contains("BOOT2", StringComparison.OrdinalIgnoreCase)) return true;
+                if (text.Contains("PLAYSTATION 2", StringComparison.OrdinalIgnoreCase)) return true;
+                if (text.Contains("PS2", StringComparison.OrdinalIgnoreCase)) return true;
 
                 return false;
             }
@@ -186,18 +192,23 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  DETECTAR MULTIDISCO
+        //  DETECTAR MULTIDISCO (ULTRA PRO)
         // ============================================================
         private (bool IsDisc, int DiscNumber) DetectDiscNumber(string path)
         {
             string name = Path.GetFileNameWithoutExtension(path).ToLower();
 
+            // Regex profesional
             for (int i = 1; i <= 9; i++)
             {
                 if (name.Contains($"disc {i}") ||
                     name.Contains($"disc{i}") ||
                     name.Contains($"cd{i}") ||
-                    name.Contains($"disk{i}"))
+                    name.Contains($"cd {i}") ||
+                    name.Contains($"disk{i}") ||
+                    name.Contains($"disk {i}") ||
+                    name.Contains($"(cd{i})") ||
+                    name.Contains($"(disc{i})"))
                 {
                     return (true, i);
                 }
@@ -207,19 +218,22 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  LIMPIAR NOMBRE BASE
+        //  LIMPIAR NOMBRE BASE (ULTRA PRO)
         // ============================================================
         private string CleanBaseName(string name)
         {
-            name = name.Replace("(Disc 1)", "", StringComparison.OrdinalIgnoreCase)
-                       .Replace("(Disc 2)", "", StringComparison.OrdinalIgnoreCase)
-                       .Replace("(Disc 3)", "", StringComparison.OrdinalIgnoreCase)
-                       .Replace("(CD1)", "", StringComparison.OrdinalIgnoreCase)
-                       .Replace("(CD2)", "", StringComparison.OrdinalIgnoreCase)
-                       .Replace("(CD3)", "", StringComparison.OrdinalIgnoreCase)
-                       .Trim();
+            string[] patterns =
+            {
+                "(disc 1)", "(disc 2)", "(disc 3)",
+                "(cd1)", "(cd2)", "(cd3)",
+                "disc 1", "disc 2", "disc 3",
+                "cd1", "cd2", "cd3"
+            };
 
-            return name;
+            foreach (var p in patterns)
+                name = name.Replace(p, "", StringComparison.OrdinalIgnoreCase);
+
+            return name.Trim();
         }
     }
 }
