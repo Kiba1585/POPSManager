@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 
@@ -9,7 +8,8 @@ namespace POPSManager.Logic
 {
     public static class GameDatabase
     {
-        private static readonly Dictionary<string, GameEntry> Cache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, GameEntry> Cache =
+            new(StringComparer.OrdinalIgnoreCase);
 
         private static Dictionary<string, GameEntry>? ps1Db;
         private static Dictionary<string, GameEntry>? ps2Db;
@@ -28,14 +28,15 @@ namespace POPSManager.Logic
             try
             {
                 var asm = Assembly.GetExecutingAssembly();
-                using var stream = asm.GetManifestResourceStream(resourceName);
+                using Stream? stream = asm.GetManifestResourceStream(resourceName);
                 if (stream == null)
                     return null;
 
                 using var reader = new StreamReader(stream);
                 string json = reader.ReadToEnd();
 
-                return JsonSerializer.Deserialize<Dictionary<string, GameEntry>>(json);
+                var data = JsonSerializer.Deserialize<Dictionary<string, GameEntry>>(json);
+                return data ?? null;
             }
             catch
             {
@@ -46,36 +47,42 @@ namespace POPSManager.Logic
         // ============================================================
         //  MÉTODO PRINCIPAL
         // ============================================================
-        public static bool TryGetEntry(string gameId, out GameEntry entry)
+        public static bool TryGetEntry(string gameId, out GameEntry? entry)
         {
-            entry = null!;
+            entry = null;
 
             if (string.IsNullOrWhiteSpace(gameId))
                 return false;
 
             // Cache
-            if (Cache.TryGetValue(gameId, out entry))
+            if (Cache.TryGetValue(gameId, out var cached))
+            {
+                entry = cached;
                 return true;
+            }
 
             // PS1
-            if (ps1Db != null && ps1Db.TryGetValue(gameId, out entry))
+            if (ps1Db != null && ps1Db.TryGetValue(gameId, out var ps1Entry))
             {
-                Cache[gameId] = entry;
+                Cache[gameId] = ps1Entry;
+                entry = ps1Entry;
                 return true;
             }
 
             // PS2
-            if (ps2Db != null && ps2Db.TryGetValue(gameId, out entry))
+            if (ps2Db != null && ps2Db.TryGetValue(gameId, out var ps2Entry))
             {
-                Cache[gameId] = entry;
+                Cache[gameId] = ps2Entry;
+                entry = ps2Entry;
                 return true;
             }
 
             // Online lookup (opcional)
-            entry = TryOnlineLookup(gameId);
-            if (entry != null)
+            var online = TryOnlineLookup(gameId);
+            if (online != null)
             {
-                Cache[gameId] = entry;
+                Cache[gameId] = online;
+                entry = online;
                 return true;
             }
 
@@ -90,7 +97,6 @@ namespace POPSManager.Logic
             try
             {
                 // Aquí no hacemos llamadas reales.
-                // POPSManager puede implementar un plugin opcional.
                 return null;
             }
             catch
@@ -104,10 +110,9 @@ namespace POPSManager.Logic
         // ============================================================
         public static string? TryGetCover(string gameId)
         {
-            if (!TryGetEntry(gameId, out var entry))
-                return null;
-
-            return entry.CoverUrl;
+            return TryGetEntry(gameId, out var entry)
+                ? entry?.CoverUrl
+                : null;
         }
 
         // ============================================================
@@ -115,10 +120,9 @@ namespace POPSManager.Logic
         // ============================================================
         public static IEnumerable<string>? TryGetFixes(string gameId)
         {
-            if (!TryGetEntry(gameId, out var entry))
-                return null;
-
-            return entry.CheatFixes;
+            return TryGetEntry(gameId, out var entry)
+                ? entry?.CheatFixes
+                : null;
         }
 
         // ============================================================
@@ -126,10 +130,9 @@ namespace POPSManager.Logic
         // ============================================================
         public static GameEntry? TryGetMetadata(string gameId)
         {
-            if (!TryGetEntry(gameId, out var entry))
-                return null;
-
-            return entry;
+            return TryGetEntry(gameId, out var entry)
+                ? entry
+                : null;
         }
     }
 
