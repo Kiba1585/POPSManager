@@ -15,25 +15,24 @@ namespace POPSManager.Services
         public ProgressService Progress { get; }
         public ConverterService Converter { get; }
 
-        // GameProcessor se inicializa bajo demanda
+        // GameProcessor se inicializa bajo demanda (Lazy)
         public GameProcessor GameProcessor => _gameProcessor.Value;
-
         private readonly Lazy<GameProcessor> _gameProcessor;
 
         public AppServices()
         {
             // ============================
-            //  LOGGING
+            //  LOGGING (PRIMERO SIEMPRE)
             // ============================
             LogService = new LoggingService();
 
             // ============================
-            //  SETTINGS
+            //  SETTINGS (depende de Logging)
             // ============================
             Settings = new SettingsService(LogService.Write);
 
             // ============================
-            //  PATHS (depende de Settings)
+            //  PATHS (depende de Settings + Logging)
             // ============================
             Paths = new PathsService(LogService.Write, Settings);
 
@@ -60,14 +59,15 @@ namespace POPSManager.Services
 
             // ============================
             //  GAME PROCESSOR (PS1 + PS2)
+            //  Lazy → solo se crea cuando se usa
             // ============================
             _gameProcessor = new Lazy<GameProcessor>(() =>
                 new GameProcessor(
-                    Progress.SetProgress,
-                    Progress.SetStatus,
-                    LogService.Write,
-                    Notifications.Show,
-                    Paths
+                    Progress.SetProgress,   // callback progreso %
+                    Progress.SetStatus,     // callback texto estado
+                    LogService.Write,       // logs
+                    Notifications.Show,     // notificaciones
+                    Paths                   // rutas
                 ));
         }
     }
