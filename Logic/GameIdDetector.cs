@@ -13,6 +13,11 @@ namespace POPSManager.Logic
             "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPS"
         };
 
+        // Regex robusto para BOOT = cdrom:\XXXX_999.99;1
+        private static readonly Regex BootRegex =
+            new(@"BOOT\s*=\s*cdrom:\\\s*([A-Z]{4})[-_ ]?(\d{3})[._ ]?(\d{2})",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         // ============================================================
         //  DETECCIÓN REAL DESDE EL VCD (LEYENDO SYSTEM.CNF)
         // ============================================================
@@ -20,8 +25,8 @@ namespace POPSManager.Logic
         {
             try
             {
-                // Leer primeros 3 MB del VCD (suficiente para SYSTEM.CNF)
-                byte[] buffer = new byte[3 * 1024 * 1024];
+                // Leer primeros 8 MB (más seguro que 3 MB)
+                byte[] buffer = new byte[8 * 1024 * 1024];
 
                 using (var fs = new FileStream(vcdPath, FileMode.Open, FileAccess.Read))
                 {
@@ -36,18 +41,19 @@ namespace POPSManager.Logic
                     return null;
 
                 // Extraer un bloque alrededor
-                string block = text.Substring(index, 2000);
+                string block = text.Substring(index, Math.Min(4000, text.Length - index));
 
-                // Buscar línea BOOT
-                var match = Regex.Match(block, @"BOOT\s*=\s*cdrom:\\([A-Z]{4}[_ ]\d{3}\.\d{2})", RegexOptions.IgnoreCase);
+                // Buscar BOOT
+                var match = BootRegex.Match(block);
 
                 if (match.Success)
                 {
-                    string id = match.Groups[1].Value
-                        .Replace(" ", "_")
-                        .Replace(".", "_");
+                    string prefix = match.Groups[1].Value.ToUpper();
+                    string part1 = match.Groups[2].Value;
+                    string part2 = match.Groups[3].Value;
 
-                    return id;
+                    // Normalizar → SCES_02105
+                    return $"{prefix}_{part1}{part2}";
                 }
             }
             catch
@@ -67,18 +73,26 @@ namespace POPSManager.Logic
 
             foreach (var p in Patterns)
             {
-                if (name.Contains(p))
+                int index = name.IndexOf(p);
+                if (index >= 0)
                 {
-                    int index = name.IndexOf(p);
-                    string id = name.Substring(index);
+                    string raw = name.Substring(index);
 
-                    id = id.Replace("-", "_")
-                           .Replace(" ", "_");
+                    // Quitar basura
+                    raw = raw.Replace("-", "_")
+                             .Replace(" ", "_")
+                             .Replace(".", "_");
 
-                    if (id.Length > 12)
-                        id = id.Substring(0, 12);
+                    // Extraer solo prefijo + números
+                    var m = Regex.Match(raw, @"([A-Z]{4})[_ ]?(\d{3})(\d{2})?");
+                    if (m.Success)
+                    {
+                        string prefix = m.Groups[1].Value;
+                        string part1 = m.Groups[2].Value;
+                        string part2 = m.Groups[3].Success ? m.Groups[3].Value : "00";
 
-                    return id;
+                        return $"{prefix}_{part1}{part2}";
+                    }
                 }
             }
 
