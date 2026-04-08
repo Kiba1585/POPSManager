@@ -76,8 +76,9 @@ namespace POPSManager.Views
                 FilesList.Items.Add(Path.GetFileName(file));
 
             Services.Notifications.Show(
-                new UiNotification(NotificationType.Info,
-                $"Se detectaron {FilesList.Items.Count} archivos."));
+                $"Se detectaron {FilesList.Items.Count} archivos.",
+                NotificationType.Info
+            );
         }
 
         // ============================================================
@@ -88,24 +89,27 @@ namespace POPSManager.Views
             if (!Directory.Exists(SourcePath.Text))
             {
                 Services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    "La carpeta de origen no existe."));
+                    "La carpeta de origen no existe.",
+                    NotificationType.Error
+                );
                 return;
             }
 
             if (!Directory.Exists(OutputPath.Text))
             {
                 Services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    "La carpeta de destino no existe."));
+                    "La carpeta de destino no existe.",
+                    NotificationType.Error
+                );
                 return;
             }
 
             if (FilesList.Items.Count == 0)
             {
                 Services.Notifications.Show(
-                    new UiNotification(NotificationType.Warning,
-                    "No hay archivos para convertir."));
+                    "No hay archivos para convertir.",
+                    NotificationType.Warning
+                );
                 return;
             }
 
@@ -119,12 +123,15 @@ namespace POPSManager.Views
                 });
 
                 Services.Progress.SetStatus("Listo");
+
+                Services.Notifications.Success("Conversión completada.");
             }
             catch (Exception ex)
             {
                 Services.Notifications.Show(
-                    new UiNotification(NotificationType.Error,
-                    $"Error durante la conversión: {ex.Message}"));
+                    $"Error durante la conversión: {ex.Message}",
+                    NotificationType.Error
+                );
             }
             finally
             {
