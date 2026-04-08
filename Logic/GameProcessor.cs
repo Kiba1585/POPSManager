@@ -15,18 +15,23 @@ namespace POPSManager.Logic
         private readonly Action<UiNotification> notify;
         private readonly PathsService paths;
 
+        // Activar o desactivar base de datos externa
+        private readonly bool useDatabase = false;
+
         public GameProcessor(
             Action<int> updateProgress,
             Action<string> updateSpinner,
             Action<string> log,
             Action<UiNotification> notify,
-            PathsService paths)
+            PathsService paths,
+            bool useDatabase = false)
         {
             this.updateProgress = updateProgress;
             this.updateSpinner = updateSpinner;
             this.log = log;
             this.notify = notify;
             this.paths = paths;
+            this.useDatabase = useDatabase;
         }
 
         // ============================================================
@@ -47,7 +52,6 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // Agrupar multidisco
             var groups = GroupMultiDisc(files);
 
             int index = 0;
@@ -114,7 +118,7 @@ namespace POPSManager.Logic
                 return cdTag != null ? int.Parse(cdTag.Replace("CD", "")) : 1;
             }).ToList();
 
-            // Detectar ID del primer disco
+            // Detectar ID real desde el VCD
             string firstDisc = discs.First();
             string? detectedId = GameIdDetector.DetectGameId(firstDisc);
 
@@ -128,13 +132,22 @@ namespace POPSManager.Logic
                 return;
             }
 
+            // Obtener nombre del juego
+            string cleanTitle = NameCleaner.Clean(baseName, out _);
+
+            if (useDatabase)
+            {
+                string? dbName = GameDatabase.LookupName(detectedId);
+                if (!string.IsNullOrWhiteSpace(dbName))
+                    cleanTitle = dbName;
+            }
+
             // Procesar cada disco
             int discNumber = 1;
             List<string> discPaths = new();
 
             foreach (var disc in discs)
             {
-                string cleanTitle = NameCleaner.Clean(baseName, out _);
                 string finalFileName = $"{detectedId}.{cleanTitle} (CD{discNumber}).VCD";
 
                 string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{detectedId} (CD{discNumber})");
@@ -153,17 +166,24 @@ namespace POPSManager.Logic
             // Generar DISCS.TXT
             MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, log);
 
+            // Generar CHEAT.TXT solo si es PAL
+            if (GameIdDetector.IsPalRegion(detectedId))
+            {
+                string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{detectedId} (CD1)");
+                CheatGenerator.GenerateCheatTxt(detectedId, popsDiscFolder, log);
+            }
+
             // Generar ELF solo para CD1
-            GenerateElfForDisc1(detectedId, baseName);
+            GenerateElfForDisc1(detectedId, cleanTitle);
 
             notify(new UiNotification(NotificationType.Success,
-                $"{baseName} procesado correctamente."));
+                $"{cleanTitle} procesado correctamente."));
         }
 
         // ============================================================
         //  GENERAR ELF PARA CD1
         // ============================================================
-        private void GenerateElfForDisc1(string gameId, string baseName)
+        private void GenerateElfForDisc1(string gameId, string title)
         {
             string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD1)");
             string vcdName = Directory.GetFiles(popsDiscFolder, "*.VCD").First();
@@ -178,7 +198,7 @@ namespace POPSManager.Logic
                 outputElf,
                 gameId,
                 vcdPopstarterPath,
-                $"{baseName} (CD1)",
+                $"{title} (CD1)",
                 log
             );
 
