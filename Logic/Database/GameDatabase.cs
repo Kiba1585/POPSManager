@@ -21,56 +21,60 @@ namespace POPSManager.Logic.Database
             // ============================
             // Cargar PS1
             // ============================
-            using (var stream = assembly.GetManifestResourceStream("POPSManager.Data.ps1db.json"))
-            {
-                if (stream != null)
-                {
-                    using var reader = new StreamReader(stream);
-                    string json = reader.ReadToEnd();
-                    ps1Db = JsonSerializer.Deserialize<Dictionary<string, GameInfo>>(json);
-                }
-            }
+            ps1Db = LoadDbFromResource(assembly, "POPSManager.Data.ps1db.json");
 
             // ============================
             // Cargar PS2
             // ============================
-            using (var stream = assembly.GetManifestResourceStream("POPSManager.Data.ps2db.json"))
+            ps2Db = LoadDbFromResource(assembly, "POPSManager.Data.ps2db.json");
+        }
+
+        private static Dictionary<string, GameInfo>? LoadDbFromResource(Assembly assembly, string resourceName)
+        {
+            try
             {
-                if (stream != null)
-                {
-                    using var reader = new StreamReader(stream);
-                    string json = reader.ReadToEnd();
-                    ps2Db = JsonSerializer.Deserialize<Dictionary<string, GameInfo>>(json);
-                }
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream == null)
+                    return null;
+
+                using var reader = new StreamReader(stream);
+                string json = reader.ReadToEnd();
+
+                return JsonSerializer.Deserialize<Dictionary<string, GameInfo>>(json);
+            }
+            catch
+            {
+                return null;
             }
         }
 
-        // Detectar si un ID es PS1 o PS2
+        // ============================
+        // DETECCIÓN PS1 / PS2 REAL
+        // ============================
         private static bool IsPs1(string id)
         {
-            return id.StartsWith("SCES") ||
-                   id.StartsWith("SLES") ||
-                   id.StartsWith("SCUS") ||
-                   id.StartsWith("SLUS") ||
-                   id.StartsWith("SLPS") ||
-                   id.StartsWith("SLPM") ||
-                   id.StartsWith("SCPS");
+            // PS1 → 4 dígitos
+            // Ej: SCES_02105
+            return id.Length == 10;
         }
 
         private static bool IsPs2(string id)
         {
-            return id.StartsWith("SLES") ||
-                   id.StartsWith("SLUS") ||
-                   id.StartsWith("SCUS") ||
-                   id.StartsWith("SCES") ||
-                   id.StartsWith("SLPM") ||
-                   id.StartsWith("SLPS");
+            // PS2 → 5 dígitos
+            // Ej: SLUS_20946
+            return id.Length == 11;
         }
 
+        // ============================
+        // LOOKUP PRINCIPAL
+        // ============================
         public static GameInfo? Lookup(string gameId)
         {
             if (string.IsNullOrWhiteSpace(gameId))
                 return null;
+
+            // Normalizar
+            gameId = gameId.Trim().ToUpper();
 
             bool ps1 = IsPs1(gameId);
             bool ps2 = IsPs2(gameId);
@@ -83,6 +87,13 @@ namespace POPSManager.Logic.Database
 
             if (ps2 && ps2Db != null && ps2Db.TryGetValue(gameId, out var info2))
                 return info2;
+
+            // Fallback cruzado (por si un ID está en la otra DB)
+            if (ps1Db != null && ps1Db.TryGetValue(gameId, out var infoCross1))
+                return infoCross1;
+
+            if (ps2Db != null && ps2Db.TryGetValue(gameId, out var infoCross2))
+                return infoCross2;
 
             // ============================
             // 2. Redump
