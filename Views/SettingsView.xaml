@@ -6,7 +6,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   CanContentScroll="True">
 
-        <StackPanel Margin="20" Spacing="20">
+        <StackPanel Margin="20">
 
             <!-- ========================================================= -->
             <!--  TÍTULO -->
@@ -14,24 +14,28 @@
             <TextBlock Text="Configuración"
                        FontSize="28"
                        FontWeight="SemiBold"
-                       Foreground="{StaticResource Brush.TextPrimary}"/>
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       Margin="0 0 0 20"/>
 
             <!-- ========================================================= -->
             <!--  SECCIÓN: RUTAS DE SALIDA -->
             <!-- ========================================================= -->
             <Border Style="{StaticResource Card}"
                     Padding="20"
-                    Effect="{StaticResource ShadowSoft}">
+                    Effect="{StaticResource ShadowSoft}"
+                    Margin="0 0 0 20">
 
-                <StackPanel Spacing="16">
+                <StackPanel>
 
                     <TextBlock Text="Rutas de salida"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.TextPrimary}"/>
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 16"/>
 
                     <!-- POPS -->
-                    <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0 0 0 16">
 
                         <TextBox x:Name="PopsPath"
                                  Width="400"
@@ -41,7 +45,8 @@
                                  BorderBrush="{StaticResource Brush.Border}"
                                  BorderThickness="1"
                                  Padding="6"
-                                 TextWrapping="NoWrap"/>
+                                 TextWrapping="NoWrap"
+                                 Margin="0 0 10 0"/>
 
                         <Button Content="Cambiar"
                                 Style="{StaticResource SecondaryButton}"
@@ -50,7 +55,7 @@
                     </StackPanel>
 
                     <!-- APPS -->
-                    <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Orientation="Horizontal">
 
                         <TextBox x:Name="AppsPath"
                                  Width="400"
@@ -60,7 +65,8 @@
                                  BorderBrush="{StaticResource Brush.Border}"
                                  BorderThickness="1"
                                  Padding="6"
-                                 TextWrapping="NoWrap"/>
+                                 TextWrapping="NoWrap"
+                                 Margin="0 0 10 0"/>
 
                         <Button Content="Cambiar"
                                 Style="{StaticResource SecondaryButton}"
@@ -76,16 +82,18 @@
             <!-- ========================================================= -->
             <Border Style="{StaticResource Card}"
                     Padding="20"
-                    Effect="{StaticResource ShadowSoft}">
+                    Effect="{StaticResource ShadowSoft}"
+                    Margin="0 0 0 20">
 
-                <StackPanel Spacing="16">
+                <StackPanel>
 
                     <TextBlock Text="POPStarter"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.TextPrimary}"/>
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 16"/>
 
-                    <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Orientation="Horizontal">
 
                         <TextBox x:Name="ElfPathBox"
                                  Width="400"
@@ -95,7 +103,8 @@
                                  BorderBrush="{StaticResource Brush.Border}"
                                  BorderThickness="1"
                                  Padding="6"
-                                 TextWrapping="NoWrap"/>
+                                 TextWrapping="NoWrap"
+                                 Margin="0 0 10 0"/>
 
                         <Button Content="Seleccionar"
                                 Style="{StaticResource SecondaryButton}"
@@ -111,22 +120,26 @@
             <!-- ========================================================= -->
             <Border Style="{StaticResource Card}"
                     Padding="20"
-                    Effect="{StaticResource ShadowSoft}">
+                    Effect="{StaticResource ShadowSoft}"
+                    Margin="0 0 0 20">
 
-                <StackPanel Spacing="16">
+                <StackPanel>
 
                     <TextBlock Text="Opciones generales"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.TextPrimary}"/>
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 16"/>
 
                     <!-- Switch: Modo oscuro -->
-                    <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0 0 0 16">
 
                         <ToggleButton x:Name="DarkModeToggle"
                                       Width="50"
                                       Height="26"
-                                      Style="{StaticResource ToggleSwitch}"/>
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0 0 10 0"/>
 
                         <TextBlock Text="Modo oscuro"
                                    VerticalAlignment="Center"
@@ -134,12 +147,13 @@
                     </StackPanel>
 
                     <!-- Switch: Notificaciones -->
-                    <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Orientation="Horizontal">
 
                         <ToggleButton x:Name="NotificationsToggle"
                                       Width="50"
                                       Height="26"
-                                      Style="{StaticResource ToggleSwitch}"/>
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0 0 10 0"/>
 
                         <TextBlock Text="Notificaciones visuales"
                                    VerticalAlignment="Center"
@@ -156,18 +170,21 @@
                     Padding="20"
                     Effect="{StaticResource ShadowSoft}">
 
-                <StackPanel Spacing="10">
+                <StackPanel>
 
                     <TextBlock Text="Información"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource Brush.TextPrimary}"/>
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 10"/>
 
                     <TextBlock Text="Versión: 1.0.0"
-                               Foreground="{StaticResource Brush.TextSecondary}"/>
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 4"/>
 
                     <TextBlock Text="Desarrollado por Raidel"
-                               Foreground="{StaticResource Brush.TextSecondary}"/>
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 12"/>
 
                     <Button Content="Abrir carpeta del programa"
                             Style="{StaticResource SecondaryButton}"
