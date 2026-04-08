@@ -63,11 +63,12 @@ namespace POPSManager.Services
             // ============================
             _gameProcessor = new Lazy<GameProcessor>(() =>
                 new GameProcessor(
-                    Progress.SetProgress,   // callback progreso %
-                    Progress.SetStatus,     // callback texto estado
-                    LogService.Write,       // logs
-                    Notifications.Show,     // notificaciones
-                    Paths                   // rutas
+                    Progress,        // ✔ ProgressService
+                    LogService,      // ✔ LoggingService
+                    Notifications,   // ✔ NotificationService
+                    Paths,           // ✔ PathsService
+                    Settings.UseDatabase, // ✔ bool
+                    Settings.UseCovers    // ✔ bool
                 ));
         }
     }
