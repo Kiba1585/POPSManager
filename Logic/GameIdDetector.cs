@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
@@ -13,12 +14,47 @@ namespace POPSManager.Logic
         };
 
         // ============================================================
-        //  DETECCIÓN DESDE ARCHIVO (VCD)
-        //  (Actualmente no implementado, pero mantenido para futuro)
+        //  DETECCIÓN REAL DESDE EL VCD (LEYENDO SYSTEM.CNF)
         // ============================================================
         public static string? DetectGameId(string vcdPath)
         {
-            // Aquí podrías leer sectores del VCD si deseas detección real
+            try
+            {
+                // Leer primeros 3 MB del VCD (suficiente para SYSTEM.CNF)
+                byte[] buffer = new byte[3 * 1024 * 1024];
+
+                using (var fs = new FileStream(vcdPath, FileMode.Open, FileAccess.Read))
+                {
+                    fs.Read(buffer, 0, buffer.Length);
+                }
+
+                string text = Encoding.ASCII.GetString(buffer);
+
+                // Buscar SYSTEM.CNF
+                int index = text.IndexOf("SYSTEM.CNF", StringComparison.OrdinalIgnoreCase);
+                if (index == -1)
+                    return null;
+
+                // Extraer un bloque alrededor
+                string block = text.Substring(index, 2000);
+
+                // Buscar línea BOOT
+                var match = Regex.Match(block, @"BOOT\s*=\s*cdrom:\\([A-Z]{4}[_ ]\d{3}\.\d{2})", RegexOptions.IgnoreCase);
+
+                if (match.Success)
+                {
+                    string id = match.Groups[1].Value
+                        .Replace(" ", "_")
+                        .Replace(".", "_");
+
+                    return id;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
             return null;
         }
 
@@ -36,11 +72,9 @@ namespace POPSManager.Logic
                     int index = name.IndexOf(p);
                     string id = name.Substring(index);
 
-                    // Normalizar
                     id = id.Replace("-", "_")
                            .Replace(" ", "_");
 
-                    // Limitar longitud típica SCES_12345
                     if (id.Length > 12)
                         id = id.Substring(0, 12);
 
@@ -52,7 +86,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECTAR SI EL JUEGO ES PAL
+        //  DETECTAR SI ES PAL
         // ============================================================
         public static bool IsPalRegion(string gameId)
         {
@@ -65,7 +99,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECTAR SI EL JUEGO REQUIERE PAL-60
+        //  DETECTAR SI REQUIERE PAL-60
         // ============================================================
         public static bool RequiresPal60(string gameId)
         {
