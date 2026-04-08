@@ -1,0 +1,252 @@
+{
+  "SLUS_20001": { "name": "Ace Combat 04: Shattered Skies", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/0/100_front.jpg" },
+  "SLUS_20851": { "name": "Ace Combat 5: The Unsung War", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/1/101_front.jpg" },
+  "SLUS_21417": { "name": "Ace Combat Zero: The Belkan War", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/2/102_front.jpg" },
+
+  "SLUS_20216": { "name": "ATV Offroad Fury", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/3/103_front.jpg" },
+  "SLUS_20423": { "name": "ATV Offroad Fury 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/4/104_front.jpg" },
+  "SLUS_20932": { "name": "ATV Offroad Fury 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/5/105_front.jpg" },
+  "SLUS_21386": { "name": "ATV Offroad Fury 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/6/106_front.jpg" },
+
+  "SLUS_20071": { "name": "Baldur's Gate: Dark Alliance", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/7/107_front.jpg" },
+  "SLUS_20562": { "name": "Baldur's Gate: Dark Alliance II", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/8/108_front.jpg" },
+
+  "SLUS_20294": { "name": "Black", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/0/9/109_front.jpg" },
+
+  "SLUS_20035": { "name": "Bloody Roar 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/0/110_front.jpg" },
+  "SLUS_20495": { "name": "Bloody Roar 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/1/111_front.jpg" },
+
+  "SLUS_20066": { "name": "Burnout", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/2/112_front.jpg" },
+  "SLUS_20757": { "name": "Burnout 2: Point of Impact", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/3/113_front.jpg" },
+  "SLUS_21050": { "name": "Burnout 3: Takedown", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/4/114_front.jpg" },
+  "SLUS_21242": { "name": "Burnout Revenge", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/5/115_front.jpg" },
+
+  "SLUS_20062": { "name": "Castlevania: Lament of Innocence", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/6/116_front.jpg" },
+  "SLUS_21311": { "name": "Castlevania: Curse of Darkness", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/7/117_front.jpg" },
+
+  "SLUS_20202": { "name": "Champions of Norrath", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/8/118_front.jpg" },
+  "SLUS_20993": { "name": "Champions: Return to Arms", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/1/9/119_front.jpg" },
+
+  "SLUS_20003": { "name": "Clock Tower 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/2/0/120_front.jpg" },
+
+  "SLUS_20005": { "name": "Contra: Shattered Soldier", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/2/1/121_front.jpg" },
+
+  "SLUS_20216B": { "name": "Crash Nitro Kart", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/2/2/122_front.jpg" },
+  "SLUS_20769": { "name": "Crash Twinsanity", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/2/3/123_front.jpg" },
+  "SLUS_21244": { "name": "Crash Tag Team Racing", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/1/2/4/124_front.jpg" }
+}{
+  "SLUS_20075": { "name": "Dark Cloud", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/0/200_front.jpg" },
+  "SLUS_20917": { "name": "Dark Cloud 2 (Dark Chronicle)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/1/201_front.jpg" },
+
+  "SLUS_20216C": { "name": "Dead to Rights", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/2/202_front.jpg" },
+  "SLUS_20776": { "name": "Dead to Rights II", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/3/203_front.jpg" },
+
+  "SLUS_20002": { "name": "Devil May Cry", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/4/204_front.jpg" },
+  "SLUS_20216D": { "name": "Devil May Cry 2 (Disc 1 - Dante)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/5/205_front.jpg" },
+  "SLUS_20216E": { "name": "Devil May Cry 2 (Disc 2 - Lucia)", "discNumber": 2, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/5/205_front.jpg" },
+  "SLUS_20964": { "name": "Devil May Cry 3: Dante's Awakening", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/6/206_front.jpg" },
+  "SLUS_21258": { "name": "Devil May Cry 3: Special Edition", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/7/207_front.jpg" },
+
+  "SLUS_20006": { "name": "Disgaea: Hour of Darkness", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/8/208_front.jpg" },
+  "SLUS_20963": { "name": "Disgaea 2: Cursed Memories", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/0/9/209_front.jpg" },
+
+  "SLUS_20008": { "name": "Dragon Ball Z: Budokai", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/0/210_front.jpg" },
+  "SLUS_20755": { "name": "Dragon Ball Z: Budokai 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/1/211_front.jpg" },
+  "SLUS_21078": { "name": "Dragon Ball Z: Budokai 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/2/212_front.jpg" },
+  "SLUS_21216": { "name": "Dragon Ball Z: Infinite World", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/3/213_front.jpg" },
+  "SLUS_21441": { "name": "Dragon Ball Z: Burst Limit", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/4/214_front.jpg" },
+
+  "SLUS_20009": { "name": "Dynasty Warriors 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/5/215_front.jpg" },
+  "SLUS_20277": { "name": "Dynasty Warriors 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/6/216_front.jpg" },
+  "SLUS_20561": { "name": "Dynasty Warriors 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/7/217_front.jpg" },
+  "SLUS_21001": { "name": "Dynasty Warriors 5", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/8/218_front.jpg" },
+
+  "SLUS_20010": { "name": "Enter the Matrix (Disc 1)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/9/219_front.jpg" },
+  "SLUS_20011": { "name": "Enter the Matrix (Disc 2)", "discNumber": 2, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/1/9/219_front.jpg" },
+
+  "SLUS_20012": { "name": "EverGrace", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/0/220_front.jpg" },
+
+  "SLUS_20013": { "name": "Fatal Frame", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/1/221_front.jpg" },
+  "SLUS_20678": { "name": "Fatal Frame II: Crimson Butterfly", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/2/222_front.jpg" },
+  "SLUS_21244B": { "name": "Fatal Frame III: The Tormented", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/3/223_front.jpg" },
+
+  "SLUS_20014": { "name": "Final Fantasy X", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/4/224_front.jpg" },
+  "SLUS_20672": { "name": "Final Fantasy X-2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/5/225_front.jpg" },
+  "SLUS_20963B": { "name": "Final Fantasy XII", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/6/226_front.jpg" },
+
+  "SLUS_20015": { "name": "Fight Night 2004", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/7/227_front.jpg" },
+  "SLUS_21004": { "name": "Fight Night Round 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/8/228_front.jpg" },
+  "SLUS_21244C": { "name": "Fight Night Round 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/2/9/229_front.jpg" },
+
+  "SLUS_20016": { "name": "God of War", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/0/230_front.jpg" },
+  "SLUS_21216B": { "name": "God of War II", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/1/231_front.jpg" },
+
+  "SLUS_20017": { "name": "Gran Turismo 3: A-Spec", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/2/232_front.jpg" },
+  "SCUS_97436": { "name": "Gran Turismo 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/3/233_front.jpg" },
+
+  "SLUS_20018": { "name": "Grand Theft Auto III", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/4/234_front.jpg" },
+  "SLUS_20552": { "name": "Grand Theft Auto: Vice City", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/5/235_front.jpg" },
+  "SLUS_20946": { "name": "Grand Theft Auto: San Andreas", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/6/236_front.jpg" },
+
+  "SLUS_20019": { "name": "Half-Life", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/7/237_front.jpg" },
+
+  "SLUS_20020": { "name": "Hitman 2: Silent Assassin", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/8/238_front.jpg" },
+  "SLUS_20862": { "name": "Hitman: Contracts", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/3/9/239_front.jpg" },
+  "SLUS_21244D": { "name": "Hitman: Blood Money", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/2/4/0/240_front.jpg" }
+}{
+  "SLUS_20021": { "name": "ICO", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/0/300_front.jpg" },
+
+  "SLUS_20022": { "name": "Jak and Daxter: The Precursor Legacy", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/1/301_front.jpg" },
+  "SCUS_97265": { "name": "Jak II", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/2/302_front.jpg" },
+  "SCUS_97429": { "name": "Jak 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/3/303_front.jpg" },
+  "SCUS_97516": { "name": "Jak X: Combat Racing", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/4/304_front.jpg" },
+
+  "SLUS_20023": { "name": "Juiced", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/5/305_front.jpg" },
+
+  "SLUS_20024": { "name": "Katamari Damacy", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/6/306_front.jpg" },
+  "SLUS_21230": { "name": "We Love Katamari", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/7/307_front.jpg" },
+
+  "SLUS_20025": { "name": "Killzone", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/8/308_front.jpg" },
+
+  "SLUS_20026": { "name": "Kingdom Hearts", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/0/9/309_front.jpg" },
+  "SLUS_21005": { "name": "Kingdom Hearts II", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/0/310_front.jpg" },
+  "SLUS_20756": { "name": "Kingdom Hearts: Chain of Memories (Re:CoM)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/1/311_front.jpg" },
+
+  "SLUS_20027": { "name": "Legacy of Kain: Blood Omen 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/2/312_front.jpg" },
+  "SLUS_20792": { "name": "Legacy of Kain: Defiance", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/3/313_front.jpg" },
+
+  "SLUS_20028": { "name": "Madden NFL 2001", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/4/314_front.jpg" },
+  "SLUS_20371": { "name": "Madden NFL 2002", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/5/315_front.jpg" },
+  "SLUS_20592": { "name": "Madden NFL 2003", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/6/316_front.jpg" },
+  "SLUS_20771": { "name": "Madden NFL 2004", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/7/317_front.jpg" },
+  "SLUS_21028": { "name": "Madden NFL 2005", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/8/318_front.jpg" },
+  "SLUS_21244E": { "name": "Madden NFL 2006", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/1/9/319_front.jpg" },
+  "SLUS_21420": { "name": "Madden NFL 2007", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/0/320_front.jpg" },
+
+  "SLUS_20029": { "name": "Manhunt", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/1/321_front.jpg" },
+  "SLUS_21294": { "name": "Manhunt 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/2/322_front.jpg" },
+
+  "SLUS_20030": { "name": "Max Payne", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/3/323_front.jpg" },
+  "SLUS_20760": { "name": "Max Payne 2: The Fall of Max Payne", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/4/324_front.jpg" },
+
+  "SLUS_20031": { "name": "Medal of Honor: Frontline", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/5/325_front.jpg" },
+  "SLUS_20753": { "name": "Medal of Honor: Rising Sun", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/6/326_front.jpg" },
+  "SLUS_21083": { "name": "Medal of Honor: European Assault", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/7/327_front.jpg" },
+  "SLUS_21435": { "name": "Medal of Honor: Vanguard", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/8/328_front.jpg" },
+
+  "SLUS_20032": { "name": "Metal Gear Solid 2: Sons of Liberty", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/2/9/329_front.jpg" },
+  "SLUS_20887": { "name": "Metal Gear Solid 2: Substance", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/0/330_front.jpg" },
+  "SLUS_21359": { "name": "Metal Gear Solid 3: Snake Eater", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/1/331_front.jpg" },
+  "SLUS_21359B": { "name": "Metal Gear Solid 3: Subsistence (Disc 1)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/2/332_front.jpg" },
+  "SLUS_21360": { "name": "Metal Gear Solid 3: Subsistence (Disc 2 - Persistence)", "discNumber": 2, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/2/332_front.jpg" },
+
+  "SLUS_20033": { "name": "Midnight Club: Street Racing", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/3/333_front.jpg" },
+  "SLUS_20209": { "name": "Midnight Club II", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/4/334_front.jpg" },
+  "SLUS_21029": { "name": "Midnight Club 3: DUB Edition", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/5/335_front.jpg" },
+
+  "SLUS_20034": { "name": "Mortal Kombat: Deadly Alliance", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/6/336_front.jpg" },
+  "SLUS_20881": { "name": "Mortal Kombat: Deception", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/7/337_front.jpg" },
+  "SLUS_21410": { "name": "Mortal Kombat: Armageddon", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/3/3/8/338_front.jpg" }
+}{
+  "SLUS_20035B": { "name": "Naruto: Ultimate Ninja", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/0/400_front.jpg" },
+  "SLUS_21233": { "name": "Naruto: Ultimate Ninja 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/1/401_front.jpg" },
+  "SLUS_21678": { "name": "Naruto: Ultimate Ninja 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/2/402_front.jpg" },
+  "SLUS_21727": { "name": "Naruto Shippuden: Ultimate Ninja 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/3/403_front.jpg" },
+  "SLUS_21842": { "name": "Naruto Shippuden: Ultimate Ninja 5", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/4/404_front.jpg" },
+
+  "SLUS_20036": { "name": "Need for Speed: Hot Pursuit 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/5/405_front.jpg" },
+  "SLUS_20757B": { "name": "Need for Speed: Underground", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/6/406_front.jpg" },
+  "SLUS_21065": { "name": "Need for Speed: Underground 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/7/407_front.jpg" },
+  "SLUS_21267": { "name": "Need for Speed: Most Wanted", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/8/408_front.jpg" },
+  "SLUS_21444": { "name": "Need for Speed: Carbon", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/0/9/409_front.jpg" },
+  "SLUS_21672": { "name": "Need for Speed: ProStreet", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/0/410_front.jpg" },
+  "SLUS_21801": { "name": "Need for Speed: Undercover", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/1/411_front.jpg" },
+
+  "SLUS_20037": { "name": "Okami", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/2/412_front.jpg" },
+
+  "SLUS_20038": { "name": "Onimusha: Warlords", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/3/413_front.jpg" },
+  "SLUS_20393": { "name": "Onimusha 2: Samurai's Destiny", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/4/414_front.jpg" },
+  "SLUS_20694": { "name": "Onimusha 3: Demon Siege", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/5/415_front.jpg" },
+  "SLUS_20915": { "name": "Onimusha: Dawn of Dreams (Disc 1)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/6/416_front.jpg" },
+  "SLUS_20916": { "name": "Onimusha: Dawn of Dreams (Disc 2)", "discNumber": 2, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/6/416_front.jpg" },
+
+  "SLUS_20039": { "name": "Prince of Persia: The Sands of Time", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/7/417_front.jpg" },
+  "SLUS_21022": { "name": "Prince of Persia: Warrior Within", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/8/418_front.jpg" },
+  "SLUS_21287": { "name": "Prince of Persia: The Two Thrones", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/1/9/419_front.jpg" },
+
+  "SLUS_20040": { "name": "Ratchet & Clank", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/0/420_front.jpg" },
+  "SCUS_97268": { "name": "Ratchet & Clank: Going Commando", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/1/421_front.jpg" },
+  "SCUS_97353": { "name": "Ratchet & Clank: Up Your Arsenal", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/2/422_front.jpg" },
+  "SCUS_97516B": { "name": "Ratchet: Deadlocked", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/3/423_front.jpg" },
+
+  "SLUS_20041": { "name": "Resident Evil Code: Veronica X", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/4/424_front.jpg" },
+  "SLUS_20987": { "name": "Resident Evil Outbreak", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/5/425_front.jpg" },
+  "SLUS_20988": { "name": "Resident Evil Outbreak File #2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/6/426_front.jpg" },
+  "SLUS_21134": { "name": "Resident Evil 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/7/427_front.jpg" },
+
+  "SLUS_20042": { "name": "Shadow of the Colossus", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/8/428_front.jpg" },
+
+  "SLUS_20043": { "name": "Shin Megami Tensei: Nocturne", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/2/9/429_front.jpg" },
+  "SLUS_20974": { "name": "Shin Megami Tensei: Digital Devil Saga (Disc 1)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/0/430_front.jpg" },
+  "SLUS_20975": { "name": "Shin Megami Tensei: Digital Devil Saga (Disc 2)", "discNumber": 2, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/0/430_front.jpg" },
+  "SLUS_21244F": { "name": "Shin Megami Tensei: Digital Devil Saga 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/1/431_front.jpg" },
+  "SLUS_21371": { "name": "Shin Megami Tensei: Persona 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/2/432_front.jpg" },
+  "SLUS_21621": { "name": "Shin Megami Tensei: Persona 3 FES", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/3/433_front.jpg" },
+  "SLUS_21782": { "name": "Shin Megami Tensei: Persona 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/4/434_front.jpg" },
+
+  "SLUS_20044": { "name": "Silent Hill 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/5/435_front.jpg" },
+  "SLUS_20622": { "name": "Silent Hill 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/6/436_front.jpg" },
+  "SLUS_20873": { "name": "Silent Hill 4: The Room", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/7/437_front.jpg" },
+
+  "SLUS_20045": { "name": "Sly Cooper and the Thievius Raccoonus", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/8/438_front.jpg" },
+  "SCUS_97264": { "name": "Sly 2: Band of Thieves", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/3/9/439_front.jpg" },
+  "SCUS_97465": { "name": "Sly 3: Honor Among Thieves", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/4/4/0/440_front.jpg" }
+}{
+  "SLUS_20046": { "name": "Tales of Legendia", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/0/500_front.jpg" },
+  "SLUS_21386B": { "name": "Tales of the Abyss", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/1/501_front.jpg" },
+
+  "SLUS_20047": { "name": "Tekken Tag Tournament", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/2/502_front.jpg" },
+  "SLUS_20624": { "name": "Tekken 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/3/503_front.jpg" },
+  "SLUS_21059": { "name": "Tekken 5", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/4/504_front.jpg" },
+
+  "SLUS_20048": { "name": "The Simpsons: Hit & Run", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/5/505_front.jpg" },
+  "SLUS_20728": { "name": "The Simpsons: Road Rage", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/6/506_front.jpg" },
+
+  "SLUS_20049": { "name": "The Warriors", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/7/507_front.jpg" },
+
+  "SLUS_20050": { "name": "TimeSplitters", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/8/508_front.jpg" },
+  "SLUS_20278": { "name": "TimeSplitters 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/0/9/509_front.jpg" },
+  "SLUS_21087": { "name": "TimeSplitters: Future Perfect", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/0/510_front.jpg" },
+
+  "SLUS_20051": { "name": "Tom Clancy's Splinter Cell", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/1/511_front.jpg" },
+  "SLUS_20790": { "name": "Splinter Cell: Pandora Tomorrow", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/2/512_front.jpg" },
+  "SLUS_21010": { "name": "Splinter Cell: Chaos Theory", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/3/513_front.jpg" },
+  "SLUS_21418": { "name": "Splinter Cell: Double Agent", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/4/514_front.jpg" },
+
+  "SLUS_20052": { "name": "Tony Hawk's Pro Skater 3", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/5/515_front.jpg" },
+  "SLUS_20504": { "name": "Tony Hawk's Underground", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/6/516_front.jpg" },
+  "SLUS_21065B": { "name": "Tony Hawk's Underground 2", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/7/517_front.jpg" },
+
+  "SLUS_20053": { "name": "Twisted Metal: Black", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/8/518_front.jpg" },
+
+  "SLUS_20054": { "name": "Virtua Fighter 4", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/1/9/519_front.jpg" },
+  "SLUS_20616": { "name": "Virtua Fighter 4: Evolution", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/0/520_front.jpg" },
+
+  "SLUS_20055": { "name": "WWE SmackDown! Just Bring It", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/1/521_front.jpg" },
+  "SLUS_20552B": { "name": "WWE SmackDown! Shut Your Mouth", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/2/522_front.jpg" },
+  "SLUS_20787": { "name": "WWE SmackDown! Here Comes the Pain", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/3/523_front.jpg" },
+  "SLUS_21060": { "name": "WWE SmackDown! vs. Raw", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/4/524_front.jpg" },
+  "SLUS_21286": { "name": "WWE SmackDown! vs. Raw 2006", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/5/525_front.jpg" },
+  "SLUS_21427": { "name": "WWE SmackDown! vs. Raw 2007", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/6/526_front.jpg" },
+  "SLUS_21645": { "name": "WWE SmackDown! vs. Raw 2008", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/7/527_front.jpg" },
+  "SLUS_21801B": { "name": "WWE SmackDown! vs. Raw 2009", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/8/528_front.jpg" },
+
+  "SLUS_20056": { "name": "Xenosaga Episode I: Der Wille zur Macht (Disc 1)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/9/529_front.jpg" },
+  "SLUS_20057": { "name": "Xenosaga Episode I: Der Wille zur Macht (Disc 2)", "discNumber": 2, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/2/9/529_front.jpg" },
+  "SLUS_20892": { "name": "Xenosaga Episode II (Disc 1)", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/3/0/530_front.jpg" },
+  "SLUS_20893": { "name": "Xenosaga Episode II (Disc 2)", "discNumber": 2, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/3/0/530_front.jpg" },
+  "SLUS_21244G": { "name": "Xenosaga Episode III: Also sprach Zarathustra", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/3/1/531_front.jpg" },
+
+  "SLUS_20058": { "name": "Zone of the Enders", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/3/2/532_front.jpg" },
+  "SLUS_20434": { "name": "Zone of the Enders: The 2nd Runner", "discNumber": 1, "coverUrl": "https://gamefaqs.gamespot.com/a/box/5/3/3/533_front.jpg" }
+}
