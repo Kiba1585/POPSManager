@@ -3,7 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{StaticResource Brush.Background}">
 
-    <Grid Margin="20" RowDefinitions="Auto,*,Auto">
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
         <!-- ========================================================= -->
         <!--  TÍTULO -->
@@ -22,19 +28,27 @@
                 Padding="20"
                 Effect="{StaticResource ShadowDefault}">
 
-            <Grid RowDefinitions="Auto,*"
-                  ColumnDefinitions="*,Auto"
-                  Margin="0"
-                  >
+            <Grid Margin="0">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
                 <!-- ========================= -->
                 <!--  Selección de carpeta -->
                 <!-- ========================= -->
-                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6">
+                <StackPanel Grid.Row="0" Grid.Column="0">
 
                     <TextBlock Text="Carpeta con juegos (VCD / ISO)"
                                FontSize="16"
-                               Foreground="{StaticResource Brush.TextSecondary}"/>
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
 
                     <TextBox x:Name="VcdPath"
                              Height="32"
@@ -64,12 +78,13 @@
                         Background="{StaticResource Brush.PanelAlt}"
                         Effect="{StaticResource ShadowSoft}">
 
-                    <StackPanel Spacing="10">
+                    <StackPanel>
 
                         <TextBlock Text="Juegos detectados (PS1 / PS2)"
                                    FontSize="16"
                                    FontWeight="SemiBold"
-                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                                   Foreground="{StaticResource Brush.TextPrimary}"
+                                   Margin="0 0 0 10"/>
 
                         <ListBox x:Name="GamesList"
                                  Height="260"
