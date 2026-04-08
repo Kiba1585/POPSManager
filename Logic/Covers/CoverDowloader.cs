@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace POPSManager.Logic
+namespace POPSManager.Logic.Covers
 {
     public static class CoverDownloader
     {
