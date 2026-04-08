@@ -1,10 +1,12 @@
-namespace POPSManager.Logic
+using POPSManager.Models;
+
+namespace POPSManager.Logic.Database
 {
     public static class GameFaqsClient
     {
         public static GameInfo? Lookup(string gameId)
         {
-            // Aquí iría la integración real con GameFAQs
+            // Aquí puedes implementar scraping/API real
             return null;
         }
     }
