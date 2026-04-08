@@ -1,6 +1,7 @@
 <UserControl x:Class="POPSManager.UI.Notifications.NotificationToast"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:POPSManager.Models"
              Height="Auto" Width="Auto">
 
     <Border x:Name="Root"
