@@ -1,7 +1,6 @@
 using POPSManager.Models;
 using POPSManager.Services;
-using POPSManager.Logic.Database;
-using POPSManager.Logic.Covers;
+using POPSManager.Logic;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -71,10 +70,33 @@ namespace POPSManager.Logic
 
                 try
                 {
-                    if (group.Value.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
-                        ProcessPS1Group(group.Key, group.Value);
+                    var discs = group.Value;
+
+                    // Validación previa por tipo
+                    if (discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        // PS1 (VCD)
+                        discs = discs.Where(ValidateVcd).ToList();
+                        if (discs.Count == 0)
+                        {
+                            log($"[PS1] Todos los VCD de {group.Key} fueron inválidos.");
+                            continue;
+                        }
+
+                        ProcessPS1Group(group.Key, discs);
+                    }
                     else
-                        ProcessPS2(group.Value.First());
+                    {
+                        // PS2 (ISO)
+                        var iso = discs.First();
+                        if (!ValidateIso(iso))
+                        {
+                            log($"[PS2] ISO inválido: {iso}");
+                            continue;
+                        }
+
+                        ProcessPS2(iso);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +110,44 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  AGRUPAR MULTIDISCO
+        //  VALIDACIÓN VCD / ISO
+        // ============================================================
+        private bool ValidateVcd(string vcdPath)
+        {
+            if (!IntegrityValidator.Validate(vcdPath))
+            {
+                log($"[PS1] VCD inválido: {vcdPath}");
+                notify(new UiNotification(NotificationType.Warning,
+                    $"VCD inválido: {Path.GetFileName(vcdPath)}"));
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidateIso(string isoPath)
+        {
+            try
+            {
+                var info = new FileInfo(isoPath);
+                if (!info.Exists || info.Length < 100_000_000) // ~100MB mínimo
+                {
+                    notify(new UiNotification(NotificationType.Warning,
+                        $"ISO sospechoso o demasiado pequeño: {Path.GetFileName(isoPath)}"));
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log($"[PS2] Error validando ISO: {ex.Message}");
+                return false;
+            }
+        }
+
+        // ============================================================
+        //  AGRUPAR MULTIDISCO (POR TÍTULO LIMPIO)
         // ============================================================
         private Dictionary<string, List<string>> GroupMultiDisc(string[] files)
         {
@@ -115,14 +174,14 @@ namespace POPSManager.Logic
         {
             log($"[PS1] Procesando grupo: {baseName}");
 
-            // Ordenar discos por número
+            // Ordenar discos por número usando NameCleaner
             discs = discs.OrderBy(d =>
             {
                 NameCleaner.Clean(Path.GetFileNameWithoutExtension(d), out string? cdTag);
                 return cdTag != null ? int.Parse(cdTag.Replace("CD", "")) : 1;
             }).ToList();
 
-            // Detectar ID real desde el VCD
+            // Detectar ID real desde el VCD (sectorial)
             string firstDisc = discs.First();
             string? detectedId = GameIdDetector.DetectGameId(firstDisc);
 
@@ -136,37 +195,36 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // Obtener nombre del juego
+            // Obtener nombre del juego (base)
             string cleanTitle = NameCleaner.Clean(baseName, out _);
 
             // ============================================================
             //  INTEGRACIÓN CON BASE DE DATOS (OPCIONAL)
             // ============================================================
-            GameInfo? dbInfo = null;
+            GameEntry? dbEntry = null;
 
-            if (useDatabase)
+            if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
-                dbInfo = GameDatabase.Lookup(detectedId);
-
-                if (dbInfo != null && !string.IsNullOrWhiteSpace(dbInfo.Name))
+                dbEntry = entry;
+                if (!string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
-                    cleanTitle = dbInfo.Name;
+                    cleanTitle = dbEntry.Name;
                     log($"[DB] Nombre oficial encontrado: {cleanTitle}");
                 }
             }
 
             // ============================================================
-            //  DESCARGA DE COVER (OPCIONAL) — OPL COMPATIBLE
+            //  DESCARGA DE COVER PS1 (OPL COMPATIBLE)
             // ============================================================
-            if (useCovers && dbInfo?.CoverUrl != null)
+            if (useCovers && dbEntry?.CoverUrl != null)
             {
                 string artFolder = Path.Combine(paths.PopsFolder, "ART");
                 Directory.CreateDirectory(artFolder);
 
-                string? art = ArtDownloader.DownloadArt(detectedId, dbInfo.CoverUrl, artFolder, log);
+                string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, log);
 
                 if (art != null)
-                    log($"[COVER] ART generado → {art}");
+                    log($"[COVER] PS1 ART generado → {art}");
             }
 
             // Procesar cada disco
@@ -175,9 +233,10 @@ namespace POPSManager.Logic
 
             foreach (var disc in discs)
             {
+                string folderName = $"{detectedId} ({cleanTitle}) (CD{discNumber})";
                 string finalFileName = $"{detectedId}.{cleanTitle} (CD{discNumber}).VCD";
 
-                string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{detectedId} (CD{discNumber})");
+                string popsDiscFolder = Path.Combine(paths.PopsFolder, folderName);
                 Directory.CreateDirectory(popsDiscFolder);
 
                 string destVcd = Path.Combine(popsDiscFolder, finalFileName);
@@ -190,17 +249,17 @@ namespace POPSManager.Logic
                 discNumber++;
             }
 
-            // Generar DISCS.TXT
+            // Generar DISCS.TXT (MultiDiscManager ULTRA PRO)
             MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, log);
 
-            // Generar CHEAT.TXT solo si es PAL
+            // Generar CHEAT.TXT solo si es PAL (CheatGenerator ULTRA PRO MAX)
             if (GameIdDetector.IsPalRegion(detectedId))
             {
-                string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{detectedId} (CD1)");
+                string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{detectedId} ({cleanTitle}) (CD1)");
                 CheatGenerator.GenerateCheatTxt(detectedId, popsDiscFolder, log);
             }
 
-            // Generar ELF solo para CD1
+            // Generar ELF solo para CD1 (PS1)
             GenerateElfForDisc1(detectedId, cleanTitle);
 
             notify(new UiNotification(NotificationType.Success,
@@ -208,15 +267,30 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  GENERAR ELF PARA CD1
+        //  GENERAR ELF PARA CD1 (PS1)
         // ============================================================
         private void GenerateElfForDisc1(string gameId, string title)
         {
-            string popsDiscFolder = Path.Combine(paths.PopsFolder, $"{gameId} (CD1)");
-            string vcdName = Directory.GetFiles(popsDiscFolder, "*.VCD").First();
+            string popsDiscFolder = Directory.GetDirectories(paths.PopsFolder)
+                .FirstOrDefault(d => Path.GetFileName(d).StartsWith($"{gameId} (", StringComparison.OrdinalIgnoreCase) &&
+                                     d.Contains("(CD1)", StringComparison.OrdinalIgnoreCase))
+                ?? Path.Combine(paths.PopsFolder, $"{gameId} (CD1)");
+
+            if (!Directory.Exists(popsDiscFolder))
+            {
+                log($"[PS1] Carpeta de CD1 no encontrada para {gameId}");
+                return;
+            }
+
+            string vcdName = Directory.GetFiles(popsDiscFolder, "*.VCD").FirstOrDefault();
+            if (vcdName == null)
+            {
+                log($"[PS1] No se encontró VCD en {popsDiscFolder}");
+                return;
+            }
 
             string vcdPopstarterPath =
-                $"mass:/POPS/{gameId} (CD1)/{Path.GetFileName(vcdName)}";
+                $"mass:/POPS/{Path.GetFileName(popsDiscFolder)}/{Path.GetFileName(vcdName)}";
 
             string outputElf = Path.Combine(popsDiscFolder, $"{gameId}.ELF");
 
@@ -237,14 +311,18 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR PS2 (ISO) — AHORA CON COVERS OPL
+        //  PROCESAR PS2 (ISO) — CON COVERS OPL
         // ============================================================
         private void ProcessPS2(string isoPath)
         {
             string originalName = Path.GetFileNameWithoutExtension(isoPath);
             log($"[PS2] Procesando: {originalName}");
 
-            string? detectedId = GameIdDetector.DetectFromName(originalName);
+            // Detección real de ID desde ISO
+            string? detectedId = GameIdDetector.DetectGameId(isoPath);
+
+            if (string.IsNullOrWhiteSpace(detectedId))
+                detectedId = GameIdDetector.DetectFromName(originalName);
 
             if (string.IsNullOrWhiteSpace(detectedId))
             {
@@ -253,42 +331,47 @@ namespace POPSManager.Logic
                 detectedId = originalName.Replace(" ", "_");
             }
 
+            // Confirmar que es PS2
+            if (!GameIdValidator.IsPs2(detectedId))
+            {
+                log($"[PS2] ID no reconocido como PS2: {detectedId}. Se copiará igualmente.");
+            }
+
             string cleanTitle = NameCleaner.CleanTitleOnly(originalName);
 
             // ============================================================
             //  BASE DE DATOS PS2
             // ============================================================
-            GameInfo? dbInfo = null;
+            GameEntry? dbEntry = null;
 
-            if (useDatabase)
+            if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
-                dbInfo = GameDatabase.Lookup(detectedId);
-
-                if (dbInfo != null)
+                dbEntry = entry;
+                if (!string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
-                    cleanTitle = dbInfo.Name;
+                    cleanTitle = dbEntry.Name;
                     log($"[DB] Nombre oficial PS2 encontrado: {cleanTitle}");
+                }
 
-                    // ============================================================
-                    //  DESCARGA DE COVER PS2 — OPL COMPATIBLE
-                    // ============================================================
-                    if (useCovers && dbInfo.CoverUrl != null)
-                    {
-                        string artFolder = Path.Combine(paths.DvdFolder, "ART");
-                        Directory.CreateDirectory(artFolder);
+                // ============================================================
+                //  DESCARGA DE COVER PS2 — OPL COMPATIBLE
+                // ============================================================
+                if (useCovers && dbEntry.CoverUrl != null)
+                {
+                    string artFolder = Path.Combine(paths.DvdFolder, "ART");
+                    Directory.CreateDirectory(artFolder);
 
-                        string? art = ArtDownloader.DownloadArt(detectedId, dbInfo.CoverUrl, artFolder, log);
+                    string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, log);
 
-                        if (art != null)
-                            log($"[COVER] PS2 ART generado → {art}");
-                    }
+                    if (art != null)
+                        log($"[COVER] PS2 ART generado → {art}");
                 }
             }
 
             string finalName = $"{detectedId}.{cleanTitle}.iso";
 
-            string dest = Path.Combine(paths.DvdFolder, finalName);
             Directory.CreateDirectory(paths.DvdFolder);
+            string dest = Path.Combine(paths.DvdFolder, finalName);
 
             File.Copy(isoPath, dest, true);
 
