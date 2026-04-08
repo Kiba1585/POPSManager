@@ -21,7 +21,7 @@
 
         <!-- CONTENIDO -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Orientation="Vertical" Spacing="18">
+            <StackPanel Orientation="Vertical">
 
                 <!-- INFO GENERAL -->
                 <Expander Header="Información General"
@@ -29,7 +29,8 @@
                           Foreground="White"
                           FontWeight="Bold"
                           Padding="10"
-                          IsExpanded="True">
+                          IsExpanded="True"
+                          Margin="0 0 0 18">
                     <StackPanel Margin="10">
                         <TextBlock Text="Ruta:" Foreground="#4FC3F7"/>
                         <TextBlock Text="{Binding FilePath}" Foreground="White" Margin="0 0 0 10"/>
@@ -48,7 +49,8 @@
                           Foreground="White"
                           FontWeight="Bold"
                           Padding="10"
-                          IsExpanded="True">
+                          IsExpanded="True"
+                          Margin="0 0 0 18">
                     <StackPanel Margin="10">
                         <TextBlock Text="Game ID:" Foreground="#81C784"/>
                         <TextBlock Text="{Binding GameId}" Foreground="#FFEB3B" FontWeight="Bold" Margin="0 0 0 10"/>
@@ -64,7 +66,8 @@
                           Foreground="White"
                           FontWeight="Bold"
                           Padding="10"
-                          IsExpanded="True">
+                          IsExpanded="True"
+                          Margin="0 0 0 18">
                     <Border Background="#111" CornerRadius="6" Margin="10">
                         <TextBox Text="{Binding SystemCnf}"
                                  Foreground="White"
@@ -84,7 +87,8 @@
                           Foreground="White"
                           FontWeight="Bold"
                           Padding="10"
-                          IsExpanded="False">
+                          IsExpanded="False"
+                          Margin="0 0 0 18">
                     <Border Background="#111" CornerRadius="6" Margin="10">
                         <ListView ItemsSource="{Binding InternalFiles}"
                                   Background="#111"
