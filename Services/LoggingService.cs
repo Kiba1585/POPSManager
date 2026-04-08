@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace POPSManager.Services
 {
@@ -7,23 +8,26 @@ namespace POPSManager.Services
     {
         public Action<string>? OnLog;
 
+        private readonly string logFolder;
         private readonly string logFilePath;
+
+        private readonly object _lock = new();
 
         public LoggingService()
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string folder = Path.Combine(appData, "POPSManager", "Logs");
+            logFolder = Path.Combine(appData, "POPSManager", "Logs");
 
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
+            Directory.CreateDirectory(logFolder);
 
-            logFilePath = Path.Combine(folder, $"log_{DateTime.Now:yyyyMMdd}.txt");
+            logFilePath = Path.Combine(logFolder, $"log_{DateTime.Now:yyyyMMdd}.txt");
+
+            RotateOldLogs();
         }
 
         // ============================================================
-        //  MÉTODO REQUERIDO POR Action<string>
+        //  MÉTODO PRINCIPAL (Action<string>)
         // ============================================================
-
         public void Write(string message)
         {
             WriteInternal(message, "INFO");
@@ -32,10 +36,9 @@ namespace POPSManager.Services
         // ============================================================
         //  MÉTODO INTERNO REAL (CON NIVEL)
         // ============================================================
-
         private void WriteInternal(string message, string level)
         {
-            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             string formatted = $"[{timestamp}] [{level}] {message}";
 
             // Enviar a la UI
@@ -44,27 +47,53 @@ namespace POPSManager.Services
             // Enviar a consola
             Console.WriteLine(formatted);
 
-            // Guardar en archivo
+            // Guardar en archivo (seguro)
             try
             {
-                File.AppendAllText(logFilePath, formatted + Environment.NewLine);
+                lock (_lock)
+                {
+                    File.AppendAllText(logFilePath, formatted + Environment.NewLine, Encoding.UTF8);
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // No romper la app si falla el archivo
+                Console.WriteLine($"[LOG ERROR] No se pudo escribir en el archivo: {ex.Message}");
             }
         }
 
         // ============================================================
         //  ATAJOS PARA NIVELES
         // ============================================================
-
         public void Info(string msg) => WriteInternal(msg, "INFO");
         public void Warn(string msg) => WriteInternal(msg, "WARN");
         public void Error(string msg) => WriteInternal(msg, "ERROR");
 
-        // Opcionales (más expresivos)
+        // Alias opcionales
         public void WriteWarn(string msg) => Warn(msg);
         public void WriteError(string msg) => Error(msg);
+
+        // ============================================================
+        //  ROTACIÓN AUTOMÁTICA DE LOGS (ULTRA PRO)
+        //  Mantiene solo 7 días de logs
+        // ============================================================
+        private void RotateOldLogs()
+        {
+            try
+            {
+                var files = Directory.GetFiles(logFolder, "log_*.txt");
+
+                foreach (var file in files)
+                {
+                    var info = new FileInfo(file);
+
+                    if (info.CreationTime < DateTime.Now.AddDays(-7))
+                        info.Delete();
+                }
+            }
+            catch
+            {
+                // No romper la app si falla la limpieza
+            }
+        }
     }
 }
