@@ -8,42 +8,42 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
 
-                <!-- =============================== -->
-                <!--   PALETA DE COLORES            -->
-                <!-- =============================== -->
+                <!-- ===================================================== -->
+                <!--  PALETA DE COLORES (DEBE IR PRIMERO SIEMPRE)          -->
+                <!-- ===================================================== -->
                 <ResourceDictionary Source="Resources/Colors.xaml"/>
 
-                <!-- =============================== -->
-                <!--   ESTILOS BASE (TextBlock, etc.) -->
-                <!-- =============================== -->
+                <!-- ===================================================== -->
+                <!--  ESTILOS BASE (TextBlock, Grid, etc.)                 -->
+                <!-- ===================================================== -->
                 <ResourceDictionary Source="Resources/Styles.xaml"/>
 
-                <!-- =============================== -->
-                <!--   BOTONES                      -->
-                <!-- =============================== -->
+                <!-- ===================================================== -->
+                <!--  SOMBRAS Y TARJETAS (depende de Colors)               -->
+                <!-- ===================================================== -->
+                <ResourceDictionary Source="Resources/Shadows.xaml"/>
+                <ResourceDictionary Source="Resources/Cards.xaml"/>
+
+                <!-- ===================================================== -->
+                <!--  BOTONES (depende de Styles + Colors)                 -->
+                <!-- ===================================================== -->
                 <ResourceDictionary Source="Resources/Buttons.xaml"/>
 
-                <!-- =============================== -->
-                <!--   TARJETAS, BORDES, SOMBRAS    -->
-                <!-- =============================== -->
-                <ResourceDictionary Source="Resources/Cards.xaml"/>
-                <ResourceDictionary Source="Resources/Shadows.xaml"/>
-
-                <!-- =============================== -->
-                <!--   TOASTS (animaciones + estilos) -->
-                <!-- =============================== -->
-                <ResourceDictionary Source="Resources/Toasts.xaml"/>
-
-                <!-- =============================== -->
-                <!--   SIDEBAR / MENÚ LATERAL       -->
-                <!-- =============================== -->
+                <!-- ===================================================== -->
+                <!--  SIDEBAR / MENÚ LATERAL                               -->
+                <!-- ===================================================== -->
                 <ResourceDictionary Source="Resources/SidebarStyles.xaml"/>
 
-                <!-- =============================== -->
-                <!--   ESTILOS DE CONTROLES EXTRA   -->
-                <!-- =============================== -->
+                <!-- ===================================================== -->
+                <!--  CONTROLES ESPECIALES (ProgressPanel, LogsPanel)      -->
+                <!-- ===================================================== -->
                 <ResourceDictionary Source="Resources/ProgressPanel.xaml"/>
                 <ResourceDictionary Source="Resources/LogsPanel.xaml"/>
+
+                <!-- ===================================================== -->
+                <!--  TOASTS / NOTIFICACIONES (depende de Colors + Styles) -->
+                <!-- ===================================================== -->
+                <ResourceDictionary Source="Resources/Toasts.xaml"/>
 
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
