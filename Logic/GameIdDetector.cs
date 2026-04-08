@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -8,111 +7,155 @@ namespace POPSManager.Logic
 {
     public static class GameIdDetector
     {
+        // Regex para detectar IDs PS1/PS2
+        private static readonly Regex IdRegex =
+            new(@"(SLUS|SCUS|SLES|SCES|SLPM|SLPS|SCPS)[-_ ]?(\d{3})[._ ]?(\d{2})",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        // Prefijos para detección por nombre
         private static readonly string[] Patterns =
         {
             "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPS"
         };
 
-        // Regex robusto para BOOT = cdrom:\XXXX_999.99;1
-        private static readonly Regex BootRegex =
-            new(@"BOOT\s*=\s*cdrom:\\\s*([A-Z]{4})[-_ ]?(\d{3})[._ ]?(\d{2})",
-                RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-        // Regex para IDs PS2 dentro de IOPRP.IMG
-        private static readonly Regex Ps2Regex =
-            new(@"(SLUS|SCUS|SLES|SCES|SLPM|SLPS)[-_ ]?(\d{3})[._ ]?(\d{2})",
-                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private const int SectorSize = 2048;
 
         // ============================================================
-        //  MÉTODO PRINCIPAL (HÍBRIDO)
+        //  MÉTODO PRINCIPAL (ULTRA PRO)
         // ============================================================
-        public static string? DetectGameId(string vcdPath)
+        public static string? DetectGameId(string path)
         {
-            // 1. SYSTEM.CNF (PS1 y algunos PS2)
-            var id = DetectFromSystemCnf(vcdPath);
-            if (!string.IsNullOrWhiteSpace(id))
-                return id;
+            try
+            {
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
 
-            // 2. IOPRP.IMG (PS2 real)
-            id = DetectPs2FromIoprp(vcdPath);
-            if (!string.IsNullOrWhiteSpace(id))
-                return id;
+                int rootLba = GetRootDirectoryLba(fs);
+                if (rootLba > 0)
+                {
+                    // 1. SYSTEM.CNF
+                    var sys = FindFile(fs, rootLba, "SYSTEM.CNF");
+                    if (sys.lba > 0)
+                    {
+                        var data = ReadFileFromIso(fs, sys.lba, sys.size);
+                        var id = ExtractId(data);
+                        if (id != null)
+                            return id;
+                    }
 
-            // 3. Nombre del archivo
-            id = DetectFromName(Path.GetFileName(vcdPath));
-            if (!string.IsNullOrWhiteSpace(id))
-                return id;
+                    // 2. IOPRP.IMG (PS2 real)
+                    var iop = FindFile(fs, rootLba, "IOPRP.IMG");
+                    if (iop.lba > 0)
+                    {
+                        var data = ReadFileFromIso(fs, iop.lba, iop.size);
+                        var id = ExtractId(data);
+                        if (id != null)
+                            return id;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignorar y continuar con fallback
+            }
+
+            // 3. Fallback → nombre del archivo
+            var nameId = DetectFromName(Path.GetFileName(path));
+            if (!string.IsNullOrWhiteSpace(nameId))
+                return nameId;
 
             return null;
         }
 
         // ============================================================
-        //  DETECCIÓN REAL DESDE SYSTEM.CNF (PS1 + algunos PS2)
+        //  LECTOR SECTORIAL (ISO9660)
         // ============================================================
-        private static string? DetectFromSystemCnf(string vcdPath)
+        private static byte[] ReadSector(FileStream fs, int lba, int count = 1)
         {
-            try
-            {
-                byte[] buffer = new byte[8 * 1024 * 1024];
-
-                using (var fs = new FileStream(vcdPath, FileMode.Open, FileAccess.Read))
-                    fs.Read(buffer, 0, buffer.Length);
-
-                string text = Encoding.ASCII.GetString(buffer);
-
-                int index = text.IndexOf("SYSTEM.CNF", StringComparison.OrdinalIgnoreCase);
-                if (index == -1)
-                    return null;
-
-                string block = text.Substring(index, Math.Min(4000, text.Length - index));
-
-                var match = BootRegex.Match(block);
-                if (match.Success)
-                {
-                    string prefix = match.Groups[1].Value.ToUpper();
-                    string part1 = match.Groups[2].Value;
-                    string part2 = match.Groups[3].Value;
-
-                    return $"{prefix}_{part1}{part2}";
-                }
-            }
-            catch { }
-
-            return null;
+            byte[] buffer = new byte[SectorSize * count];
+            fs.Seek(lba * SectorSize, SeekOrigin.Begin);
+            fs.Read(buffer, 0, buffer.Length);
+            return buffer;
         }
 
         // ============================================================
-        //  DETECCIÓN REAL PS2 LEYENDO IOPRP.IMG
+        //  LEER PRIMARY VOLUME DESCRIPTOR (sector 16)
         // ============================================================
-        private static string? DetectPs2FromIoprp(string vcdPath)
+        private static int GetRootDirectoryLba(FileStream fs)
         {
             try
             {
-                byte[] buffer = File.ReadAllBytes(vcdPath);
-                string text = Encoding.ASCII.GetString(buffer);
+                var pvd = ReadSector(fs, 16);
 
-                int index = text.IndexOf("IOPRP.IMG", StringComparison.OrdinalIgnoreCase);
-                if (index == -1)
-                    return null;
+                // Offset 156 = Directory Record del root
+                int lba = BitConverter.ToInt32(pvd, 156 + 2);
+                return lba;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
 
-                int start = Math.Max(0, index - 200000);
-                int length = Math.Min(400000, buffer.Length - start);
+        // ============================================================
+        //  BUSCAR ARCHIVO EN EL DIRECTORIO (SYSTEM.CNF / IOPRP.IMG)
+        // ============================================================
+        private static (int lba, int size) FindFile(FileStream fs, int rootLba, string target)
+        {
+            try
+            {
+                var sector = ReadSector(fs, rootLba);
 
-                string block = Encoding.ASCII.GetString(buffer, start, length);
-
-                var match = Ps2Regex.Match(block);
-                if (match.Success)
+                int pos = 0;
+                while (pos < sector.Length)
                 {
-                    string prefix = match.Groups[1].Value.ToUpper();
-                    string part1 = match.Groups[2].Value;
-                    string part2 = match.Groups[3].Value;
+                    int len = sector[pos];
+                    if (len == 0)
+                        break;
 
-                    return $"{prefix}_{part1}{part2}";
+                    int nameLen = sector[pos + 32];
+                    string name = Encoding.ASCII.GetString(sector, pos + 33, nameLen)
+                        .TrimEnd(';', '1');
+
+                    if (name.Equals(target, StringComparison.OrdinalIgnoreCase))
+                    {
+                        int lba = BitConverter.ToInt32(sector, pos + 2);
+                        int size = BitConverter.ToInt32(sector, pos + 10);
+                        return (lba, size);
+                    }
+
+                    pos += len;
                 }
             }
             catch { }
 
-            return null;
+            return (0, 0);
+        }
+
+        // ============================================================
+        //  LEER ARCHIVO REAL DESDE EL ISO
+        // ============================================================
+        private static byte[] ReadFileFromIso(FileStream fs, int lba, int size)
+        {
+            int sectors = (size + SectorSize - 1) / SectorSize;
+            return ReadSector(fs, lba, sectors);
+        }
+
+        // ============================================================
+        //  EXTRAER ID DE BYTES (SYSTEM.CNF o IOPRP.IMG)
+        // ============================================================
+        private static string? ExtractId(byte[] data)
+        {
+            string text = Encoding.ASCII.GetString(data);
+
+            var match = IdRegex.Match(text);
+            if (!match.Success)
+                return null;
+
+            string prefix = match.Groups[1].Value.ToUpper();
+            string part1 = match.Groups[2].Value;
+            string part2 = match.Groups[3].Value;
+
+            return $"{prefix}_{part1}{part2}";
         }
 
         // ============================================================
@@ -133,12 +176,12 @@ namespace POPSManager.Logic
                              .Replace(" ", "_")
                              .Replace(".", "_");
 
-                    var m = Regex.Match(raw, @"([A-Z]{4})[_ ]?(\d{3})(\d{2})?");
+                    var m = IdRegex.Match(raw);
                     if (m.Success)
                     {
                         string prefix = m.Groups[1].Value;
                         string part1 = m.Groups[2].Value;
-                        string part2 = m.Groups[3].Success ? m.Groups[3].Value : "00";
+                        string part2 = m.Groups[3].Value;
 
                         return $"{prefix}_{part1}{part2}";
                     }
@@ -185,7 +228,7 @@ namespace POPSManager.Logic
                 "SCES02835"
             };
 
-            return pal60Games.Any(id => gameId.StartsWith(id, StringComparison.OrdinalIgnoreCase));
+            return Array.Exists(pal60Games, id => gameId.StartsWith(id, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
