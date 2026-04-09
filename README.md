@@ -92,7 +92,7 @@ Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación
 ![Gestión Multidisco](images/gestion-multidisco.jpeg)
 
 ### 4. Procesamiento Completo
-![Procesamiento Completo](images/procesamiento-completo.jpeg), descarga de carátulas y notificación de éxito.
+![Procesamiento Completo](images/procesamiento-completo.jpeg)
 
 ---
 
