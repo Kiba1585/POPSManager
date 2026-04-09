@@ -1,0 +1,47 @@
+# ──────────────────────────────────────────────
+# POPSManager Certificate Installer — .gitignore
+# ──────────────────────────────────────────────
+
+# Logs
+logs/
+*.log
+
+# Private keys — NEVER commit these
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Archives (release artifacts)
+*.zip
+*.7z
+*.tar.gz
+
+# PowerShell module cache
+PSModuleAnalysisCache
+
+# Placeholder files (remove after replacing with real cert)
+*.placeholder
