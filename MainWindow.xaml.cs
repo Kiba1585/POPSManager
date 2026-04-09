@@ -15,7 +15,7 @@ namespace POPSManager
         private readonly AppServices _services;
 
         // Notificaciones globales accesibles desde cualquier módulo
-        public static NotificationManager Notifications { get; private set; }
+        public static NotificationManager Notifications { get; private set; } = null!;
 
         public MainWindow()
         {
