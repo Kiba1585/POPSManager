@@ -120,7 +120,7 @@ jobs:
           $hasErrors  = $false
 
           $requiredFiles = @(
-            "Installer-Certificate.ps1",
+            "Install-Certificate.ps1",
             "Uninstall-Certificate.ps1",
             "README.md",
             "CHANGELOG.md",
