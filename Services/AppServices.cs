@@ -53,7 +53,7 @@ namespace POPSManager.Services
                 LogService.Write,
                 Paths,
                 Settings,
-                msg => Notifications.Info(msg),   // ✔ Callback actualizado
+                Notifications.Show   // ✔ Callback actualizado
                 Progress.SetStatus
             );
 
