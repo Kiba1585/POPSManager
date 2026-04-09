@@ -41,6 +41,18 @@ namespace POPSManager.Views
         }
 
         // ============================================================
+        //  VALIDAR RUTA RAÍZ (evitar PS2/PS1/POPSManager)
+        // ============================================================
+        private bool IsInvalidRoot(string path)
+        {
+            string folder = Path.GetFileName(path).ToUpperInvariant();
+
+            return folder == "PS2" ||
+                   folder == "PS1" ||
+                   folder == "POPSMANAGER";
+        }
+
+        // ============================================================
         //  CAMBIAR CARPETA POPS
         // ============================================================
         private void ChangePopsPath_Click(object sender, RoutedEventArgs e)
@@ -60,6 +72,16 @@ namespace POPSManager.Views
             {
                 Services.Notifications.Error("La carpeta seleccionada no existe.");
                 return;
+            }
+
+            // Validación de raíz incorrecta
+            if (IsInvalidRoot(path))
+            {
+                Services.Notifications.Warning(
+                    "Has seleccionado una carpeta incorrecta (PS2/PS1). Se usará su carpeta padre."
+                );
+
+                path = Directory.GetParent(path)?.FullName ?? path;
             }
 
             try
@@ -96,6 +118,15 @@ namespace POPSManager.Views
             {
                 Services.Notifications.Error("La carpeta seleccionada no existe.");
                 return;
+            }
+
+            if (IsInvalidRoot(path))
+            {
+                Services.Notifications.Warning(
+                    "Has seleccionado una carpeta incorrecta (PS2/PS1). Se usará su carpeta padre."
+                );
+
+                path = Directory.GetParent(path)?.FullName ?? path;
             }
 
             try
