@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace POPSManager.Logic
 {
-    public static class NameCleaner
+    public static class NameCleanerBase
     {
         // Palabras menores que deben ir en minúsculas
         private static readonly string[] MinorWords =
