@@ -1,167 +1,120 @@
 ---
 
-📘 README — POPSManager
+POPSManager – Plataforma Profesional para Gestión de Juegos PS1/PS2
 
-🎮 POPSManager
-POPSManager es una herramienta profesional diseñada para automatizar y simplificar el manejo de juegos de PlayStation 1 para POPStarter, OPL y entornos similares.  
-Incluye conversión, multidisc, generación de VCD, creación de ELF, manejo de carpetas, detección automática y más.
-
----
-
-✨ Características principales
-
-- ✔ Conversión automática de BIN/CUE a VCD  
-- ✔ Detección y manejo de multidisc (crea DISCS.TXT automáticamente)  
-- ✔ Generación de ELF compatible con POPStarter  
-- ✔ Estructura de carpetas profesional y configurable  
-- ✔ Interfaz moderna y fácil de usar  
-- ✔ Logs detallados para depuración  
-- ✔ Totalmente modular y escalable  
-- ✔ Instalador MSIX firmado digitalmente  
+POPSManager es una herramienta modular, escalable y profesional diseñada para automatizar y simplificar el manejo de juegos de PlayStation 1 y PlayStation 2.  
+Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación de integridad, soporte multidisco, integración con bases de datos locales/online y un flujo completo de procesamiento.
 
 ---
 
-📦 Instalación
+🚀 Características Principales
 
-🔹 Opción 1 — Instalar directamente (recomendado)
+- Detección automática de GameID  
+  - PS1: extracción desde ejecutables y patrones internos  
+  - PS2: detección avanzada mediante análisis de IOPRP.IMG
 
-1. Descarga el archivo POPSManager.msix desde GitHub Releases  
-2. Haz doble clic para instalar  
-3. Si Windows muestra SmartScreen, sigue las instrucciones de la sección siguiente
+- Limpieza profesional de nombres (Title Case)  
+  - Convenciones: GameID.Name (CDX).VCD  
+  - Corrección automática de mayúsculas, símbolos y formatos
 
----
+- Soporte Multidisco  
+  - Detección, agrupación y renombrado inteligente  
+  - Compatibilidad con POPStarter y OPL
 
-🛡️ Seguridad, firma digital y SmartScreen
+- Validación de integridad  
+  - Verificación de estructura, archivos requeridos y consistencia  
+  - Módulo IntegrityValidator modular y extensible
 
-POPSManager está firmado digitalmente con un certificado de desarrollador.  
-Esto garantiza que:
+- Base de datos híbrida (local + online)  
+  - ps1db.json y ps2db.json  
+  - Expansión dinámica y validación automática
 
-- El archivo proviene del autor original  
-- No ha sido modificado  
-- Su integridad está verificada  
+- Interfaz moderna y modular (WPF)  
+  - Notificaciones animadas  
+  - UI escalable y mantenible  
+  - Integración de carátulas PS1/PS2
 
-ℹ️ ¿Por qué aparece SmartScreen?
-
-Windows SmartScreen puede mostrar advertencias cuando:
-
-- El proyecto es nuevo  
-- El certificado aún no tiene reputación  
-- El archivo no ha sido descargado muchas veces  
-
-Esto es normal en proyectos open‑source y certificados gratuitos.
-
-✔ Cómo continuar la instalación
-
-Si aparece el mensaje “Windows protegió tu PC”:
-
-1. Haz clic en Más información  
-2. Selecciona Ejecutar de todas formas
-
-El instalador está firmado y es seguro.
+- Arquitectura profesional  
+  - Módulos independientes  
+  - Servicios desacoplados  
+  - Código limpio, seguro y mantenible
 
 ---
 
-🏷 Instalación opcional del certificado público
-(Mejora la experiencia, elimina “Editor desconocido”, pero no elimina SmartScreen)
-
-Si deseas que Windows reconozca a POPSManager como editor confiable:
-
-1. Descarga la carpeta POPSManager-Certificate-Installer desde Releases  
-2. Ejecuta InstallCert.bat  
-3. Windows añadirá el certificado público a “Trusted People”
-
-📁 Contenido del instalador
+📁 Estructura del Proyecto
 
 `
-POPSManager-Certificate-Installer
-│
-├── POPSManager_Public.cer
-├── InstallCert.ps1
-└── InstallCert.bat
-`
-
-🧩 ¿Qué hace este instalador?
-
-- Instala solo la parte pública del certificado  
-- No requiere contraseña  
-- No expone la clave privada  
-- No compromete la seguridad del sistema  
-
----
-
-🖼️ Capturas de pantalla
-
-Vista principal
-(Reemplaza la URL por tus imágenes)
-
-`markdown
-!POPSManager UI
-`
-
-Ejemplo de conversión
-
-`markdown
-!Conversión
+/POPSManager
+ ├── Core/
+ │    ├── GameIdDetector/
+ │    ├── NameCleaner/
+ │    ├── MultiDiscManager/
+ │    ├── IntegrityValidator/
+ │    └── GameDatabase/
+ ├── UI/
+ │    ├── Views/
+ │    ├── Controls/
+ │    └── Notifications/
+ ├── Services/
+ │    ├── PathsService.cs
+ │    ├── GameProcessor.cs
+ │    └── CoverService.cs
+ ├── Resources/
+ │    ├── Icons/
+ │    └── Themes/
+ └── README.md
 `
 
 ---
 
-🚀 Uso básico
+🧠 Flujo de Procesamiento
 
-1. Abre POPSManager  
-2. Selecciona tus juegos en formato BIN/CUE  
-3. Configura las opciones deseadas  
-4. Haz clic en Procesar  
-5. POPSManager generará automáticamente:
-   - Carpeta del juego  
-   - VCD  
-   - ELF  
-   - DISCS.TXT (si aplica)  
-   - Estructura compatible con POPStarter  
+1. El usuario selecciona uno o varios juegos  
+2. El sistema detecta automáticamente el GameID  
+3. Se limpia y normaliza el nombre  
+4. Se valida la integridad del contenido  
+5. Se consulta la base de datos local/online  
+6. Se genera la estructura final (incluyendo multidisco)  
+7. Se descargan carátulas opcionales  
+8. Se muestra notificación visual del resultado
 
 ---
 
-🧩 Multidisc
+🖼️ Capturas de Pantalla
 
-POPSManager detecta automáticamente:
+Aquí irán las imágenes una vez generadas:
 
-- Juegos multidisc  
-- Orden correcto de los discos  
-- Nombres compatibles  
-- Generación de DISCS.TXT  
-- Estructura POPStarter lista para copiar a tu dispositivo
+`
+!Captura 1
+!Captura 2
+!Captura 3
+!Captura 4
+`
 
 ---
 
-🛠 Requisitos
+🔧 Requisitos
 
 - Windows 10/11  
-- .NET 8 (si usas la versión portable)  
-- 200 MB de espacio libre  
+- .NET 8  
+- Permisos de lectura/escritura en las rutas configuradas  
+- Conexión opcional para carátulas y base de datos online
 
 ---
 
-📄 Licencia
+📦 Build & Release Automation
 
-Este proyecto es open‑source.  
-Puedes modificarlo, estudiarlo y contribuir.
-
----
-
-🤝 Contribuciones
-
-Las contribuciones son bienvenidas:
-
-- Correcciones  
-- Nuevas funciones  
-- Mejoras de UI  
-- Documentación  
-- Traducciones  
+- Pipeline GitHub Actions  
+- Firma con certificados  
+- Versionado automático  
+- Generación de instalador profesional  
+- Publicación automática de assets
 
 ---
 
-📬 Contacto
+📝 Licencia
 
-Si deseas reportar un error o sugerir una mejora, abre un Issue en GitHub.
+Proyecto de uso personal y educativo.  
+No incluye ni distribuye contenido con copyright.
 
 ---
