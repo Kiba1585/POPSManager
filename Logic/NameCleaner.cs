@@ -37,6 +37,12 @@ namespace POPSManager.Logic
         private static readonly Regex BadSymbolsRegex =
             new(@"[\[\]\{\}#@%&]+", RegexOptions.Compiled);
 
+        private static readonly Regex ParenthesisCleaner =
+            new(@"\([^)]*\)", RegexOptions.Compiled);
+
+        private static readonly Regex BracketCleaner =
+            new(@"\[[^\]]*\]", RegexOptions.Compiled);
+
         private static readonly Regex SpaceNormalizer =
             new(@"\s{2,}", RegexOptions.Compiled);
 
@@ -53,34 +59,38 @@ namespace POPSManager.Logic
             // 1. Eliminar tag de disco
             name = DiscRegex.Replace(name, "");
 
-            // 2. Eliminar región
+            // 2. Eliminar contenido entre paréntesis y corchetes
+            name = ParenthesisCleaner.Replace(name, "");
+            name = BracketCleaner.Replace(name, "");
+
+            // 3. Eliminar región
             name = RegionRegex.Replace(name, "");
 
-            // 3. Eliminar idiomas
+            // 4. Eliminar idiomas
             name = LanguageRegex.Replace(name, "");
 
-            // 4. Eliminar versiones
+            // 5. Eliminar versiones
             name = VersionRegex.Replace(name, "");
 
-            // 5. Eliminar tracks
+            // 6. Eliminar tracks
             name = TrackRegex.Replace(name, "");
 
-            // 6. Eliminar IDs incrustados
+            // 7. Eliminar IDs incrustados
             name = EmbeddedIdRegex.Replace(name, "");
 
-            // 7. Eliminar símbolos basura
+            // 8. Eliminar símbolos basura
             name = BadSymbolsRegex.Replace(name, "");
 
-            // 8. Normalizar separadores
+            // 9. Normalizar separadores
             name = UnderscoreDotNormalizer.Replace(name, " ");
 
-            // 9. Normalizar espacios
+            // 10. Normalizar espacios
             name = SpaceNormalizer.Replace(name, " ");
 
-            // 10. Limpieza final
+            // 11. Limpieza final
             name = name.Trim();
 
-            // 11. Title Case inteligente
+            // 12. Title Case inteligente
             return ToTitleCaseSmart(name);
         }
 
@@ -89,6 +99,8 @@ namespace POPSManager.Logic
         /// </summary>
         public static string CleanTitleOnly(string name)
         {
+            name = ParenthesisCleaner.Replace(name, "");
+            name = BracketCleaner.Replace(name, "");
             name = RegionRegex.Replace(name, "");
             name = LanguageRegex.Replace(name, "");
             name = VersionRegex.Replace(name, "");
