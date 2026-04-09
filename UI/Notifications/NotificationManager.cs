@@ -1,19 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Controls;
-using POPSManager.Models;   // ← OBLIGATORIO
+using POPSManager.Models;
 
 namespace POPSManager.UI.Notifications
 {
-    public partial class NotificationManager
+    public class NotificationManager
     {
-        private readonly Panel _container;
+        private readonly NotificationHost _host;
         private readonly List<NotificationToast> _activeToasts = new();
 
-        public NotificationManager(Panel container)
+        public NotificationManager(NotificationHost host)
         {
-            _container = container;
+            _host = host;
         }
 
         // ============================================================
@@ -32,7 +31,7 @@ namespace POPSManager.UI.Notifications
                 toast.Closed += OnToastClosed;
 
                 _activeToasts.Add(toast);
-                _container.Children.Insert(0, toast);
+                _host.ShowToast(toast);
             });
         }
 
@@ -43,7 +42,6 @@ namespace POPSManager.UI.Notifications
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                _container.Children.Remove(toast);
                 _activeToasts.Remove(toast);
             });
         }
