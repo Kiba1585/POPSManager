@@ -60,12 +60,12 @@ namespace POPSManager.Logic
                 ApplyGameSpecificFixes(gameId, lines, log);
 
                 // ============================================================
-                // 3. Fixes por engine (Crash, Spyro, RE, FF…)
+                // 3. Fixes por engine (Crash, Spyro, FF…)
                 // ============================================================
                 ApplyEngineFixes(gameId, lines, log);
 
                 // ============================================================
-                // 4. Fixes por heurísticas (FMVs, timings, etc.)
+                // 4. Fixes heurísticos seguros
                 // ============================================================
                 ApplyHeuristicFixes(gameId, lines, log);
 
@@ -100,7 +100,7 @@ namespace POPSManager.Logic
         private static bool IsDisc1Folder(string folder)
         {
             string name = Path.GetFileName(folder).ToUpperInvariant();
-            return name.Contains("(CD1)") || name.Contains("CD1") || name.Contains("DISC1");
+            return name.Contains("CD1") || name.Contains("(CD1)") || name.Contains("DISC1");
         }
 
         // ============================================================
@@ -155,7 +155,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  FIXES POR ENGINE (Crash, Spyro, RE, FF…)
+        //  FIXES POR ENGINE (Crash, Spyro, FF…)
         // ============================================================
         private static void ApplyEngineFixes(string gameId, List<string> lines, Action<string> log)
         {
@@ -184,20 +184,13 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  FIXES HEURÍSTICOS (FMVs, timings, etc.)
+        //  FIXES HEURÍSTICOS SEGUROS
         // ============================================================
         private static void ApplyHeuristicFixes(string gameId, List<string> lines, Action<string> log)
         {
             string id = gameId.ToUpperInvariant();
 
-            // Juegos con FMVs problemáticos
-            if (id.Contains("5") || id.Contains("7"))
-            {
-                lines.Add("SKIPVIDEOS=ON");
-                log("[PS1] Heurística: FMVs problemáticos detectados (SKIPVIDEOS)");
-            }
-
-            // Juegos con timings sensibles
+            // Heurística real: IDs terminados en 80 o 65 suelen tener timings sensibles
             if (id.EndsWith("80") || id.EndsWith("65"))
             {
                 lines.Add("FORCEVIDEO=1");
