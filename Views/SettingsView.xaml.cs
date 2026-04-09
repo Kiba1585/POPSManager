@@ -25,6 +25,8 @@ namespace POPSManager.Views
         {
             try
             {
+                RootPathBox.Text = Services.Paths.RootFolder;
+
                 PopsPath.Text = Services.Paths.PopsFolder;
                 AppsPath.Text = Services.Paths.AppsFolder;
 
@@ -53,6 +55,64 @@ namespace POPSManager.Views
         }
 
         // ============================================================
+        //  CAMBIAR CARPETA RAÍZ DEL DISPOSITIVO OPL
+        // ============================================================
+        private void ChangeRootFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new CommonOpenFileDialog
+            {
+                IsFolderPicker = true,
+                Title = "Seleccionar carpeta raíz del dispositivo OPL"
+            };
+
+            if (dlg.ShowDialog() != CommonFileDialogResult.Ok)
+                return;
+
+            string path = dlg.FileName;
+
+            if (!Directory.Exists(path))
+            {
+                Services.Notifications.Error("La carpeta seleccionada no existe.");
+                return;
+            }
+
+            // Validación: evitar PS2/PS1/POPSManager
+            if (IsInvalidRoot(path))
+            {
+                Services.Notifications.Warning(
+                    "Has seleccionado una carpeta incorrecta (PS2/PS1). Se usará su carpeta padre."
+                );
+
+                path = Directory.GetParent(path)?.FullName ?? path;
+            }
+
+            try
+            {
+                // Guardar la nueva raíz
+                Services.Settings.RootFolder = path;
+                Services.Settings.Save();
+
+                // Regenerar PathsService con la nueva raíz
+                App.Services.Paths = new PathsService(
+                    Services.LogService.Write,
+                    Services.Settings
+                );
+
+                // Actualizar UI
+                RootPathBox.Text = Services.Paths.RootFolder;
+                PopsPath.Text = Services.Paths.PopsFolder;
+                AppsPath.Text = Services.Paths.AppsFolder;
+
+                Services.Notifications.Success("Carpeta raíz actualizada correctamente.");
+            }
+            catch (Exception ex)
+            {
+                Services.Notifications.Error("No se pudo actualizar la carpeta raíz.");
+                Services.LogService.Error($"[SettingsView] Error ChangeRootFolder: {ex.Message}");
+            }
+        }
+
+        // ============================================================
         //  CAMBIAR CARPETA POPS
         // ============================================================
         private void ChangePopsPath_Click(object sender, RoutedEventArgs e)
@@ -74,7 +134,6 @@ namespace POPSManager.Views
                 return;
             }
 
-            // Validación de raíz incorrecta
             if (IsInvalidRoot(path))
             {
                 Services.Notifications.Warning(
