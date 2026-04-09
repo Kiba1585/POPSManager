@@ -7,16 +7,15 @@ namespace POPSManager.Logic
 {
     public static class GameIdDetector
     {
-        // Regex profesional para detectar IDs PS1/PS2
-        private static readonly Regex IdRegex =
+        // PS1: SLUS_123.45, SCES_543.21, etc.
+        private static readonly Regex Ps1Regex =
             new(@"(SLUS|SCUS|SLES|SCES|SLPM|SLPS|SCPS)[-_ ]?(\d{3})[._ ]?(\d{2})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // Prefijos válidos para detección por nombre
-        private static readonly string[] Patterns =
-        {
-            "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPS"
-        };
+        // PS2: SLUS_20312, SLES_54321, etc. (sin punto)
+        private static readonly Regex Ps2Regex =
+            new(@"(SLUS|SCUS|SLES|SCES|SLPM|SLPS|SCPS)[-_ ]?(\d{5})",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private const int SectorSize = 2048;
 
@@ -25,50 +24,78 @@ namespace POPSManager.Logic
         // ============================================================
         public static string? DetectGameId(string path)
         {
+            if (!File.Exists(path))
+                return null;
+
             try
             {
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
 
+                // 1) ISO9660 → SYSTEM.CNF (PS1 y PS2)
                 int rootLba = GetRootDirectoryLba(fs);
                 if (rootLba > 0)
                 {
-                    // 1. SYSTEM.CNF (PS1 y PS2)
                     var sys = FindFile(fs, rootLba, "SYSTEM.CNF");
                     if (sys.lba > 0)
                     {
                         var data = ReadFileFromIso(fs, sys.lba, sys.size);
-                        var id = ExtractId(data);
+                        var id = ExtractPs1OrPs2Id(data);
                         if (id != null)
-                            return NormalizeId(id);
+                            return Normalize(id);
                     }
 
-                    // 2. IOPRP.IMG (PS2 real)
+                    // 2) PS2 → IOPRP.IMG
                     var iop = FindFile(fs, rootLba, "IOPRP.IMG");
                     if (iop.lba > 0)
                     {
                         var data = ReadFileFromIso(fs, iop.lba, iop.size);
-                        var id = ExtractId(data);
+                        var id = ExtractPs2Id(data);
                         if (id != null)
-                            return NormalizeId(id);
+                            return Normalize(id);
                     }
                 }
+
+                // 3) PS2 → ELF (muy común)
+                fs.Seek(0, SeekOrigin.Begin);
+                var elfId = ScanForPs2Id(fs, 8 * 1024 * 1024);
+                if (elfId != null)
+                    return Normalize(elfId);
+
+                // 4) PS1 → escaneo profundo (primeros 16MB)
+                fs.Seek(0, SeekOrigin.Begin);
+                var ps1Deep = ScanForPs1Id(fs, 16 * 1024 * 1024);
+                if (ps1Deep != null)
+                    return Normalize(ps1Deep);
             }
             catch
             {
                 // Ignorar errores y continuar con fallback
             }
 
-            // 3. Fallback → nombre del archivo
+            // 5) Fallback → nombre del archivo
             var nameId = DetectFromName(Path.GetFileName(path));
             if (!string.IsNullOrWhiteSpace(nameId))
-                return NormalizeId(nameId);
+                return Normalize(nameId);
 
             return null;
         }
 
         // ============================================================
-        //  LECTOR SECTORIAL (ISO9660)
+        //  ISO9660: Primary Volume Descriptor
         // ============================================================
+        private static int GetRootDirectoryLba(FileStream fs)
+        {
+            try
+            {
+                var pvd = ReadSector(fs, 16);
+                return BitConverter.ToInt32(pvd, 156 + 2);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         private static byte[] ReadSector(FileStream fs, int lba, int count = 1)
         {
             byte[] buffer = new byte[SectorSize * count];
@@ -77,35 +104,13 @@ namespace POPSManager.Logic
             return buffer;
         }
 
-        // ============================================================
-        //  LEER PRIMARY VOLUME DESCRIPTOR (sector 16)
-        // ============================================================
-        private static int GetRootDirectoryLba(FileStream fs)
-        {
-            try
-            {
-                var pvd = ReadSector(fs, 16);
-
-                // Offset 156 = Directory Record del root
-                int lba = BitConverter.ToInt32(pvd, 156 + 2);
-                return lba;
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-
-        // ============================================================
-        //  BUSCAR ARCHIVO EN EL DIRECTORIO (SYSTEM.CNF / IOPRP.IMG)
-        // ============================================================
         private static (int lba, int size) FindFile(FileStream fs, int rootLba, string target)
         {
             try
             {
                 var sector = ReadSector(fs, rootLba);
-
                 int pos = 0;
+
                 while (pos < sector.Length)
                 {
                     int len = sector[pos];
@@ -131,9 +136,6 @@ namespace POPSManager.Logic
             return (0, 0);
         }
 
-        // ============================================================
-        //  LEER ARCHIVO REAL DESDE EL ISO
-        // ============================================================
         private static byte[] ReadFileFromIso(FileStream fs, int lba, int size)
         {
             int sectors = (size + SectorSize - 1) / SectorSize;
@@ -141,79 +143,106 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  EXTRAER ID DE BYTES (SYSTEM.CNF o IOPRP.IMG)
+        //  EXTRACCIÓN DE ID (PS1 + PS2)
         // ============================================================
-        private static string? ExtractId(byte[] data)
+        private static string? ExtractPs1OrPs2Id(byte[] data)
         {
             string text = Encoding.ASCII.GetString(data);
 
-            var match = IdRegex.Match(text);
-            if (!match.Success)
-                return null;
+            var ps1 = Ps1Regex.Match(text);
+            if (ps1.Success)
+                return $"{ps1.Groups[1].Value}_{ps1.Groups[2].Value}{ps1.Groups[3].Value}";
 
-            string prefix = match.Groups[1].Value.ToUpper();
-            string part1 = match.Groups[2].Value;
-            string part2 = match.Groups[3].Value;
+            var ps2 = Ps2Regex.Match(text);
+            if (ps2.Success)
+                return $"{ps2.Groups[1].Value}_{ps2.Groups[2].Value}";
 
-            return $"{prefix}_{part1}{part2}";
+            return null;
+        }
+
+        private static string? ExtractPs2Id(byte[] data)
+        {
+            string text = Encoding.ASCII.GetString(data);
+            var m = Ps2Regex.Match(text);
+            if (m.Success)
+                return $"{m.Groups[1].Value}_{m.Groups[2].Value}";
+            return null;
         }
 
         // ============================================================
-        //  DETECCIÓN DESDE EL NOMBRE DEL ARCHIVO
+        //  ESCANEO PROFUNDO (PS1 y PS2)
+        // ============================================================
+        private static string? ScanForPs1Id(FileStream fs, int bytes)
+        {
+            int toRead = (int)Math.Min(bytes, fs.Length);
+            byte[] buffer = new byte[toRead];
+            fs.Read(buffer, 0, toRead);
+
+            string text = Encoding.ASCII.GetString(buffer);
+            var m = Ps1Regex.Match(text);
+            if (m.Success)
+                return $"{m.Groups[1].Value}_{m.Groups[2].Value}{m.Groups[3].Value}";
+
+            return null;
+        }
+
+        private static string? ScanForPs2Id(FileStream fs, int bytes)
+        {
+            int toRead = (int)Math.Min(bytes, fs.Length);
+            byte[] buffer = new byte[toRead];
+            fs.Read(buffer, 0, toRead);
+
+            string text = Encoding.ASCII.GetString(buffer);
+            var m = Ps2Regex.Match(text);
+            if (m.Success)
+                return $"{m.Groups[1].Value}_{m.Groups[2].Value}";
+
+            return null;
+        }
+
+        // ============================================================
+        //  DETECCIÓN DESDE EL NOMBRE
         // ============================================================
         public static string DetectFromName(string name)
         {
             name = name.ToUpperInvariant();
 
-            foreach (var p in Patterns)
-            {
-                int index = name.IndexOf(p);
-                if (index >= 0)
-                {
-                    string raw = name.Substring(index);
+            var m1 = Ps1Regex.Match(name);
+            if (m1.Success)
+                return $"{m1.Groups[1].Value}_{m1.Groups[2].Value}{m1.Groups[3].Value}";
 
-                    raw = raw.Replace("-", "_")
-                             .Replace(" ", "_")
-                             .Replace(".", "_");
-
-                    var m = IdRegex.Match(raw);
-                    if (m.Success)
-                    {
-                        string prefix = m.Groups[1].Value.ToUpper();
-                        string part1 = m.Groups[2].Value;
-                        string part2 = m.Groups[3].Value;
-
-                        return $"{prefix}_{part1}{part2}";
-                    }
-                }
-            }
+            var m2 = Ps2Regex.Match(name);
+            if (m2.Success)
+                return $"{m2.Groups[1].Value}_{m2.Groups[2].Value}";
 
             return "";
         }
 
         // ============================================================
-        //  NORMALIZAR ID (SCES_12345 → SCES_12345)
+        //  NORMALIZACIÓN
         // ============================================================
-        private static string NormalizeId(string id)
+        private static string Normalize(string id)
         {
-            id = id.ToUpperInvariant();
+            id = id.ToUpperInvariant()
+                   .Replace("-", "_")
+                   .Replace(" ", "_")
+                   .Replace(".", "_");
 
-            // Asegurar formato SCES_12345
-            id = id.Replace("-", "_").Replace(" ", "_").Replace(".", "_");
+            // PS1 → SLUS_123.45
+            var ps1 = Ps1Regex.Match(id);
+            if (ps1.Success)
+                return $"{ps1.Groups[1].Value}_{ps1.Groups[2].Value}.{ps1.Groups[3].Value}";
 
-            var m = IdRegex.Match(id);
-            if (!m.Success)
-                return id;
+            // PS2 → SLUS_20312
+            var ps2 = Ps2Regex.Match(id);
+            if (ps2.Success)
+                return $"{ps2.Groups[1].Value}_{ps2.Groups[2].Value}";
 
-            string prefix = m.Groups[1].Value.ToUpper();
-            string part1 = m.Groups[2].Value;
-            string part2 = m.Groups[3].Value;
-
-            return $"{prefix}_{part1}{part2}";
+            return id;
         }
 
         // ============================================================
-        //  DETECTAR SI ES PAL
+        //  REGIÓN
         // ============================================================
         public static bool IsPalRegion(string gameId)
         {
@@ -228,7 +257,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECTAR SI REQUIERE PAL-60
+        //  PAL-60
         // ============================================================
         public static bool RequiresPal60(string gameId)
         {
