@@ -15,8 +15,8 @@ namespace POPSManager.Services
         public bool DarkMode { get; set; } = false;
         public bool NotificationsEnabled { get; set; } = true;
 
-        public bool UseDatabase { get; set; } = true;   // ← NUEVO
-        public bool UseCovers { get; set; } = true;     // ← NUEVO
+        public bool UseDatabase { get; set; } = true;
+        public bool UseCovers { get; set; } = true;
 
         public string RootFolder { get; set; } = "";
         public string CustomElfPath { get; set; } = "";
@@ -69,8 +69,8 @@ namespace POPSManager.Services
                 DarkMode = data.DarkMode;
                 NotificationsEnabled = data.NotificationsEnabled;
 
-                UseDatabase = data.UseDatabase;   // ← NUEVO
-                UseCovers = data.UseCovers;       // ← NUEVO
+                UseDatabase = data.UseDatabase;
+                UseCovers = data.UseCovers;
 
                 RootFolder = data.RootFolder ?? "";
                 CustomElfPath = data.CustomElfPath ?? "";
@@ -101,8 +101,8 @@ namespace POPSManager.Services
                     DarkMode = DarkMode,
                     NotificationsEnabled = NotificationsEnabled,
 
-                    UseDatabase = UseDatabase,   // ← NUEVO
-                    UseCovers = UseCovers,       // ← NUEVO
+                    UseDatabase = UseDatabase,
+                    UseCovers = UseCovers,
 
                     RootFolder = RootFolder,
                     CustomElfPath = CustomElfPath,
@@ -218,8 +218,8 @@ namespace POPSManager.Services
             public bool DarkMode { get; set; }
             public bool NotificationsEnabled { get; set; }
 
-            public bool UseDatabase { get; set; } = true;   // ← NUEVO
-            public bool UseCovers { get; set; } = true;     // ← NUEVO
+            public bool UseDatabase { get; set; } = true;
+            public bool UseCovers { get; set; } = true;
 
             public string? RootFolder { get; set; }
             public string? CustomElfPath { get; set; }
