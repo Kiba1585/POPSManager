@@ -14,13 +14,19 @@ namespace POPSManager.Logic
             string vcdFullPath,
             string appsFolder,
             int discNumber,
+            string cleanTitle,     // <-- VIENE DESDE GameProcessor
+            string gameId,         // <-- VIENE DESDE GameProcessor
             Action<string> log)
         {
             try
             {
-                // -----------------------------
-                // Validaciones iniciales
-                // -----------------------------
+                // Solo CD1 genera ELF
+                if (discNumber != 1)
+                {
+                    log("[ELF] Saltando generación: solo CD1 genera ELF.");
+                    return true;
+                }
+
                 if (!File.Exists(baseElfPath))
                 {
                     log($"[ELF] ERROR: POPSTARTER.ELF base no encontrado → {baseElfPath}");
@@ -33,31 +39,13 @@ namespace POPSManager.Logic
                     return false;
                 }
 
-                if (string.IsNullOrWhiteSpace(appsFolder))
-                {
-                    log("[ELF] ERROR: Carpeta APPS inválida.");
-                    return false;
-                }
-
                 Directory.CreateDirectory(appsFolder);
 
-                // -----------------------------
-                // Datos del juego
-                // -----------------------------
-                string gameId = GameIdDetector.DetectGameId(vcdFullPath) ?? "UNKNOWN";
-
-                // Título limpio SIN GameID (lo que verá OPL)
-                string baseName = Path.GetFileNameWithoutExtension(vcdFullPath) ?? "";
-                string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
-
-                if (discNumber > 1)
-                    cleanTitle += $" (Disc {discNumber})";
-
-                // Nombre de archivo ELF (con .ELF.NTSC)
-                string elfFileName = $"{gameId} - {cleanTitle}.ELF.NTSC";
+                // Nombre final del ELF
+                string elfFileName = NameFormatter.BuildElfName(gameId, cleanTitle);
                 string outputElf = Path.Combine(appsFolder, elfFileName);
 
-                // Ruta POPStarter al VCD (mass:/POPS/Carpeta/VCD)
+                // Ruta POPStarter
                 string vcdRelativePath = BuildPopsVcdPath(vcdFullPath);
 
                 log("[ELF] Preparando generación de ELF PS1:");
@@ -66,25 +54,20 @@ namespace POPSManager.Logic
                 log($"[ELF]   VCD:    {vcdRelativePath}");
                 log($"[ELF]   ELF:    {outputElf}");
 
-                // -----------------------------
                 // Copiar ELF base
-                // -----------------------------
-                Directory.CreateDirectory(Path.GetDirectoryName(outputElf)!);
                 File.Copy(baseElfPath, outputElf, true);
 
-                // Normalizar valores ASCII
+                // Normalizar ASCII
                 string safeGameId = NormalizeAscii(gameId);
                 string safeVcdPath = NormalizeAscii(vcdRelativePath);
                 string safeTitle = NormalizeAscii(cleanTitle);
 
-                // Validar longitudes
+                // Truncar si es necesario
                 safeGameId = TruncateWithLog(safeGameId, ElfOffsets.GameIdMaxLength, log, "GameID");
                 safeVcdPath = TruncateWithLog(safeVcdPath, ElfOffsets.VcdPathMaxLength, log, "VCD Path");
                 safeTitle = TruncateWithLog(safeTitle, ElfOffsets.TitleMaxLength, log, "Title");
 
-                // -----------------------------
                 // Escritura binaria
-                // -----------------------------
                 using var stream = new FileStream(outputElf, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                 using var writer = new BinaryWriter(stream, Encoding.ASCII, leaveOpen: true);
 
@@ -108,10 +91,6 @@ namespace POPSManager.Logic
             }
         }
 
-        // ============================================================
-        //  Construir ruta POPStarter al VCD
-        //  mass:/POPS/{Carpeta}/{Archivo.VCD}
-        // ============================================================
         private static string BuildPopsVcdPath(string vcdFullPath)
         {
             string folder = Path.GetFileName(Path.GetDirectoryName(vcdFullPath)) ?? "";
@@ -119,9 +98,6 @@ namespace POPSManager.Logic
             return $"mass:/POPS/{folder}/{file}";
         }
 
-        // ============================================================
-        // Helpers
-        // ============================================================
         private static string NormalizeAscii(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
