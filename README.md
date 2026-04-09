@@ -87,7 +87,7 @@ A continuación se muestran capturas conceptuales generadas para ilustrar el flu
 ---
 
 1. Pantalla Principal
-[Parece que el resultado no era seguro para mostrar. ¡Cambiemos de enfoque y probemos algo diferente!]
+[https://copilot.microsoft.com/shares/mWgDVYwS8XhcS48tG3bmo]
 
 Vista general del POPSManager mostrando la lista de juegos, acciones principales y flujo de procesamiento.
 
