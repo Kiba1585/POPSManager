@@ -2,7 +2,7 @@
 
 POPSManager – Plataforma Profesional para Gestión de Juegos PS1/PS2
 
-POPSManager es una herramienta modular, escalable y profesional diseñada para automatizar y simplificar el manejo de juegos de PlayStation 1 y PlayStation 2.  
+POPSManager es una herramienta modular, escalable y profesional diseñada para automatizar y optimizar el manejo de juegos de PlayStation 1 y PlayStation 2.  
 Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación de integridad, soporte multidisco, integración con bases de datos locales/online y un flujo completo de procesamiento.
 
 ---
@@ -11,7 +11,7 @@ Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación
 
 - Detección automática de GameID  
   - PS1: extracción desde ejecutables y patrones internos  
-  - PS2: detección avanzada mediante análisis de IOPRP.IMG
+  - PS2: análisis avanzado mediante IOPRP.IMG
 
 - Limpieza profesional de nombres (Title Case)  
   - Convenciones: GameID.Name (CDX).VCD  
@@ -80,32 +80,56 @@ Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación
 
 ---
 
+🖼️ Capturas de Pantalla
 
-## 🖼️ Capturas de Pantalla
-
-### Pantalla Principal
-![Pantalla Principal](images/capture1.png)
-Visual general del POPSManager mostrando la lista de juegos, botones de acción y flujo de procesamiento.
-
-### Detección de GameID
-![Detección de GameID](images/capture2.png)
-Interfaz de análisis y detección automática del GameID, región y coincidencia en la base de datos.
-
-### Gestión Multidisco
-![Gestión Multidisco](images/capture3.png)
-Vista de agrupación y renombrado de discos múltiples, con indicadores de estado y opciones de combinación.
-
-### Procesamiento Completo
-![Procesamiento Completo](images/capture del procesamiento con validación, limpieza, descarga de carátulas y notificación de éxito.
+A continuación se muestran capturas conceptuales generadas para ilustrar el flujo completo del POPSManager.
 
 ---
 
-🔧 Requisitos
+1. Pantalla Principal
+[Parece que el resultado no era seguro para mostrar. ¡Cambiemos de enfoque y probemos algo diferente!]
 
-- Windows 10/11  
-- .NET 8  
-- Permisos de lectura/escritura en las rutas configuradas  
-- Conexión opcional para carátulas y base de datos online
+Vista general del POPSManager mostrando la lista de juegos, acciones principales y flujo de procesamiento.
+
+---
+
+2. Detección Automática de GameID
+[Parece que el resultado no era seguro para mostrar. ¡Cambiemos de enfoque y probemos algo diferente!]
+
+Interfaz de análisis y detección automática del GameID, región y coincidencia en la base de datos.
+
+---
+
+3. Gestión Multidisco
+[Parece que el resultado no era seguro para mostrar. ¡Cambiemos de enfoque y probemos algo diferente!]
+
+Vista de agrupación y renombrado de discos múltiples, con indicadores de estado y opciones de combinación.
+
+---
+
+4. Procesamiento Completo
+[Parece que el resultado no era seguro para mostrar. ¡Cambiemos de enfoque y probemos algo diferente!]
+
+Flujo final del procesamiento con validación, limpieza, descarga de carátulas y notificación de éxito.
+
+---
+
+🎨 Créditos Visuales
+
+Las imágenes incluidas en este README fueron generadas conceptualmente para documentación del proyecto.  
+No representan capturas reales del software, sino mockups técnicos diseñados para ilustrar el flujo de trabajo.
+
+- Diseño conceptual: Raidel  
+- Generación visual: Microsoft Copilot (IA)  
+- Estilo: UI WPF moderna + elementos técnicos PlayStation  
+- Proyecto: POPSManager – Gestión Profesional de Juegos PS1/PS2
+
+---
+
+📚 Notas de Documentación
+
+Este README y sus recursos visuales forman parte de la documentación oficial del proyecto POPSManager.  
+Pueden utilizarse en presentaciones, portafolios o demostraciones técnicas manteniendo la atribución correspondiente.
 
 ---
 
