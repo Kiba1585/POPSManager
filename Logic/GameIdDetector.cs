@@ -7,12 +7,12 @@ namespace POPSManager.Logic
 {
     public static class GameIdDetector
     {
-        // PS1: SLUS_123.45, SCES_543.21, etc.
+        // PS1: SLUS_123.45
         private static readonly Regex Ps1Regex =
             new(@"(SLUS|SCUS|SLES|SCES|SLPM|SLPS|SCPS)[-_ ]?(\d{3})[._ ]?(\d{2})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // PS2: SLUS_20312, SLES_54321, etc. (sin punto)
+        // PS2: SLUS_20312
         private static readonly Regex Ps2Regex =
             new(@"(SLUS|SCUS|SLES|SCES|SLPM|SLPS|SCPS)[-_ ]?(\d{5})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -31,57 +31,82 @@ namespace POPSManager.Logic
             {
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
 
-                // 1) ISO9660 → SYSTEM.CNF (PS1 y PS2)
+                // ========================================================
+                // 1) PS2 primero (IOPRP.IMG → ELF → SYSTEM.CNF)
+                // ========================================================
                 int rootLba = GetRootDirectoryLba(fs);
                 if (rootLba > 0)
                 {
-                    var sys = FindFile(fs, rootLba, "SYSTEM.CNF");
-                    if (sys.lba > 0)
-                    {
-                        var data = ReadFileFromIso(fs, sys.lba, sys.size);
-                        var id = ExtractPs1OrPs2Id(data);
-                        if (id != null)
-                            return Normalize(id);
-                    }
-
-                    // 2) PS2 → IOPRP.IMG
+                    // IOPRP.IMG (PS2)
                     var iop = FindFile(fs, rootLba, "IOPRP.IMG");
                     if (iop.lba > 0)
                     {
                         var data = ReadFileFromIso(fs, iop.lba, iop.size);
                         var id = ExtractPs2Id(data);
                         if (id != null)
-                            return Normalize(id);
+                            return NormalizePs2(id);
+                    }
+
+                    // SYSTEM.CNF (PS2)
+                    var sys = FindFile(fs, rootLba, "SYSTEM.CNF");
+                    if (sys.lba > 0)
+                    {
+                        var data = ReadFileFromIso(fs, sys.lba, sys.size);
+                        var id = ExtractPs2Id(data);
+                        if (id != null)
+                            return NormalizePs2(id);
                     }
                 }
 
-                // 3) PS2 → ELF (muy común)
+                // ELF interno (PS2)
                 fs.Seek(0, SeekOrigin.Begin);
-                var elfId = ScanForPs2Id(fs, 8 * 1024 * 1024);
+                var elfId = ScanForPs2Id(fs, 2 * 1024 * 1024);
                 if (elfId != null)
-                    return Normalize(elfId);
+                    return NormalizePs2(elfId);
 
-                // 4) PS1 → escaneo profundo (primeros 16MB)
+                // ========================================================
+                // 2) PS1 (SYSTEM.CNF → deep scan)
+                // ========================================================
+                if (rootLba > 0)
+                {
+                    var sys = FindFile(fs, rootLba, "SYSTEM.CNF");
+                    if (sys.lba > 0)
+                    {
+                        var data = ReadFileFromIso(fs, sys.lba, sys.size);
+                        var id = ExtractPs1Id(data);
+                        if (id != null)
+                            return NormalizePs1(id);
+                    }
+                }
+
                 fs.Seek(0, SeekOrigin.Begin);
-                var ps1Deep = ScanForPs1Id(fs, 16 * 1024 * 1024);
+                var ps1Deep = ScanForPs1Id(fs, 2 * 1024 * 1024);
                 if (ps1Deep != null)
-                    return Normalize(ps1Deep);
+                    return NormalizePs1(ps1Deep);
             }
             catch
             {
-                // Ignorar errores y continuar con fallback
+                // Ignorar errores
             }
 
-            // 5) Fallback → nombre del archivo
+            // ========================================================
+            // 3) Fallback → nombre del archivo
+            // ========================================================
             var nameId = DetectFromName(Path.GetFileName(path));
             if (!string.IsNullOrWhiteSpace(nameId))
-                return Normalize(nameId);
+            {
+                if (Ps2Regex.IsMatch(nameId))
+                    return NormalizePs2(nameId);
+
+                if (Ps1Regex.IsMatch(nameId))
+                    return NormalizePs1(nameId);
+            }
 
             return null;
         }
 
         // ============================================================
-        //  ISO9660: Primary Volume Descriptor
+        //  ISO9660
         // ============================================================
         private static int GetRootDirectoryLba(FileStream fs)
         {
@@ -90,10 +115,7 @@ namespace POPSManager.Logic
                 var pvd = ReadSector(fs, 16);
                 return BitConverter.ToInt32(pvd, 156 + 2);
             }
-            catch
-            {
-                return 0;
-            }
+            catch { return 0; }
         }
 
         private static byte[] ReadSector(FileStream fs, int lba, int count = 1)
@@ -143,23 +165,20 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  EXTRACCIÓN DE ID (PS1 + PS2)
+        //  EXTRACCIÓN PS1
         // ============================================================
-        private static string? ExtractPs1OrPs2Id(byte[] data)
+        private static string? ExtractPs1Id(byte[] data)
         {
             string text = Encoding.ASCII.GetString(data);
-
-            var ps1 = Ps1Regex.Match(text);
-            if (ps1.Success)
-                return $"{ps1.Groups[1].Value}_{ps1.Groups[2].Value}{ps1.Groups[3].Value}";
-
-            var ps2 = Ps2Regex.Match(text);
-            if (ps2.Success)
-                return $"{ps2.Groups[1].Value}_{ps2.Groups[2].Value}";
-
+            var m = Ps1Regex.Match(text);
+            if (m.Success)
+                return $"{m.Groups[1].Value}_{m.Groups[2].Value}{m.Groups[3].Value}";
             return null;
         }
 
+        // ============================================================
+        //  EXTRACCIÓN PS2
+        // ============================================================
         private static string? ExtractPs2Id(byte[] data)
         {
             string text = Encoding.ASCII.GetString(data);
@@ -170,7 +189,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  ESCANEO PROFUNDO (PS1 y PS2)
+        //  ESCANEO PROFUNDO
         // ============================================================
         private static string? ScanForPs1Id(FileStream fs, int bytes)
         {
@@ -201,7 +220,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECCIÓN DESDE EL NOMBRE
+        //  DETECCIÓN DESDE NOMBRE
         // ============================================================
         public static string DetectFromName(string name)
         {
@@ -219,24 +238,35 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  NORMALIZACIÓN
+        //  NORMALIZACIÓN PS1
         // ============================================================
-        private static string Normalize(string id)
+        private static string NormalizePs1(string id)
         {
             id = id.ToUpperInvariant()
                    .Replace("-", "_")
                    .Replace(" ", "_")
                    .Replace(".", "_");
 
-            // PS1 → SLUS_123.45
-            var ps1 = Ps1Regex.Match(id);
-            if (ps1.Success)
-                return $"{ps1.Groups[1].Value}_{ps1.Groups[2].Value}.{ps1.Groups[3].Value}";
+            var m = Ps1Regex.Match(id);
+            if (m.Success)
+                return $"{m.Groups[1].Value}_{m.Groups[2].Value}.{m.Groups[3].Value}";
 
-            // PS2 → SLUS_20312
-            var ps2 = Ps2Regex.Match(id);
-            if (ps2.Success)
-                return $"{ps2.Groups[1].Value}_{ps2.Groups[2].Value}";
+            return id;
+        }
+
+        // ============================================================
+        //  NORMALIZACIÓN PS2
+        // ============================================================
+        private static string NormalizePs2(string id)
+        {
+            id = id.ToUpperInvariant()
+                   .Replace("-", "_")
+                   .Replace(" ", "_")
+                   .Replace(".", "_");
+
+            var m = Ps2Regex.Match(id);
+            if (m.Success)
+                return $"{m.Groups[1].Value}_{m.Groups[2].Value}";
 
             return id;
         }
