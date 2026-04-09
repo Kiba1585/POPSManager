@@ -167,12 +167,12 @@ namespace POPSManager.Logic
         {
             logService.Info($"[PS1] Procesando grupo: {baseName}");
 
-            // Ordenar discos por número usando NameCleanerBase + MultiDiscManager
+            // Ordenar discos por número usando MultiDiscManager Ultra‑Pro
             discs = discs.OrderBy(d =>
             {
-                NameCleanerBase.CleanTitleOnly(Path.GetFileNameWithoutExtension(d));
-                NameCleanerBase.Clean(Path.GetFileNameWithoutExtension(d), out string? cdTag);
-                return MultiDiscManager.ExtractDiscNumber(cdTag ?? "");
+                string fileName = Path.GetFileNameWithoutExtension(d);
+                NameCleanerBase.Clean(fileName, out string? cdTag);
+                return MultiDiscManager.ExtractDiscNumber(cdTag ?? fileName);
             }).ToList();
 
             // Detectar ID real desde el VCD
@@ -237,7 +237,13 @@ namespace POPSManager.Logic
                     string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
                     Directory.CreateDirectory(discFolder);
 
-                    string finalFileName = NameFormatter.BuildPs1VcdName(disc, discNumber);
+                    string finalFileName = NameFormatter.BuildPs1VcdName(
+                        disc,
+                        discNumber,
+                        detectedId,
+                        cleanTitle
+                    );
+
                     string destVcd = Path.Combine(discFolder, finalFileName);
 
                     File.Copy(disc, destVcd, true);
@@ -276,7 +282,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  GENERAR ELF PARA CD1 (PS1) — ULTRA PRO
+        //  GENERAR ELF PARA CD1 (PS1)
         // ============================================================
         private void GenerateElfForDisc1(string gameId, string title, string gameRootFolder)
         {
@@ -290,11 +296,13 @@ namespace POPSManager.Logic
             }
 
             bool ok = ElfGenerator.GeneratePs1Elf(
-                baseElfPath: paths.PopstarterElfPath,
-                vcdFullPath: vcdPath,
-                appsFolder: paths.AppsFolder,
-                discNumber: 1,
-                log: logService.Info
+                paths.PopstarterElfPath,
+                vcdPath,
+                paths.AppsFolder,
+                1,
+                title,
+                gameId,
+                logService.Info
             );
 
             if (!ok)
@@ -356,7 +364,11 @@ namespace POPSManager.Logic
             }
 
             Directory.CreateDirectory(paths.DvdFolder);
-            string dest = Path.Combine(paths.DvdFolder, NameFormatter.BuildPs2IsoName(isoPath));
+
+            string dest = Path.Combine(
+                paths.DvdFolder,
+                NameFormatter.BuildPs2IsoName(isoPath, detectedId, cleanTitle)
+            );
 
             File.Copy(isoPath, dest, true);
 
