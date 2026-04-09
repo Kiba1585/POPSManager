@@ -94,7 +94,7 @@ Vista general del POPSManager mostrando la lista de juegos, acciones principales
 ---
 
 2. Detección Automática de GameID
-[!https://copilot.microsoft.com/shares/5R4D24GojanDNCi4dThpN]
+[![https://copilot.microsoft.com/shares/5R4D24GojanDNCi4dThpN])]
 
 Interfaz de análisis y detección automática del GameID, región y coincidencia en la base de datos.
 
