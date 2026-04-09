@@ -46,7 +46,7 @@ permissions:
 # ──────────────────────────────────────────────────────────────
 env:
   PACKAGE_NAME: "POPSManager.CertificateInstaller"
-  PACKAGE_DIR: "tools/CertificateInstaller"
+  PACKAGE_DIR: "POPSManager-Certificate-Installer"
   ARTIFACT_NAME: "certificate-installer-package"
 
 # ──────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ jobs:
 
           # Required files
           $requiredFiles = @(
-            "Install-Certificate.ps1",
+            "Installer-Certificate.ps1",
             "Uninstall-Certificate.ps1",
             "README.md",
             "CHANGELOG.md",
