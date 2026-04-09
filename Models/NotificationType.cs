@@ -3,8 +3,8 @@ namespace POPSManager.Models
     public enum NotificationType
     {
         Success,
-        Info,
+        Error,
         Warning,
-        Error
+        Info
     }
 }
