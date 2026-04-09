@@ -126,15 +126,15 @@
         </Border>
 
         <!-- ========================================================= -->
-        <!--  NOTIFICACIONES ULTRA PRO (NUEVO SISTEMA) -->
+        <!--  NOTIFICATION HOST (NUEVO SISTEMA ULTRA PRO) -->
         <!-- ========================================================= -->
-        <StackPanel x:Name="ToastContainer"
-                    Grid.Row="0"
-                    Grid.ColumnSpan="2"
-                    VerticalAlignment="Top"
-                    HorizontalAlignment="Right"
-                    Margin="0 60 20 0"
-                    Width="300"/>
+        <ui:NotificationHost x:Name="Notifier"
+                             Grid.Row="0"
+                             Grid.ColumnSpan="2"
+                             VerticalAlignment="Top"
+                             HorizontalAlignment="Right"
+                             Margin="0 60 20 0"
+                             Width="350"/>
 
         <!-- ========================================================= -->
         <!--  PROGRESS PANEL -->
