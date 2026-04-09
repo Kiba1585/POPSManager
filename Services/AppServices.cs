@@ -37,7 +37,7 @@ namespace POPSManager.Services
             Paths = new PathsService(LogService.Write, Settings);
 
             // ============================
-            //  NOTIFICACIONES
+            //  NOTIFICACIONES (ULTRA PRO)
             // ============================
             Notifications = new NotificationService();
 
@@ -53,7 +53,7 @@ namespace POPSManager.Services
                 LogService.Write,
                 Paths,
                 Settings,
-                Notifications.Show,   // Firma correcta: (string, NotificationType)
+                (msg, type) => Notifications.Show(msg, type), // Firma correcta
                 Progress.SetStatus
             );
 
