@@ -6,67 +6,43 @@ namespace POPSManager.Logic
     public static class NameFormatter
     {
         // ============================================================
-        //  NOMBRE FINAL PARA PS1 (VCD)
+        //  PS1 — Nombre final del VCD
         // ============================================================
-        public static string BuildPs1VcdName(string path, int discNumber = 1)
+        public static string BuildPs1VcdName(string discPath, int discNumber, string gameId, string cleanTitle)
         {
             string ext = ".VCD";
 
-            // 1. Detectar ID interno
-            string id = GameIdDetector.DetectGameId(path) ?? "UNKNOWN";
+            string title = cleanTitle;
 
-            // 2. Limpiar título base
-            string fileName = Path.GetFileNameWithoutExtension(path) ?? "";
-            string cleanTitle = NameCleanerBase.CleanTitleOnly(fileName);
-
-            // 3. Disc tag
             if (discNumber > 1)
-                cleanTitle += $" (Disc {discNumber})";
+                title += $" (Disc {discNumber})";
 
-            // 4. Ensamblar nombre final
-            return $"{id} - {cleanTitle}{ext}";
+            return $"{gameId} - {title}{ext}";
         }
 
         // ============================================================
-        //  NOMBRE FINAL PARA PS2 (ISO)
+        //  PS2 — Nombre final del ISO
         // ============================================================
-        public static string BuildPs2IsoName(string path)
+        public static string BuildPs2IsoName(string isoPath, string gameId, string cleanTitle)
         {
             string ext = ".iso";
-
-            // 1. Detectar ID interno
-            string id = GameIdDetector.DetectGameId(path) ?? "UNKNOWN";
-
-            // 2. Limpiar título base
-            string fileName = Path.GetFileNameWithoutExtension(path) ?? "";
-            string cleanTitle = NameCleanerBase.CleanTitleOnly(fileName);
-
-            // 3. Ensamblar nombre final
-            return $"{id} - {cleanTitle}{ext}";
+            return $"{gameId} - {cleanTitle}{ext}";
         }
 
         // ============================================================
-        //  NOMBRE DE CARPETA POPS (PS1)
+        //  Carpeta POPS (PS1)
         // ============================================================
-        public static string BuildPopsFolderName(string path, int discNumber = 1)
+        public static string BuildPopsFolderName(string gameId, string cleanTitle)
         {
-            string id = GameIdDetector.DetectGameId(path) ?? "UNKNOWN";
-
-            string fileName = Path.GetFileNameWithoutExtension(path) ?? "";
-            string cleanTitle = NameCleanerBase.CleanTitleOnly(fileName);
-
-            if (discNumber > 1)
-                cleanTitle += $" (Disc {discNumber})";
-
-            return $"{id} - {cleanTitle}";
+            return $"{gameId} - {cleanTitle}";
         }
 
         // ============================================================
-        //  NOMBRE DE ARCHIVO ELF PARA OPL (PS1)
+        //  Nombre del ELF (PS1)
         // ============================================================
-        public static string BuildElfName(string gameId)
+        public static string BuildElfName(string gameId, string cleanTitle)
         {
-            return $"{gameId}.ELF";
+            return $"{gameId} - {cleanTitle}.ELF.NTSC";
         }
     }
 }
