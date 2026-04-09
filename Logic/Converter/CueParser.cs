@@ -63,7 +63,13 @@ namespace POPSManager.Logic
                             Number = int.Parse(parts[1]),
                         };
 
-                        ParseTime(parts[2], out idx.Minute, out idx.Second, out idx.Frame);
+                        // ← FIX ULTRA‑PRO
+                        int m, s, f;
+                        ParseTime(parts[2], out m, out s, out f);
+                        idx.Minute = m;
+                        idx.Second = s;
+                        idx.Frame = f;
+
                         currentTrack.Indexes.Add(idx);
                         break;
                 }
