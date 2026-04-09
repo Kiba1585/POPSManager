@@ -7,18 +7,21 @@ namespace POPSManager.Logic
 {
     public static class NameCleanerBase
     {
-        // Palabras menores que deben ir en minúsculas
         private static readonly string[] MinorWords =
         {
             "of", "the", "and", "to", "in", "on", "at", "for", "from", "a", "an"
         };
 
-        // Regex profesional para detectar discos
+        // Detecta TODOS los formatos reales de multidisco
         private static readonly Regex DiscRegex =
             new(@"(?:DISC|DISK|CD)[\s\-_]*0?(\d{1,2})|(?:D)(\d{1,2})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // Regex para eliminar tags comunes
+        // Paréntesis que deben eliminarse (solo basura)
+        private static readonly Regex TrashParenthesis =
+            new(@"\((PAL|NTSC|NTSC-U|NTSC-J|ESP|ES|EN|ENG|FRA|GER|ITA|MULTI\d?|v\d+\.\d+|Rev\s*\d+|Beta|Demo|Track\s*\d+)\)",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         private static readonly Regex RegionRegex =
             new(@"\b(PAL|NTSC|NTSC-U|NTSC-J)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -37,84 +40,57 @@ namespace POPSManager.Logic
         private static readonly Regex BadSymbolsRegex =
             new(@"[\[\]\{\}#@%&]+", RegexOptions.Compiled);
 
-        private static readonly Regex ParenthesisCleaner =
-            new(@"\([^)]*\)", RegexOptions.Compiled);
-
-        private static readonly Regex BracketCleaner =
-            new(@"\[[^\]]*\]", RegexOptions.Compiled);
-
         private static readonly Regex SpaceNormalizer =
             new(@"\s{2,}", RegexOptions.Compiled);
 
         private static readonly Regex UnderscoreDotNormalizer =
             new(@"[_\.]+", RegexOptions.Compiled);
 
-        /// <summary>
-        /// Limpieza completa del nombre, con detección de disco.
-        /// </summary>
+        // ============================================================
+        //  LIMPIEZA COMPLETA (CON DETECCIÓN DE DISCO)
+        // ============================================================
         public static string Clean(string name, out string? cdTag)
         {
             cdTag = DetectDisc(name);
 
-            // 1. Eliminar tag de disco
-            name = DiscRegex.Replace(name, "");
+            // Eliminar solo paréntesis basura, no subtítulos válidos
+            name = TrashParenthesis.Replace(name, "");
 
-            // 2. Eliminar contenido entre paréntesis y corchetes
-            name = ParenthesisCleaner.Replace(name, "");
-            name = BracketCleaner.Replace(name, "");
-
-            // 3. Eliminar región
             name = RegionRegex.Replace(name, "");
-
-            // 4. Eliminar idiomas
             name = LanguageRegex.Replace(name, "");
-
-            // 5. Eliminar versiones
             name = VersionRegex.Replace(name, "");
-
-            // 6. Eliminar tracks
             name = TrackRegex.Replace(name, "");
-
-            // 7. Eliminar IDs incrustados
-            name = EmbeddedIdRegex.Replace(name, "");
-
-            // 8. Eliminar símbolos basura
-            name = BadSymbolsRegex.Replace(name, "");
-
-            // 9. Normalizar separadores
-            name = UnderscoreDotNormalizer.Replace(name, " ");
-
-            // 10. Normalizar espacios
-            name = SpaceNormalizer.Replace(name, " ");
-
-            // 11. Limpieza final
-            name = name.Trim();
-
-            // 12. Title Case inteligente
-            return ToTitleCaseSmart(name);
-        }
-
-        /// <summary>
-        /// Limpieza sin detección de disco (para títulos).
-        /// </summary>
-        public static string CleanTitleOnly(string name)
-        {
-            name = ParenthesisCleaner.Replace(name, "");
-            name = BracketCleaner.Replace(name, "");
-            name = RegionRegex.Replace(name, "");
-            name = LanguageRegex.Replace(name, "");
-            name = VersionRegex.Replace(name, "");
             name = EmbeddedIdRegex.Replace(name, "");
             name = BadSymbolsRegex.Replace(name, "");
+
             name = UnderscoreDotNormalizer.Replace(name, " ");
             name = SpaceNormalizer.Replace(name, " ");
 
             return ToTitleCaseSmart(name.Trim());
         }
 
-        /// <summary>
-        /// Detección avanzada del número de disco.
-        /// </summary>
+        // ============================================================
+        //  LIMPIEZA SOLO PARA TÍTULOS
+        // ============================================================
+        public static string CleanTitleOnly(string name)
+        {
+            name = TrashParenthesis.Replace(name, "");
+
+            name = RegionRegex.Replace(name, "");
+            name = LanguageRegex.Replace(name, "");
+            name = VersionRegex.Replace(name, "");
+            name = EmbeddedIdRegex.Replace(name, "");
+            name = BadSymbolsRegex.Replace(name, "");
+
+            name = UnderscoreDotNormalizer.Replace(name, " ");
+            name = SpaceNormalizer.Replace(name, " ");
+
+            return ToTitleCaseSmart(name.Trim());
+        }
+
+        // ============================================================
+        //  DETECCIÓN DE DISCO
+        // ============================================================
         private static string? DetectDisc(string name)
         {
             var m = DiscRegex.Match(name);
@@ -130,9 +106,9 @@ namespace POPSManager.Logic
             return null;
         }
 
-        /// <summary>
-        /// Title Case inteligente con preservación de símbolos válidos.
-        /// </summary>
+        // ============================================================
+        //  TITLE CASE INTELIGENTE
+        // ============================================================
         private static string ToTitleCaseSmart(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -144,21 +120,12 @@ namespace POPSManager.Logic
             {
                 string w = words[i].ToLowerInvariant();
 
-                // Palabras menores en minúsculas (excepto la primera)
                 if (i > 0 && MinorWords.Contains(w))
                 {
                     words[i] = w;
                     continue;
                 }
 
-                // Preservar símbolos válidos
-                if (w.Contains(':') || w.Contains('-') || w.Contains('!') || w.Contains('?'))
-                {
-                    words[i] = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(w);
-                    continue;
-                }
-
-                // Title Case normal
                 words[i] = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(w);
             }
 
