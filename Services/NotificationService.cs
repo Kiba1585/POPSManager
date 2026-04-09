@@ -1,19 +1,28 @@
-using POPSManager.UI.Notifications;
+using POPSManager.Models;
 
 namespace POPSManager.Services
 {
     public class NotificationService
     {
-        private readonly NotificationManager _manager;
+        // Evento que la UI (MainWindow) conectará al NotificationManager
+        public Action<string, NotificationType>? OnShowToast { get; set; }
 
-        public NotificationService(NotificationManager manager)
+        // Métodos simples para disparar notificaciones
+        public void Show(string message, NotificationType type)
         {
-            _manager = manager;
+            OnShowToast?.Invoke(message, type);
         }
 
-        public void Success(string msg) => _manager.ShowSuccess(msg);
-        public void Error(string msg)   => _manager.ShowError(msg);
-        public void Warning(string msg) => _manager.ShowWarning(msg);
-        public void Info(string msg)    => _manager.ShowInfo(msg);
+        public void Success(string message) =>
+            Show(message, NotificationType.Success);
+
+        public void Error(string message) =>
+            Show(message, NotificationType.Error);
+
+        public void Warning(string message) =>
+            Show(message, NotificationType.Warning);
+
+        public void Info(string message) =>
+            Show(message, NotificationType.Info);
     }
 }
