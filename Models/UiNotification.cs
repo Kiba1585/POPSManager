@@ -1,5 +1,3 @@
-using POPSManager.Models;
-
 namespace POPSManager.Models
 {
     public class UiNotification
