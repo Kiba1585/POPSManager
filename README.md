@@ -80,16 +80,23 @@ Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación
 
 ---
 
-🖼️ Capturas de Pantalla
 
-Aquí irán las imágenes una vez generadas:
+## 🖼️ Capturas de Pantalla
 
-`
-https://copilot.microsoft.com/shares/mWgDVYwS8XhcS48tG3bmo
-https://copilot.microsoft.com/shares/5R4D24GojanDNCi4dThpN
-![Captura 3](https://copilot.microsoft.com/shares/EAH2N16pHtvbGR2in3srW)
-!Captura 4
-`
+### Pantalla Principal
+![Pantalla Principal](images/capture1.png)
+Visual general del POPSManager mostrando la lista de juegos, botones de acción y flujo de procesamiento.
+
+### Detección de GameID
+![Detección de GameID](images/capture2.png)
+Interfaz de análisis y detección automática del GameID, región y coincidencia en la base de datos.
+
+### Gestión Multidisco
+![Gestión Multidisco](images/capture3.png)
+Vista de agrupación y renombrado de discos múltiples, con indicadores de estado y opciones de combinación.
+
+### Procesamiento Completo
+![Procesamiento Completo](images/capture del procesamiento con validación, limpieza, descarga de carátulas y notificación de éxito.
 
 ---
 
