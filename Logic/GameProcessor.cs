@@ -149,7 +149,7 @@ namespace POPSManager.Logic
             foreach (var file in files)
             {
                 string name = Path.GetFileNameWithoutExtension(file);
-                string baseName = NameCleaner.Clean(name, out _) ?? name;
+                string baseName = NameCleanerBase.CleanTitleOnly(name);
 
                 if (!groups.ContainsKey(baseName))
                     groups[baseName] = new List<string>();
@@ -167,10 +167,11 @@ namespace POPSManager.Logic
         {
             logService.Info($"[PS1] Procesando grupo: {baseName}");
 
-            // Ordenar discos por número usando NameCleaner
+            // Ordenar discos por número usando NameCleanerBase + MultiDiscManager
             discs = discs.OrderBy(d =>
             {
-                NameCleaner.Clean(Path.GetFileNameWithoutExtension(d), out string? cdTag);
+                NameCleanerBase.CleanTitleOnly(Path.GetFileNameWithoutExtension(d));
+                NameCleanerBase.Clean(Path.GetFileNameWithoutExtension(d), out string? cdTag);
                 return MultiDiscManager.ExtractDiscNumber(cdTag ?? "");
             }).ToList();
 
@@ -188,7 +189,7 @@ namespace POPSManager.Logic
             }
 
             // Obtener nombre del juego
-            string cleanTitle = NameCleaner.CleanTitleOnly(baseName);
+            string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
 
             // ============================================================
             //  BASE DE DATOS
@@ -223,7 +224,7 @@ namespace POPSManager.Logic
             // ============================================================
             //  ESTRUCTURA FINAL PS1
             // ============================================================
-            string gameRootFolder = Path.Combine(paths.PopsFolder, $"{detectedId} ({cleanTitle})");
+            string gameRootFolder = Path.Combine(paths.PopsFolder, $"{detectedId} - {cleanTitle}");
             Directory.CreateDirectory(gameRootFolder);
 
             int discNumber = 1;
@@ -236,7 +237,7 @@ namespace POPSManager.Logic
                     string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
                     Directory.CreateDirectory(discFolder);
 
-                    string finalFileName = $"{detectedId}.{cleanTitle} (CD{discNumber}).VCD";
+                    string finalFileName = NameFormatter.BuildPs1VcdName(disc, discNumber);
                     string destVcd = Path.Combine(discFolder, finalFileName);
 
                     File.Copy(disc, destVcd, true);
@@ -275,31 +276,25 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  GENERAR ELF PARA CD1 (PS1)
+        //  GENERAR ELF PARA CD1 (PS1) — ULTRA PRO
         // ============================================================
         private void GenerateElfForDisc1(string gameId, string title, string gameRootFolder)
         {
             string cd1Folder = Path.Combine(gameRootFolder, "CD1");
 
-            string? vcdName = Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault();
-            if (vcdName == null)
+            string? vcdPath = Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault();
+            if (vcdPath == null)
             {
                 logService.Warn($"[PS1] No se encontró VCD en {cd1Folder}");
                 return;
             }
 
-            string vcdPopstarterPath =
-                $"mass:/POPS/{Path.GetFileName(gameRootFolder)}/CD1/{Path.GetFileName(vcdName)}";
-
-            string outputElf = Path.Combine(cd1Folder, $"{gameId}.ELF");
-
-            bool ok = ElfGenerator.GenerateElf(
-                paths.PopstarterElfPath,
-                outputElf,
-                gameId,
-                vcdPopstarterPath,
-                $"{title} (CD1)",
-                logService.Info
+            bool ok = ElfGenerator.GeneratePs1Elf(
+                baseElfPath: paths.PopstarterElfPath,
+                vcdFullPath: vcdPath,
+                appsFolder: paths.AppsFolder,
+                discNumber: 1,
+                log: logService.Info
             );
 
             if (!ok)
@@ -308,11 +303,7 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // COPIA A APPS
-            string appsElf = Path.Combine(paths.AppsFolder, $"{gameId}.ELF");
-            File.Copy(outputElf, appsElf, true);
-
-            logService.Info($"[PS1] ELF copiado a APPS → {appsElf}");
+            logService.Info($"[PS1] ELF generado para {gameId}");
         }
 
         // ============================================================
@@ -334,7 +325,7 @@ namespace POPSManager.Logic
                 detectedId = originalName.Replace(" ", "_");
             }
 
-            string cleanTitle = NameCleaner.CleanTitleOnly(originalName);
+            string cleanTitle = NameCleanerBase.CleanTitleOnly(originalName);
 
             // ============================================================
             //  BASE DE DATOS PS2
@@ -364,10 +355,8 @@ namespace POPSManager.Logic
                 }
             }
 
-            string finalName = $"{detectedId}.{cleanTitle}.iso";
-
             Directory.CreateDirectory(paths.DvdFolder);
-            string dest = Path.Combine(paths.DvdFolder, finalName);
+            string dest = Path.Combine(paths.DvdFolder, NameFormatter.BuildPs2IsoName(isoPath));
 
             File.Copy(isoPath, dest, true);
 
