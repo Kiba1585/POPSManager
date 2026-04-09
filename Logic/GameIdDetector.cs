@@ -7,12 +7,12 @@ namespace POPSManager.Logic
 {
     public static class GameIdDetector
     {
-        // Regex para detectar IDs PS1/PS2
+        // Regex profesional para detectar IDs PS1/PS2
         private static readonly Regex IdRegex =
             new(@"(SLUS|SCUS|SLES|SCES|SLPM|SLPS|SCPS)[-_ ]?(\d{3})[._ ]?(\d{2})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // Prefijos para detección por nombre
+        // Prefijos válidos para detección por nombre
         private static readonly string[] Patterns =
         {
             "SCES", "SLES", "SLUS", "SCUS", "SLPS", "SLPM", "SCPS"
@@ -32,14 +32,14 @@ namespace POPSManager.Logic
                 int rootLba = GetRootDirectoryLba(fs);
                 if (rootLba > 0)
                 {
-                    // 1. SYSTEM.CNF
+                    // 1. SYSTEM.CNF (PS1 y PS2)
                     var sys = FindFile(fs, rootLba, "SYSTEM.CNF");
                     if (sys.lba > 0)
                     {
                         var data = ReadFileFromIso(fs, sys.lba, sys.size);
                         var id = ExtractId(data);
                         if (id != null)
-                            return id;
+                            return NormalizeId(id);
                     }
 
                     // 2. IOPRP.IMG (PS2 real)
@@ -49,19 +49,19 @@ namespace POPSManager.Logic
                         var data = ReadFileFromIso(fs, iop.lba, iop.size);
                         var id = ExtractId(data);
                         if (id != null)
-                            return id;
+                            return NormalizeId(id);
                     }
                 }
             }
             catch
             {
-                // Ignorar y continuar con fallback
+                // Ignorar errores y continuar con fallback
             }
 
             // 3. Fallback → nombre del archivo
             var nameId = DetectFromName(Path.GetFileName(path));
             if (!string.IsNullOrWhiteSpace(nameId))
-                return nameId;
+                return NormalizeId(nameId);
 
             return null;
         }
@@ -179,7 +179,7 @@ namespace POPSManager.Logic
                     var m = IdRegex.Match(raw);
                     if (m.Success)
                     {
-                        string prefix = m.Groups[1].Value;
+                        string prefix = m.Groups[1].Value.ToUpper();
                         string part1 = m.Groups[2].Value;
                         string part2 = m.Groups[3].Value;
 
@@ -192,6 +192,27 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
+        //  NORMALIZAR ID (SCES_12345 → SCES_12345)
+        // ============================================================
+        private static string NormalizeId(string id)
+        {
+            id = id.ToUpperInvariant();
+
+            // Asegurar formato SCES_12345
+            id = id.Replace("-", "_").Replace(" ", "_").Replace(".", "_");
+
+            var m = IdRegex.Match(id);
+            if (!m.Success)
+                return id;
+
+            string prefix = m.Groups[1].Value.ToUpper();
+            string part1 = m.Groups[2].Value;
+            string part2 = m.Groups[3].Value;
+
+            return $"{prefix}_{part1}{part2}";
+        }
+
+        // ============================================================
         //  DETECTAR SI ES PAL
         // ============================================================
         public static bool IsPalRegion(string gameId)
@@ -199,9 +220,11 @@ namespace POPSManager.Logic
             if (string.IsNullOrWhiteSpace(gameId))
                 return false;
 
-            return gameId.StartsWith("SLES", StringComparison.OrdinalIgnoreCase) ||
-                   gameId.StartsWith("SCES", StringComparison.OrdinalIgnoreCase) ||
-                   gameId.StartsWith("PBPX", StringComparison.OrdinalIgnoreCase);
+            gameId = gameId.ToUpperInvariant();
+
+            return gameId.StartsWith("SLES") ||
+                   gameId.StartsWith("SCES") ||
+                   gameId.StartsWith("PBPX");
         }
 
         // ============================================================
