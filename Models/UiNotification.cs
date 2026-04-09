@@ -1,14 +1,16 @@
 namespace POPSManager.Models
 {
+    public enum NotificationType
+    {
+        Success,
+        Error,
+        Warning,
+        Info
+    }
+
     public class UiNotification
     {
-        public NotificationType Type { get; }
-        public string Message { get; }
-
-        public UiNotification(NotificationType type, string message)
-        {
-            Type = type;
-            Message = message;
-        }
+        public NotificationType Type { get; set; }
+        public string Message { get; set; } = "";
     }
 }
