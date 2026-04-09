@@ -25,12 +25,19 @@ namespace POPSManager.Logic
                     return false;
                 }
 
-                Directory.CreateDirectory(Path.GetDirectoryName(outputElf)!);
+                string? outDir = Path.GetDirectoryName(outputElf);
+                if (string.IsNullOrWhiteSpace(outDir))
+                {
+                    log("[ELF] ERROR: Ruta de salida inválida.");
+                    return false;
+                }
+
+                Directory.CreateDirectory(outDir);
 
                 // Copiar ELF base
                 File.Copy(baseElf, outputElf, true);
 
-                // Normalizar valores
+                // Normalizar valores ASCII
                 string safeGameId = NormalizeAscii(gameId);
                 string safeVcdPath = NormalizeAscii(vcdPath);
                 string safeTitle = NormalizeAscii(title);
