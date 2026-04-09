@@ -92,11 +92,8 @@ namespace POPSManager.Views
                 Services.Settings.RootFolder = path;
                 Services.Settings.Save();
 
-                // Regenerar PathsService con la nueva raíz
-                App.Services.Paths = new PathsService(
-                    Services.LogService.Write,
-                    Services.Settings
-                );
+                // Recargar PathsService sin reemplazarlo
+                Services.Paths.Reload();
 
                 // Actualizar UI
                 RootPathBox.Text = Services.Paths.RootFolder;
