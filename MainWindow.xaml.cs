@@ -1,7 +1,8 @@
 using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.Views;
-using POPSManager.UI.Notifications;
+using POPSManager.Logic;
+using POPSManager.UI;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,28 +14,42 @@ namespace POPSManager
     {
         private readonly AppServices _services;
 
+        // Notificaciones globales accesibles desde cualquier módulo
+        public static NotificationManager Notifications { get; private set; }
+
         public MainWindow()
         {
             InitializeComponent();
 
-            // Inicializar contenedor de notificaciones
-            Notifier.Initialize(ToastContainer);
+            // ============================================================
+            //  NOTIFICATION MANAGER (ULTRA PRO)
+            // ============================================================
+            Notifications = new NotificationManager(ToastContainer);
 
             _services = App.Services!;
 
-            // Notificaciones ULTRA PRO (nuevo sistema)
-            _services.Notifications.OnShowToast = ShowNotification;
+            // Conectar servicios internos a las notificaciones
+            _services.Notifications.OnShowToast = (msg, type) =>
+            {
+                Notifications.Show(new UiNotification(type, msg));
+            };
 
-            // Logs
+            // ============================================================
+            //  LOGS
+            // ============================================================
             _services.LogService.OnLog = AddLog;
 
-            // Progreso global
+            // ============================================================
+            //  PROGRESO GLOBAL
+            // ============================================================
             _services.Progress.OnStart = ProgressStart;
             _services.Progress.OnStop = ProgressStop;
             _services.Progress.OnProgress = ProgressUpdate;
             _services.Progress.OnStatus = ProgressStatus;
 
-            // Vista inicial
+            // ============================================================
+            //  VISTA INICIAL
+            // ============================================================
             LoadView(new Dashboard());
         }
 
@@ -59,23 +74,6 @@ namespace POPSManager
         private void ProcessPops_Click(object sender, RoutedEventArgs e) => LoadView(new ProcessPopsView());
         private void Settings_Click(object sender, RoutedEventArgs e) => LoadView(new SettingsView());
         private void About_Click(object sender, RoutedEventArgs e) => LoadView(new AboutView());
-
-        // ============================================================
-        //  NOTIFICACIONES ULTRA PRO (NUEVO SISTEMA)
-        // ============================================================
-        private void ShowNotification(string message, NotificationType type)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                var toast = new NotificationToast(
-                    title: type.ToString(),
-                    message: message,
-                    type: type
-                );
-
-                Notifier.ShowToast(toast);
-            });
-        }
 
         // ============================================================
         //  LOGS
@@ -136,10 +134,10 @@ namespace POPSManager
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            _services.Notifications.Show(
-                "Arrastra archivos dentro de la vista correspondiente.",
-                NotificationType.Info
-            );
+            Notifications.Show(new UiNotification(
+                NotificationType.Info,
+                "Arrastra archivos dentro de la vista correspondiente."
+            ));
         }
     }
 }
