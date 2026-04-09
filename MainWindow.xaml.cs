@@ -3,7 +3,6 @@ using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.Views;
 using POPSManager.Logic;
-using POPSManager.UI;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,14 +24,18 @@ namespace POPSManager
             // ============================================================
             //  NOTIFICATION MANAGER (ULTRA PRO)
             // ============================================================
-            Notifications = new NotificationManager(ToastContainer);
+            Notifications = new NotificationManager(Notifier);
 
             _services = App.Services!;
 
             // Conectar servicios internos a las notificaciones
             _services.Notifications.OnShowToast = (msg, type) =>
             {
-                Notifications.Show(new UiNotification(type, msg));
+                Notifications.Show(new UiNotification
+                {
+                    Type = type,
+                    Message = msg
+                });
             };
 
             // ============================================================
@@ -135,10 +138,11 @@ namespace POPSManager
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            Notifications.Show(new UiNotification(
-                NotificationType.Info,
-                "Arrastra archivos dentro de la vista correspondiente."
-            ));
+            Notifications.Show(new UiNotification
+            {
+                Type = NotificationType.Info,
+                Message = "Arrastra archivos dentro de la vista correspondiente."
+            });
         }
     }
 }
