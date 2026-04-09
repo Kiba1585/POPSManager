@@ -206,6 +206,28 @@ namespace POPSManager.Services
         }
 
         // ============================================================
+        //  RECARGAR RUTAS (para SettingsView)
+        // ============================================================
+        public void Reload()
+        {
+            // Releer settings
+            _customPopsFolder = settings?.CustomPopsFolder;
+            _customAppsFolder = settings?.CustomAppsFolder;
+
+            // Recalcular raíz
+            RootFolder = NormalizeRoot(settings?.RootFolder);
+
+            // Recrear estructura
+            EnsureFolderStructure();
+
+            // Re-resolver ELF
+            PopstarterElfPath = ResolveElf("POPSTARTER.ELF");
+            PopstarterPs2ElfPath = ResolveElf("POPS2.ELF");
+
+            log?.Invoke("[Paths] Rutas recargadas correctamente.");
+        }
+
+        // ============================================================
         //  GUARDAR SETTINGS
         // ============================================================
         public void Save()
