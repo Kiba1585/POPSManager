@@ -8,12 +8,12 @@ namespace POPSManager.Services
         // ============================
         //  SERVICIOS PRINCIPALES
         // ============================
-        public SettingsService Settings { get; }
-        public PathsService Paths { get; }
-        public LoggingService LogService { get; }
-        public NotificationService Notifications { get; }
-        public ProgressService Progress { get; }
-        public ConverterService Converter { get; }
+        public SettingsService Settings { get; } = null!;
+        public PathsService Paths { get; } = null!;
+        public LoggingService LogService { get; } = null!;
+        public NotificationService Notifications { get; } = null!;
+        public ProgressService Progress { get; } = null!;
+        public ConverterService Converter { get; } = null!;
 
         // GameProcessor se inicializa bajo demanda (Lazy)
         public GameProcessor GameProcessor => _gameProcessor.Value;
