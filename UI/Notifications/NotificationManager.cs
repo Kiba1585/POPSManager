@@ -5,7 +5,7 @@ using System.Windows.Controls;
 
 namespace POPSManager.UI.Notifications
 {
-    public class NotificationManager
+    public partial class NotificationManager
     {
         private readonly Panel _container;
         private readonly List<NotificationToast> _activeToasts = new();
