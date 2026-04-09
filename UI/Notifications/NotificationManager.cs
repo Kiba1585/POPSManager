@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using POPSManager.Models;   // ← OBLIGATORIO
 
 namespace POPSManager.UI.Notifications
 {
