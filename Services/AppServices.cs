@@ -53,7 +53,7 @@ namespace POPSManager.Services
                 LogService.Write,
                 Paths,
                 Settings,
-                Notifications.Show,   // ✔ Firma correcta: (string, NotificationType)
+                Notifications.Show,   // Firma correcta: (string, NotificationType)
                 Progress.SetStatus
             );
 
