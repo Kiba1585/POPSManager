@@ -87,7 +87,7 @@ Aquí irán las imágenes una vez generadas:
 `
 https://copilot.microsoft.com/shares/mWgDVYwS8XhcS48tG3bmo
 https://copilot.microsoft.com/shares/5R4D24GojanDNCi4dThpN
-!Captura 3
+![Captura 3](https://copilot.microsoft.com/shares/EAH2N16pHtvbGR2in3srW)
 !Captura 4
 `
 
