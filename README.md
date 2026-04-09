@@ -87,28 +87,28 @@ A continuación se muestran capturas conceptuales generadas para ilustrar el flu
 ---
 
 1. Pantalla Principal
-[https://copilot.microsoft.com/shares/mWgDVYwS8XhcS48tG3bmo]
+[!https://copilot.microsoft.com/shares/mWgDVYwS8XhcS48tG3bmo]
 
 Vista general del POPSManager mostrando la lista de juegos, acciones principales y flujo de procesamiento.
 
 ---
 
 2. Detección Automática de GameID
-[https://copilot.microsoft.com/shares/5R4D24GojanDNCi4dThpN]
+[!https://copilot.microsoft.com/shares/5R4D24GojanDNCi4dThpN]
 
 Interfaz de análisis y detección automática del GameID, región y coincidencia en la base de datos.
 
 ---
 
 3. Gestión Multidisco
-[https://copilot.microsoft.com/shares/EAH2N16pHtvbGR2in3srW]
+[!https://copilot.microsoft.com/shares/EAH2N16pHtvbGR2in3srW]
 
 Vista de agrupación y renombrado de discos múltiples, con indicadores de estado y opciones de combinación.
 
 ---
 
 4. Procesamiento Completo
-[https://copilot.microsoft.com/shares/CzvgcKELMFJyEMCqoqhn2]
+[!https://copilot.microsoft.com/shares/CzvgcKELMFJyEMCqoqhn2]
 
 Flujo final del procesamiento con validación, limpieza, descarga de carátulas y notificación de éxito.
 
