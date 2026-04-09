@@ -101,7 +101,7 @@ Interfaz de análisis y detección automática del GameID, región y coincidenci
 ---
 
 3. Gestión Multidisco
-[Parece que el resultado no era seguro para mostrar. ¡Cambiemos de enfoque y probemos algo diferente!]
+[https://copilot.microsoft.com/shares/EAH2N16pHtvbGR2in3srW]
 
 Vista de agrupación y renombrado de discos múltiples, con indicadores de estado y opciones de combinación.
 
