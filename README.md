@@ -85,8 +85,8 @@ Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación
 Aquí irán las imágenes una vez generadas:
 
 `
-!Captura 1
-!Captura 2
+https://copilot.microsoft.com/shares/mWgDVYwS8XhcS48tG3bmo
+https://copilot.microsoft.com/shares/5R4D24GojanDNCi4dThpN
 !Captura 3
 !Captura 4
 `
