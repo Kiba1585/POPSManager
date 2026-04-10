@@ -1,4 +1,4 @@
-name: Build, Pack and Release MSIX
+name: Build, Pack and Release MSIX + Portable + Installer
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
         run: dotnet restore
 
       # ================================
-      #   PUBLICACIÓN x64 (NO self-contained)
+      #   BUILD 1: MSIX x64
       # ================================
       - name: Publish project (MSIX compatible)
         run: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -o publish
@@ -39,19 +39,12 @@ jobs:
           Copy-Item Installer\AppxManifest.xml msix\ -Force
           Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
-      # ================================
-      #   MAKEAPPX (x64)
-      # ================================
       - name: Locate MakeAppx.exe (x64 only)
         id: makeappx
         run: |
           $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter makeappx.exe |
             Where-Object { $_.FullName -match "x64" } |
             Select-Object -First 1
-
-          if (-not $makeappx) {
-            Write-Error "No se encontró MakeAppx.exe x64"
-          }
 
           echo "MAKEAPPX=$($makeappx.FullName)" >> $env:GITHUB_ENV
 
@@ -60,52 +53,55 @@ jobs:
           & "$env:MAKEAPPX" pack /d msix /p "POPSManager_${{ github.ref_name }}.msix" /l
 
       # ================================
-      #   SIGNTOOL (x64)
+      #   BUILD 2: PORTABLE EXE
       # ================================
-      - name: Locate SignTool.exe (x64 only)
-        id: signtool
-        run: |
-          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
-            Where-Object { $_.FullName -match "x64" } |
-            Select-Object -First 1
+      - name: Publish portable EXE
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o portable
 
-          if (-not $signtool) {
-            Write-Error "No se encontró SignTool.exe x64"
-          }
+      # ================================
+      #   BUILD 3: INSTALLER EXE (Inno Setup)
+      # ================================
+      - name: Install Inno Setup
+        run: choco install innosetup -y
 
-          echo "SIGNTOOL=$($signtool.FullName)" >> $env:GITHUB_ENV
+      - name: Build Installer EXE
+        run: iscc Installer\POPSManager.iss
 
-      - name: Sign MSIX package
-        run: |
-          $certPath = "$env:RUNNER_TEMP\cert.pfx"
-          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String("${{ secrets.PFX_FILE }}"))
-
-          & "$env:SIGNTOOL" sign `
-            /fd SHA256 `
-            /a `
-            /f $certPath `
-            /p "${{ secrets.PFX_PASSWORD }}" `
-            "POPSManager_${{ github.ref_name }}.msix"
-
-      - name: Upload MSIX artifact
+      # ================================
+      #   UPLOAD ARTIFACTS
+      # ================================
+      - name: Upload MSIX
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager_MSIX
           path: "POPSManager_${{ github.ref_name }}.msix"
+
+      - name: Upload Portable EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: POPSManager_Portable
+          path: portable
+
+      - name: Upload Installer EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: POPSManager_Installer
+          path: dist
 
   release:
     needs: build
     runs-on: windows-latest
 
     steps:
-      - name: Download MSIX artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
-        with:
-          name: POPSManager_MSIX
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: "POPSManager_${{ github.ref_name }}.msix"
+          files: |
+            POPSManager_MSIX/*
+            POPSManager_Portable/*
+            POPSManager_Installer/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
