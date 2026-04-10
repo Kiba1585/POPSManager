@@ -13,7 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Limpieza total del workspace (evita errores WPF y archivos viejos)
       - name: Clean workspace
         run: git clean -xfd
 
@@ -26,22 +25,22 @@ jobs:
         run: dotnet restore
 
       # ================================
-      #   PUBLICACIÓN SELF-CONTAINED
+      #   PUBLICACIÓN x64 (NO self-contained)
       # ================================
-      - name: Publish project (self-contained)
-        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o publish
+      - name: Publish project (MSIX compatible)
+        run: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -o publish
 
       - name: Prepare MSIX folder structure
         run: |
-          New-Item -ItemType Directory -Force -Path "msix\VFS\ProgramFiles\POPSManager" | Out-Null
+          New-Item -ItemType Directory -Force -Path "msix\VFS\ProgramFilesX64\POPSManager" | Out-Null
           New-Item -ItemType Directory -Force -Path "msix\Assets" | Out-Null
 
-          Copy-Item publish\* msix\VFS\ProgramFiles\POPSManager\ -Recurse -Force
+          Copy-Item publish\* msix\VFS\ProgramFilesX64\POPSManager\ -Recurse -Force
           Copy-Item Installer\AppxManifest.xml msix\ -Force
           Copy-Item Installer\Assets\* msix\Assets\ -Recurse -Force
 
       # ================================
-      #   MAKEAPPX (solo versión x64)
+      #   MAKEAPPX (x64)
       # ================================
       - name: Locate MakeAppx.exe (x64 only)
         id: makeappx
@@ -61,7 +60,7 @@ jobs:
           & "$env:MAKEAPPX" pack /d msix /p "POPSManager_${{ github.ref_name }}.msix" /l
 
       # ================================
-      #   SIGNTOOL (solo versión x64)
+      #   SIGNTOOL (x64)
       # ================================
       - name: Locate SignTool.exe (x64 only)
         id: signtool
@@ -79,11 +78,8 @@ jobs:
       - name: Sign MSIX package
         run: |
           $certPath = "$env:RUNNER_TEMP\cert.pfx"
-
-          # Guardar el PFX correctamente como archivo binario
           [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String("${{ secrets.PFX_FILE }}"))
 
-          # Firmar el MSIX con SHA256 (obligatorio)
           & "$env:SIGNTOOL" sign `
             /fd SHA256 `
             /a `
