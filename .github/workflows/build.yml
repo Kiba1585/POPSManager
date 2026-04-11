@@ -25,6 +25,16 @@ jobs:
         run: dotnet restore
 
       # ================================
+      #   RESTAURAR CERTIFICADO (.PFX)
+      # ================================
+      - name: Restore code signing certificate
+        shell: pwsh
+        run: |
+          $pfxBase64 = "${{ secrets.PFX_FILE }}"
+          $pfxBytes = [Convert]::FromBase64String($pfxBase64)
+          [IO.File]::WriteAllBytes("codesign.pfx", $pfxBytes)
+
+      # ================================
       #   BUILD 1: MSIX x64
       # ================================
       - name: Publish project (MSIX compatible)
@@ -73,12 +83,44 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y
 
-      # ✔ FIX REAL: Crear carpeta correcta donde Inno Setup escribirá
       - name: Ensure installer output folder exists
         run: mkdir Installer/dist
 
       - name: Build Installer EXE
         run: iscc Installer\POPSManager.iss
+
+      # ================================
+      #   SIGNTOOL: LOCALIZAR Y FIRMAR
+      # ================================
+      - name: Locate signtool.exe
+        id: signtool
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
+            Where-Object { $_.FullName -match "x64" } |
+            Select-Object -First 1
+
+          echo "SIGNTOOL=$($signtool.FullName)" >> $env:GITHUB_ENV
+
+      - name: Sign MSIX, Installer and Portable EXE
+        shell: pwsh
+        run: |
+          $signtool = "$env:SIGNTOOL"
+          $pfxPath = "codesign.pfx"
+          $pfxPass = "${{ secrets.PFX_PASSWORD }}"
+          $timestamp = "http://timestamp.digicert.com"
+
+          # MSIX
+          & $signtool sign /f $pfxPath /p $pfxPass /fd SHA256 /tr $timestamp /td SHA256 "POPSManager_${{ github.ref_name }}.msix"
+
+          # Installer EXE
+          & $signtool sign /f $pfxPath /p $pfxPass /fd SHA256 /tr $timestamp /td SHA256 "Installer/dist/POPSManager_Setup.exe"
+
+          # Portable EXE principal
+          $portableExe = Get-ChildItem portable -Filter "*.exe" | Select-Object -First 1
+          if ($portableExe) {
+            & $signtool sign /f $pfxPath /p $pfxPass /fd SHA256 /tr $timestamp /td SHA256 $portableExe.FullName
+          }
 
       # ================================
       #   UPLOAD ARTIFACTS
