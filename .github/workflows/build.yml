@@ -73,9 +73,9 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y
 
-      # ✔ FIX: Crear carpeta dist antes de compilar
-      - name: Ensure dist folder exists
-        run: mkdir dist
+      # ✔ FIX REAL: Crear carpeta correcta donde Inno Setup escribirá
+      - name: Ensure installer output folder exists
+        run: mkdir Installer/dist
 
       - name: Build Installer EXE
         run: iscc Installer\POPSManager.iss
@@ -99,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager_Installer
-          path: dist
+          path: Installer/dist
 
   release:
     needs: build
