@@ -1,5 +1,6 @@
 using POPSManager.Models;
 using POPSManager.Services;
+using POPSManager.Settings;
 using POPSManager.Logic;
 using POPSManager.Logic.Cheats;
 using POPSManager.Logic.Covers;
@@ -27,7 +28,6 @@ namespace POPSManager.Logic
         private readonly PathsService _paths;
         private readonly CheatSettingsService _cheatSettings;
         private readonly CheatManagerService _cheatManager;
-
         private readonly bool _useDatabase;
         private readonly bool _useCovers;
 
@@ -61,10 +61,10 @@ namespace POPSManager.Logic
         public async Task ProcessFolderAsync(string folder, CancellationToken ct = default)
         {
             var files = Directory.GetFiles(folder)
-                                 .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
-                                             f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                                 .OrderBy(f => f)
-                                 .ToArray();
+                .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)
+                          || f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(f => f)
+                .ToArray();
 
             if (files.Length == 0)
             {
@@ -73,7 +73,6 @@ namespace POPSManager.Logic
             }
 
             var groups = GroupMultiDisc(files);
-
             int index = 0;
             int total = groups.Count;
 
@@ -84,7 +83,6 @@ namespace POPSManager.Logic
 
                 index++;
                 int progressValue = (int)((index / (double)total) * 100);
-
                 _progress.SetProgress(progressValue);
                 _progress.SetStatus($"Procesando {group.Key}");
 
@@ -140,10 +138,10 @@ namespace POPSManager.Logic
         public void ProcessFolder(string folder)
         {
             var files = Directory.GetFiles(folder)
-                                 .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
-                                             f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                                 .OrderBy(f => f)
-                                 .ToArray();
+                .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)
+                          || f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(f => f)
+                .ToArray();
 
             if (files.Length == 0)
             {
@@ -152,7 +150,6 @@ namespace POPSManager.Logic
             }
 
             var groups = GroupMultiDisc(files);
-
             int index = 0;
             int total = groups.Count;
 
@@ -160,7 +157,6 @@ namespace POPSManager.Logic
             {
                 index++;
                 int progressValue = (int)((index / (double)total) * 100);
-
                 _progress.SetProgress(progressValue);
                 _progress.SetStatus($"Procesando {group.Key}");
 
@@ -214,7 +210,6 @@ namespace POPSManager.Logic
                 _notifications.Warning($"VCD inválido: {Path.GetFileName(vcdPath)}");
                 return false;
             }
-
             return true;
         }
 
@@ -228,7 +223,6 @@ namespace POPSManager.Logic
                     _notifications.Warning($"ISO sospechoso o demasiado pequeño: {Path.GetFileName(isoPath)}");
                     return false;
                 }
-
                 return true;
             }
             catch (Exception ex)
@@ -277,7 +271,6 @@ namespace POPSManager.Logic
             // Detectar ID real desde el VCD
             string firstDisc = discs.First();
             string? detectedId = GameIdDetector.DetectGameId(firstDisc);
-
             if (string.IsNullOrWhiteSpace(detectedId))
                 detectedId = GameIdDetector.DetectFromName(baseName);
 
@@ -292,11 +285,9 @@ namespace POPSManager.Logic
 
             // ── BASE DE DATOS ──
             GameEntry? dbEntry = null;
-
             if (_useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
                 dbEntry = entry;
-
                 if (dbEntry != null && !string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
@@ -311,7 +302,6 @@ namespace POPSManager.Logic
                 Directory.CreateDirectory(artFolder);
 
                 string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, _logService.Info);
-
                 if (art != null)
                     _logService.Info($"[COVER] PS1 ART generado → {art}");
             }
@@ -331,14 +321,10 @@ namespace POPSManager.Logic
                     Directory.CreateDirectory(discFolder);
 
                     string finalFileName = NameFormatter.BuildPs1VcdName(
-                        disc,
-                        discNumber,
-                        detectedId,
-                        cleanTitle
+                        disc, discNumber, detectedId, cleanTitle
                     );
 
                     string destVcd = Path.Combine(discFolder, finalFileName);
-
                     File.Copy(disc, destVcd, true);
                     discPaths.Add(destVcd);
 
@@ -374,8 +360,8 @@ namespace POPSManager.Logic
         private void GenerateElfForDisc1(string gameId, string title, string gameRootFolder)
         {
             string cd1Folder = Path.Combine(gameRootFolder, "CD1");
-
             string? vcdPath = Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault();
+
             if (vcdPath == null)
             {
                 _logService.Warn($"[PS1] No se encontró VCD en {cd1Folder}");
@@ -410,7 +396,6 @@ namespace POPSManager.Logic
             _logService.Info($"[PS2] Procesando: {originalName}");
 
             string? detectedId = GameIdDetector.DetectGameId(isoPath);
-
             if (string.IsNullOrWhiteSpace(detectedId))
                 detectedId = GameIdDetector.DetectFromName(originalName);
 
@@ -424,11 +409,9 @@ namespace POPSManager.Logic
 
             // ── BASE DE DATOS PS2 ──
             GameEntry? dbEntry = null;
-
             if (_useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
                 dbEntry = entry;
-
                 if (dbEntry != null && !string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
@@ -442,7 +425,6 @@ namespace POPSManager.Logic
                     Directory.CreateDirectory(artFolder);
 
                     string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, _logService.Info);
-
                     if (art != null)
                         _logService.Info($"[COVER] PS2 ART generado → {art}");
                 }
@@ -456,9 +438,7 @@ namespace POPSManager.Logic
             );
 
             File.Copy(isoPath, dest, true);
-
             _logService.Info($"[PS2] Copiado ISO → {dest}");
-
             _notifications.Success($"{cleanTitle} copiado a DVD correctamente.");
         }
     }
