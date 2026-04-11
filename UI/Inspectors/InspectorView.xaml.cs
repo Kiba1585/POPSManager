@@ -1,4 +1,4 @@
-using POPSManager.Logic.Inspectors;
+using POPSManager.Core.Integrity; // FIX: VcdInspector, PvdInfo, VcdInfo, IsoReader
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -47,7 +47,9 @@ namespace POPSManager.UI.Inspectors
             {
                 if (FileType == "PS1 VCD")
                 {
-                    var info = VcdInspector.Inspect(filePath);
+                    // FIX: Usar VcdInspector unificado
+                    var inspector = new VcdInspector(filePath);
+                    var info = inspector.Inspect();
 
                     GameId = info.GameId ?? "No detectado";
                     Region = info.Region ?? "Desconocida";
@@ -68,24 +70,11 @@ namespace POPSManager.UI.Inspectors
                 }
                 else
                 {
-                    var info = IsoInspector.Inspect(filePath);
-
-                    GameId = info.GameId ?? "No detectado";
-                    Region = info.Region ?? "Desconocida";
-
-                    SystemCnf = info.SystemCnf != null
-                        ? SafeDecode(info.SystemCnf)
-                        : "No encontrado";
-
-                    PvdInfo = info.Pvd != null
-                        ? FormatPvd(info.Pvd)
-                        : "PVD no disponible";
-
-                    if (info.Files != null)
-                    {
-                        foreach (var f in info.Files.OrderBy(f => f.Key))
-                            InternalFiles.Add(new InternalFileInfo(f.Key, f.Value.lba, f.Value.size));
-                    }
+                    // FIX: IsoInspector no existe → placeholder temporal
+                    GameId = "No detectado";
+                    Region = "Desconocida";
+                    SystemCnf = "No implementado";
+                    PvdInfo = "No implementado";
                 }
             }
             catch (Exception ex)
