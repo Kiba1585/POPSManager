@@ -31,6 +31,7 @@ function InitializeSetup(): Boolean;
 var
   UninstallCmd: String;
   ExecResult: Boolean;
+  ExitCode: Integer;
 begin
   if RegQueryStringValue(HKLM,
      'Software\Microsoft\Windows\CurrentVersion\Uninstall\POPSManager_is1',
@@ -39,7 +40,7 @@ begin
     MsgBox('Se encontró una versión previa de POPSManager. Será desinstalada antes de continuar.',
            mbInformation, MB_OK);
 
-    ExecResult := Exec(UninstallCmd, '/VERYSILENT', '', SW_HIDE, ewWaitUntilTerminated, ExecResult);
+    ExecResult := Exec(UninstallCmd, '/VERYSILENT', '', SW_HIDE, ewWaitUntilTerminated, ExitCode);
   end;
 
   Result := True;
