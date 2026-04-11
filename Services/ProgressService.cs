@@ -1,26 +1,34 @@
 using System;
+using System.Diagnostics;
+using POPSManager.Services.Interfaces;
 
 namespace POPSManager.Services
 {
-    public class ProgressService
+    /// <summary>
+    /// Servicio de progreso global optimizado.
+    /// Usa Stopwatch monotónico en lugar de DateTime.Now para throttling.
+    /// </summary>
+    public class ProgressService : IProgressService
     {
-        // Callbacks asignados desde MainWindow
-        public Action? OnStart;
-        public Action? OnStop;
-        public Action<int>? OnProgress;
-        public Action<string>? OnStatus;
+        public Action? OnStart { get; set; }
+        public Action? OnStop { get; set; }
+        public Action<int>? OnProgress { get; set; }
+        public Action<string>? OnStatus { get; set; }
 
-        // Estado interno
         public bool IsRunning { get; private set; }
-        private DateTime _lastUpdate = DateTime.MinValue;
+
+        private readonly Stopwatch _throttleWatch = new();
+        private int _lastReportedValue = -1;
+        private const int ThrottleMs = 50;
 
         // ============================================================
-        //  INICIAR PROGRESO
+        // INICIAR PROGRESO
         // ============================================================
         public void Start(string? status = null)
         {
             IsRunning = true;
-
+            _lastReportedValue = -1;
+            _throttleWatch.Restart();
             OnStart?.Invoke();
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -28,58 +36,56 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  ACTUALIZAR PORCENTAJE (con validación + throttling)
+        // ACTUALIZAR PORCENTAJE (Stopwatch + skip duplicados)
         // ============================================================
         public void SetProgress(int value)
         {
-            if (!IsRunning)
-                return;
+            if (!IsRunning) return;
 
-            // Clamp 0–100
-            if (value < 0) value = 0;
-            if (value > 100) value = 100;
+            // Clamp 0-100
+            value = Math.Clamp(value, 0, 100);
 
-            // Throttling: evitar saturar la UI
-            if ((DateTime.Now - _lastUpdate).TotalMilliseconds < 50)
-                return;
+            // Skip valores repetidos
+            if (value == _lastReportedValue) return;
 
-            _lastUpdate = DateTime.Now;
+            // Throttling monotónico (no depende del reloj del sistema)
+            if (_throttleWatch.ElapsedMilliseconds < ThrottleMs
+                && value < 100) return;
 
+            _lastReportedValue = value;
+            _throttleWatch.Restart();
             OnProgress?.Invoke(value);
         }
 
         // ============================================================
-        //  ACTUALIZAR TEXTO DE ESTADO
+        // ACTUALIZAR TEXTO DE ESTADO
         // ============================================================
         public void SetStatus(string text)
         {
-            if (!IsRunning)
-                return;
-
+            if (!IsRunning) return;
             if (!string.IsNullOrWhiteSpace(text))
                 OnStatus?.Invoke(text);
         }
 
         // ============================================================
-        //  DETENER PROGRESO
+        // DETENER PROGRESO
         // ============================================================
         public void Stop()
         {
-            if (!IsRunning)
-                return;
-
+            if (!IsRunning) return;
             IsRunning = false;
-
+            _throttleWatch.Stop();
             OnStop?.Invoke();
         }
 
         // ============================================================
-        //  REINICIAR (opcional)
+        // REINICIAR
         // ============================================================
         public void Reset()
         {
             IsRunning = false;
-            _lastUpdate = DateTime.MinValue;
+            _lastReportedValue = -1;
+            _throttleWatch.Reset();
         }
     }
 }
