@@ -85,13 +85,12 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  DETECTAR MULTIDISCO
+        // DETECTAR MULTIDISCO
         // ============================================================
         private static bool IsMultiDiscFolder(string folder)
         {
             string? parent = Path.GetDirectoryName(folder);
-            if (parent == null)
-                return false;
+            if (parent == null) return false;
 
             return Directory.GetFiles(parent)
                 .Any(f => f.EndsWith("DISCS.TXT", StringComparison.OrdinalIgnoreCase));
@@ -104,7 +103,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  FIXES AVANZADOS POR JUEGO (BASE DE DATOS INTERNA)
+        // FIXES AVANZADOS POR JUEGO (BASE DE DATOS INTERNA)
         // ============================================================
         private static void ApplyGameSpecificFixes(string gameId, List<string> lines, Action<string> log)
         {
@@ -116,29 +115,22 @@ namespace POPSManager.Logic
                 { "SLES00972", () => { lines.Add("FORCEVIDEO=1"); lines.Add("SKIPVIDEOS=ON"); } },
                 { "SLES10972", () => { lines.Add("FORCEVIDEO=1"); lines.Add("SKIPVIDEOS=ON"); } },
                 { "SLES02529", () => { lines.Add("FORCEVIDEO=1"); lines.Add("SKIPVIDEOS=ON"); } },
-
                 // Silent Hill
                 { "SLES01514", () => lines.Add("FORCEVIDEO=1") },
-
                 // Metal Gear Solid
                 { "SLES01370", () => lines.Add("FORCEVIDEO=1") },
                 { "SLES11370", () => lines.Add("FORCEVIDEO=1") },
-
                 // Final Fantasy VIII / IX
                 { "SLES02080", () => lines.Add("FORCEVIDEO=1") },
                 { "SLES12080", () => lines.Add("FORCEVIDEO=1") },
                 { "SLES02965", () => lines.Add("FORCEVIDEO=1") },
                 { "SLES12965", () => lines.Add("FORCEVIDEO=1") },
-
                 // Gran Turismo 2
                 { "SLES12380", () => { lines.Add("FORCEVIDEO=1"); lines.Add("FIXGRAPHICS=ON"); } },
-
                 // Tekken 3
                 { "SCES01237", () => lines.Add("FORCEVIDEO=1") },
-
                 // Crash Team Racing
                 { "SCES02105", () => lines.Add("FORCEVIDEO=1") },
-
                 // Spyro 2 / 3
                 { "SCES02104", () => lines.Add("FORCEVIDEO=1") },
                 { "SCES02835", () => lines.Add("FORCEVIDEO=1") }
@@ -146,7 +138,8 @@ namespace POPSManager.Logic
 
             foreach (var kv in fixes)
             {
-                if (id.StartsWith(kv.Key))
+                // ✅ FIX CA1310: Agregar StringComparison.Ordinal
+                if (id.StartsWith(kv.Key, StringComparison.Ordinal))
                 {
                     kv.Value();
                     log($"[PS1] Fix aplicado: {kv.Key}");
@@ -155,28 +148,29 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  FIXES POR ENGINE (Crash, Spyro, FF…)
+        // FIXES POR ENGINE (Crash, Spyro, FF…)
         // ============================================================
         private static void ApplyEngineFixes(string gameId, List<string> lines, Action<string> log)
         {
             string id = gameId.ToUpperInvariant();
 
             // Crash Bandicoot engine
-            if (id.StartsWith("SCES00") || id.StartsWith("SCUS94"))
+            // ✅ FIX CA1310: Agregar StringComparison.Ordinal
+            if (id.StartsWith("SCES00", StringComparison.Ordinal) || id.StartsWith("SCUS94", StringComparison.Ordinal))
             {
                 lines.Add("FIXSOUND=ON");
                 log("[PS1] Fix engine: Crash Bandicoot (FIXSOUND)");
             }
 
             // Spyro engine
-            if (id.StartsWith("SCES02") || id.StartsWith("SCUS94"))
+            if (id.StartsWith("SCES02", StringComparison.Ordinal) || id.StartsWith("SCUS94", StringComparison.Ordinal))
             {
                 lines.Add("FIXGRAPHICS=ON");
                 log("[PS1] Fix engine: Spyro (FIXGRAPHICS)");
             }
 
             // Final Fantasy engine
-            if (id.StartsWith("SLES02") || id.StartsWith("SCES02"))
+            if (id.StartsWith("SLES02", StringComparison.Ordinal) || id.StartsWith("SCES02", StringComparison.Ordinal))
             {
                 lines.Add("FIXCDDA=ON");
                 log("[PS1] Fix engine: Final Fantasy (FIXCDDA)");
@@ -184,14 +178,15 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  FIXES HEURÍSTICOS SEGUROS
+        // FIXES HEURÍSTICOS SEGUROS
         // ============================================================
         private static void ApplyHeuristicFixes(string gameId, List<string> lines, Action<string> log)
         {
             string id = gameId.ToUpperInvariant();
 
             // Heurística real: IDs terminados en 80 o 65 suelen tener timings sensibles
-            if (id.EndsWith("80") || id.EndsWith("65"))
+            // ✅ FIX CA1310: Agregar StringComparison.Ordinal
+            if (id.EndsWith("80", StringComparison.Ordinal) || id.EndsWith("65", StringComparison.Ordinal))
             {
                 lines.Add("FORCEVIDEO=1");
                 log("[PS1] Heurística: Timings sensibles detectados (FORCEVIDEO)");
@@ -199,7 +194,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  FIXES DESDE GAMEDATABASE (si existe entrada avanzada)
+        // FIXES DESDE GAMEDATABASE (si existe entrada avanzada)
         // ============================================================
         private static void ApplyDatabaseFixes(string gameId, List<string> lines, Action<string> log)
         {
