@@ -155,7 +155,7 @@ namespace POPSManager.Services
         {
             string[] searchPaths =
             {
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, elfName),
+                Path.Combine(AppContext.BaseDirectory, elfName), // FIX: compatible con MSIX + single-file
                 Path.Combine(RootFolder, elfName),
                 Path.Combine(PopsFolder, elfName),
                 Path.Combine(AppsFolder, elfName),
