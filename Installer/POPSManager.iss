@@ -23,7 +23,11 @@ ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
 
 [Files]
-Source: "portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; ============================================
+;  ARCHIVOS DEL PROGRAMA
+;  (Se copian desde la carpeta publish)
+; ============================================
+Source: "..\bin\Release\net8.0-windows\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\POPSManager"; Filename: "{app}\POPSManager.exe"
