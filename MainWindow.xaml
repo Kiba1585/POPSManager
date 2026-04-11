@@ -89,6 +89,14 @@
                         Margin="0 0 0 10"
                         Click="ProcessPops_Click"/>
 
+                <!-- ========================================================= -->
+                <!--  NUEVO BOTÓN: CONFIGURACIÓN DE CHEATS -->
+                <!-- ========================================================= -->
+                <Button Content="Cheats"
+                        Style="{StaticResource SidebarButtonStyle}"
+                        Margin="0 0 0 10"
+                        Click="CheatsSettings_Click"/>
+
                 <Button Content="Configuración"
                         Style="{StaticResource SidebarButtonStyle}"
                         Margin="0 0 0 10"
@@ -126,7 +134,7 @@
         </Border>
 
         <!-- ========================================================= -->
-        <!--  NOTIFICATION HOST (NUEVO SISTEMA ULTRA PRO) -->
+        <!--  NOTIFICATION HOST -->
         <!-- ========================================================= -->
         <ui:NotificationHost x:Name="Notifier"
                              Grid.Row="0"
