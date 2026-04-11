@@ -59,8 +59,11 @@ jobs:
         run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o portable
 
       # ================================
-      #   BUILD 3: INSTALLER EXE (Inno Setup)
+      #   BUILD 3: INSTALLER EXE
       # ================================
+      - name: Publish installer build (non-single-file)
+        run: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -o installer_build
+
       - name: Install Inno Setup
         run: choco install innosetup -y
 
