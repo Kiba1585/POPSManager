@@ -105,37 +105,91 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  VALIDACIÓN VCD / ISO
+        //  VALIDACIÓN AVANZADA VCD / ISO
         // ============================================================
         private bool ValidateVcd(string vcdPath)
         {
-            if (!IntegrityValidator.Validate(vcdPath))
+            try
             {
-                logService.Warn($"[PS1] VCD inválido: {vcdPath}");
-                notifications.Warning($"VCD inválido: {Path.GetFileName(vcdPath)}");
+                // 1) Validación avanzada con VcdInspector
+                var inspector = new VcdInspector(vcdPath);
+                var report = inspector.InspectBasic();
+
+                foreach (var issue in report.Issues)
+                    logService.Info($"[VCD] {issue}");
+
+                if (report.HasErrors)
+                {
+                    notifications.Warning($"VCD inválido: {Path.GetFileName(vcdPath)}");
+                    return false;
+                }
+
+                // 2) Validación clásica adicional (IntegrityValidator) como capa extra
+                if (!IntegrityValidator.Validate(vcdPath, msg => logService.Info(msg)))
+                {
+                    notifications.Warning($"VCD inválido: {Path.GetFileName(vcdPath)}");
+                    return false;
+                }
+
+                // 3) Análisis de posibles reparaciones (solo sugerencias, no modifica nada)
+                AnalyzeAndSuggestRepairs(vcdPath);
+
+                logService.Info($"[PS1] VCD válido: {vcdPath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logService.Error($"[PS1] Error validando VCD: {ex.Message}");
+                notifications.Warning($"Error validando VCD: {Path.GetFileName(vcdPath)}");
                 return false;
             }
-
-            return true;
         }
 
         private bool ValidateIso(string isoPath)
         {
             try
             {
-                var info = new FileInfo(isoPath);
-                if (!info.Exists || info.Length < 100_000_000)
+                using var iso = new IsoReader(isoPath);
+
+                if (!iso.TryReadPrimaryVolumeDescriptor(out var volumeId, out var report))
                 {
-                    notifications.Warning($"ISO sospechoso o demasiado pequeño: {Path.GetFileName(isoPath)}");
+                    foreach (var issue in report.Issues)
+                        logService.Warn($"[ISO] {issue}");
+
+                    notifications.Warning($"ISO inválido: {Path.GetFileName(isoPath)}");
                     return false;
                 }
 
+                logService.Info($"[ISO] Volume ID detectado: {volumeId}");
                 return true;
             }
             catch (Exception ex)
             {
                 logService.Error($"[PS2] Error validando ISO: {ex.Message}");
+                notifications.Warning($"Error validando ISO: {Path.GetFileName(isoPath)}");
                 return false;
+            }
+        }
+
+        // ============================================================
+        //  ANÁLISIS DE REPARACIÓN (SOLO SUGERENCIAS)
+        // ============================================================
+        private void AnalyzeAndSuggestRepairs(string vcdPath)
+        {
+            try
+            {
+                var repair = new RepairEngine();
+                var result = repair.AnalyzeVcdForRepairs(vcdPath);
+
+                foreach (var issue in result.Report.Issues)
+                    logService.Info($"[REPAIR] {issue}");
+
+                foreach (var suggestion in result.Suggestions)
+                    logService.Warn($"[REPAIR] Sugerencia: {suggestion}");
+            }
+            catch (Exception ex)
+            {
+                logService.Error($"[REPAIR] Error analizando VCD para reparaciones: {ex.Message}");
             }
         }
 
