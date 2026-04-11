@@ -281,9 +281,10 @@ namespace POPSManager.Logic
 
             gameId = gameId.ToUpperInvariant();
 
-            return gameId.StartsWith("SLES") ||
-                   gameId.StartsWith("SCES") ||
-                   gameId.StartsWith("PBPX");
+            // ✅ FIX CA1310: Agregar StringComparison.Ordinal
+            return gameId.StartsWith("SLES", StringComparison.Ordinal) ||
+                   gameId.StartsWith("SCES", StringComparison.Ordinal) ||
+                   gameId.StartsWith("PBPX", StringComparison.Ordinal);
         }
 
         // ============================================================
