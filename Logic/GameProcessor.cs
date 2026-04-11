@@ -1,7 +1,8 @@
 using POPSManager.Models;
 using POPSManager.Services;
-using POPSManager.Logic;
 using POPSManager.Logic.Covers;
+using POPSManager.Settings;
+using POPSManager.Logic.Cheats;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +17,9 @@ namespace POPSManager.Logic
         private readonly NotificationService notifications;
         private readonly PathsService paths;
 
+        private readonly CheatSettingsService cheatSettings;
+        private readonly CheatManagerService cheatManager;
+
         private readonly bool useDatabase;
         private readonly bool useCovers;
 
@@ -24,6 +28,8 @@ namespace POPSManager.Logic
             LoggingService logService,
             NotificationService notifications,
             PathsService paths,
+            CheatSettingsService cheatSettings,
+            CheatManagerService cheatManager,
             bool useDatabase = false,
             bool useCovers = false)
         {
@@ -31,6 +37,8 @@ namespace POPSManager.Logic
             this.logService = logService;
             this.notifications = notifications;
             this.paths = paths;
+            this.cheatSettings = cheatSettings;
+            this.cheatManager = cheatManager;
             this.useDatabase = useDatabase;
             this.useCovers = useCovers;
         }
@@ -111,7 +119,6 @@ namespace POPSManager.Logic
         {
             try
             {
-                // 1) Validación avanzada con VcdInspector
                 var inspector = new VcdInspector(vcdPath);
                 var report = inspector.InspectBasic();
 
@@ -124,14 +131,12 @@ namespace POPSManager.Logic
                     return false;
                 }
 
-                // 2) Validación clásica adicional (IntegrityValidator) como capa extra
                 if (!IntegrityValidator.Validate(vcdPath, msg => logService.Info(msg)))
                 {
                     notifications.Warning($"VCD inválido: {Path.GetFileName(vcdPath)}");
                     return false;
                 }
 
-                // 3) Análisis de posibles reparaciones (solo sugerencias, no modifica nada)
                 AnalyzeAndSuggestRepairs(vcdPath);
 
                 logService.Info($"[PS1] VCD válido: {vcdPath}");
@@ -221,7 +226,6 @@ namespace POPSManager.Logic
         {
             logService.Info($"[PS1] Procesando grupo: {baseName}");
 
-            // Ordenar discos por número usando MultiDiscManager Ultra‑Pro
             discs = discs.OrderBy(d =>
             {
                 string fileName = Path.GetFileNameWithoutExtension(d);
@@ -229,7 +233,6 @@ namespace POPSManager.Logic
                 return MultiDiscManager.ExtractDiscNumber(cdTag ?? fileName);
             }).ToList();
 
-            // Detectar ID real desde el VCD
             string firstDisc = discs.First();
             string? detectedId = GameIdDetector.DetectGameId(firstDisc);
 
@@ -242,12 +245,8 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // Obtener nombre del juego
             string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
 
-            // ============================================================
-            //  BASE DE DATOS
-            // ============================================================
             GameEntry? dbEntry = null;
 
             if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
@@ -261,9 +260,6 @@ namespace POPSManager.Logic
                 }
             }
 
-            // ============================================================
-            //  COVER PS1
-            // ============================================================
             if (useCovers && dbEntry?.CoverUrl != null)
             {
                 string artFolder = Path.Combine(paths.PopsFolder, "ART");
@@ -275,9 +271,6 @@ namespace POPSManager.Logic
                     logService.Info($"[COVER] PS1 ART generado → {art}");
             }
 
-            // ============================================================
-            //  ESTRUCTURA FINAL PS1
-            // ============================================================
             string gameRootFolder = Path.Combine(paths.PopsFolder, $"{detectedId} - {cleanTitle}");
             Directory.CreateDirectory(gameRootFolder);
 
@@ -313,23 +306,46 @@ namespace POPSManager.Logic
                 discNumber++;
             }
 
-            // ============================================================
-            //  DISCS.TXT
-            // ============================================================
             MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, logService.Info);
 
             // ============================================================
-            //  CHEAT.TXT (solo PAL)
+            //  CHEAT.TXT (según configuración)
             // ============================================================
-            if (GameIdDetector.IsPalRegion(detectedId))
+            string cd1Folder = Path.Combine(gameRootFolder, "CD1");
+
+            switch (cheatSettings.Current.Mode)
             {
-                string cd1Folder = Path.Combine(gameRootFolder, "CD1");
-                CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, logService.Info);
+                case CheatMode.Disabled:
+                    logService.Info("[Cheats] Modo: Desactivado. No se genera CHEAT.TXT.");
+                    break;
+
+                case CheatMode.AutoForPal:
+                    if (GameIdDetector.IsPalRegion(detectedId))
+                    {
+                        logService.Info("[Cheats] Modo: Auto PAL. Generando CHEAT.TXT automático.");
+                        CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, logService.Info);
+                    }
+                    else
+                    {
+                        logService.Info("[Cheats] Modo: Auto PAL, pero el juego no es PAL. No se genera CHEAT.TXT.");
+                    }
+                    break;
+
+                case CheatMode.AskEachTime:
+                    // Opción C: por ahora se comporta como AutoForPal a nivel de lógica,
+                    // la interacción visual se maneja desde la UI (menú/ventanas).
+                    if (GameIdDetector.IsPalRegion(detectedId))
+                    {
+                        logService.Info("[Cheats] Modo: Preguntar cada vez (lógica base). Generando CHEAT.TXT automático para PAL.");
+                        CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, logService.Info);
+                    }
+                    break;
+
+                case CheatMode.ManualSelection:
+                    logService.Info("[Cheats] Modo: Selección manual. No se genera CHEAT.TXT automáticamente.");
+                    break;
             }
 
-            // ============================================================
-            //  ELF (PS1)
-            // ============================================================
             GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder);
 
             notifications.Success($"{cleanTitle} procesado correctamente.");
@@ -389,9 +405,6 @@ namespace POPSManager.Logic
 
             string cleanTitle = NameCleanerBase.CleanTitleOnly(originalName);
 
-            // ============================================================
-            //  BASE DE DATOS PS2
-            // ============================================================
             GameEntry? dbEntry = null;
 
             if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
@@ -404,7 +417,6 @@ namespace POPSManager.Logic
                     logService.Info($"[DB] Nombre oficial PS2 encontrado: {cleanTitle}");
                 }
 
-                // COVER PS2
                 if (useCovers && dbEntry?.CoverUrl != null)
                 {
                     string artFolder = Path.Combine(paths.DvdFolder, "ART");
