@@ -1,0 +1,98 @@
+<Window x:Class="POPSManager.UI.Windows.CheatSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuración de CHEAT.TXT"
+        Width="520"
+        Height="520"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Brush.Background}"
+        ResizeMode="NoResize">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ========================================================= -->
+        <!--  TÍTULO -->
+        <!-- ========================================================= -->
+        <TextBlock Text="Configuración de CHEAT.TXT"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="{StaticResource Brush.TextPrimary}"
+                   Margin="0 0 0 20"/>
+
+        <!-- ========================================================= -->
+        <!--  CONTENIDO -->
+        <!-- ========================================================= -->
+        <StackPanel Grid.Row="1" Margin="0 10 0 10" VerticalAlignment="Top">
+
+            <!-- MODO PRINCIPAL -->
+            <TextBlock Text="Modo de generación"
+                       FontWeight="Bold"
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       Margin="0 0 0 8"/>
+
+            <ComboBox x:Name="ModeCombo"
+                      Width="300"
+                      SelectedIndex="1"
+                      Margin="0 0 0 20">
+                <ComboBoxItem Content="Desactivado"/>
+                <ComboBoxItem Content="Automático para juegos PAL"/>
+                <ComboBoxItem Content="Preguntar cada vez"/>
+                <ComboBoxItem Content="Selección manual antes de procesar"/>
+            </ComboBox>
+
+            <!-- OPCIONES AVANZADAS -->
+            <TextBlock Text="Opciones avanzadas"
+                       FontWeight="Bold"
+                       Foreground="{StaticResource Brush.TextPrimary}"
+                       Margin="0 0 0 8"/>
+
+            <CheckBox x:Name="AutoFixesCheck"
+                      Content="Usar fixes automáticos por juego"
+                      Margin="0 4"/>
+
+            <CheckBox x:Name="EngineFixesCheck"
+                      Content="Usar fixes por engine (Crash, Spyro, FF...)"
+                      Margin="0 4"/>
+
+            <CheckBox x:Name="HeuristicFixesCheck"
+                      Content="Usar fixes heurísticos"
+                      Margin="0 4"/>
+
+            <CheckBox x:Name="DatabaseFixesCheck"
+                      Content="Usar fixes desde GameDatabase"
+                      Margin="0 4"/>
+
+            <CheckBox x:Name="CustomCheatsCheck"
+                      Content="Permitir cheats personalizados del usuario"
+                      Margin="0 4"/>
+
+        </StackPanel>
+
+        <!-- ========================================================= -->
+        <!--  BOTONES -->
+        <!-- ========================================================= -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0 20 0 0">
+
+            <Button Content="Cancelar"
+                    Width="100"
+                    Margin="0 0 10 0"
+                    Style="{StaticResource SecondaryButton}"
+                    Click="Cancel_Click"/>
+
+            <Button Content="Guardar"
+                    Width="120"
+                    Style="{StaticResource PrimaryButton}"
+                    Click="Save_Click"/>
+        </StackPanel>
+
+    </Grid>
+</Window>
