@@ -1,52 +1,84 @@
 using System;
 using System.Windows;
 using POPSManager.Services;
-using POPSManager.Models; // ← Necesario para NotificationType
+using POPSManager.Models;
 
 namespace POPSManager
 {
+    /// <summary>
+    /// Punto de entrada de la aplicación con DI y manejo global
+    /// de excepciones. Implementa shutdown seguro con flush de logs
+    /// vía IAsyncDisposable.
+    /// </summary>
     public partial class App : Application
     {
         // Servicios globales accesibles desde toda la aplicación
-        public static AppServices Services { get; private set; } = null!;
+        public static AppServices Services { get; private set; }
+            = null!;
 
         public App()
         {
-            // Inicialización temprana de servicios globales
+            // Inicialización de DI container
             Services = new AppServices();
 
-            // Manejo global de excepciones (ULTRA PRO)
-            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            // Manejo global de excepciones
+            this.DispatcherUnhandledException
+                += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException
+                += CurrentDomain_UnhandledException;
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(
+            StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            // Inicializaciones globales opcionales
-            // Services.Paths.EnsureFolderStructure();
         }
 
         // ============================================================
-        //  MANEJO GLOBAL DE EXCEPCIONES (ULTRA PRO)
+        // SHUTDOWN SEGURO (FLUSH DE LOGS)
         // ============================================================
-        private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        protected override async void OnExit(
+            ExitEventArgs e)
+        {
+            try
+            {
+                // Flush seguro de todos los servicios
+                // IAsyncDisposable (LoggingService)
+                await Services.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"[SHUTDOWN] Error durante dispose: {ex.Message}");
+            }
+
+            base.OnExit(e);
+        }
+
+        // ============================================================
+        // MANEJO GLOBAL DE EXCEPCIONES
+        // ============================================================
+        private void App_DispatcherUnhandledException(
+            object sender,
+            System.Windows.Threading
+                .DispatcherUnhandledExceptionEventArgs e)
         {
             try
             {
                 Services.Notifications.Show(
                     $"Error inesperado: {e.Exception.Message}",
                     NotificationType.Error);
-
-                Services.LogService.Error($"[ERROR] {e.Exception}");
+                Services.LogService.Error(
+                    $"[ERROR] {e.Exception}");
             }
             catch { }
 
             e.Handled = true;
         }
 
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void CurrentDomain_UnhandledException(
+            object sender,
+            UnhandledExceptionEventArgs e)
         {
             try
             {
@@ -55,8 +87,8 @@ namespace POPSManager
                     Services.Notifications.Show(
                         $"Error crítico: {ex.Message}",
                         NotificationType.Error);
-
-                    Services.LogService.Error($"[CRITICAL] {ex}");
+                    Services.LogService.Error(
+                        $"[CRITICAL] {ex}");
                 }
             }
             catch { }
