@@ -42,7 +42,9 @@ namespace POPSManager.Settings
                 });
 
                 File.WriteAllText(_settingsPath, json);
-                log?.Invoke?.Invoke("[Cheats] CheatSettings guardado.");
+
+                // ✔ FIX: solo una llamada a Invoke
+                log?.Invoke("[Cheats] CheatSettings guardado.");
             }
             catch (Exception ex)
             {
