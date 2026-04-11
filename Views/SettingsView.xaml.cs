@@ -76,7 +76,6 @@ namespace POPSManager.Views
                 return;
             }
 
-            // Validación: evitar PS2/PS1/POPSManager
             if (IsInvalidRoot(path))
             {
                 Services.Notifications.Warning(
@@ -88,14 +87,11 @@ namespace POPSManager.Views
 
             try
             {
-                // Guardar la nueva raíz
                 Services.Settings.RootFolder = path;
                 Services.Settings.Save();
 
-                // Recargar PathsService sin reemplazarlo
                 Services.Paths.Reload();
 
-                // Actualizar UI
                 RootPathBox.Text = Services.Paths.RootFolder;
                 PopsPath.Text = Services.Paths.PopsFolder;
                 AppsPath.Text = Services.Paths.AppsFolder;
@@ -270,14 +266,13 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  ABRIR CARPETA DEL PROGRAMA
+        //  ABRIR CARPETA DEL PROGRAMA (FIX IL3000)
         // ============================================================
         private void OpenProgramFolder_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                string? folder = Path.GetDirectoryName(
-                    System.Reflection.Assembly.GetExecutingAssembly().Location);
+                string folder = AppContext.BaseDirectory;
 
                 if (!string.IsNullOrWhiteSpace(folder))
                     System.Diagnostics.Process.Start("explorer.exe", folder);
