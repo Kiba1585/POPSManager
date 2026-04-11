@@ -14,8 +14,10 @@ namespace POPSManager.UI.Windows
         private readonly string _gameFolder;
         private readonly string _cd1Folder;
         private readonly string _cheatPath;
+
         private readonly CheatManagerService _manager;
         private readonly CheatSettingsService _settings;
+        private readonly PathsService _paths;
 
         private List<CheatDefinition> _officialCheats = new();
         private List<CheatDefinition> _userCheats = new();
@@ -24,13 +26,15 @@ namespace POPSManager.UI.Windows
         public CheatEditorWindow(
             string gameFolder,
             CheatManagerService manager,
-            CheatSettingsService settings)
+            CheatSettingsService settings,
+            PathsService paths)
         {
             InitializeComponent();
 
             _gameFolder = gameFolder;
             _manager = manager;
             _settings = settings;
+            _paths = paths;
 
             _cd1Folder = Path.Combine(gameFolder, "CD1");
             _cheatPath = Path.Combine(_cd1Folder, "CHEAT.TXT");
@@ -46,7 +50,10 @@ namespace POPSManager.UI.Windows
         private void LoadCheats()
         {
             _officialCheats = CheatLibrary.GetOfficialCheats().ToList();
-            _userCheats = _manager.LoadUserCheats(_settings.Current.RootFolder).ToList();
+
+            // FIX: RootFolder viene de PathsService, NO de CheatSettings
+            _userCheats = _manager.LoadUserCheats(_paths.RootFolder).ToList();
+
             _existingCheats = _manager.LoadCheatFile(_cheatPath);
 
             CheatsList.Items.Clear();
@@ -132,7 +139,9 @@ namespace POPSManager.UI.Windows
             };
 
             _userCheats.Add(cheat);
-            _manager.SaveUserCheats(_settings.Current.RootFolder, _userCheats);
+
+            // FIX: Guardar cheats personalizados en RootFolder correcto
+            _manager.SaveUserCheats(_paths.RootFolder, _userCheats);
 
             LoadCheats();
         }
@@ -155,7 +164,9 @@ namespace POPSManager.UI.Windows
             }
 
             _userCheats.Remove(cheat);
-            _manager.SaveUserCheats(_settings.Current.RootFolder, _userCheats);
+
+            // FIX: Guardar cambios en la ruta correcta
+            _manager.SaveUserCheats(_paths.RootFolder, _userCheats);
 
             LoadCheats();
         }
