@@ -1,0 +1,48 @@
+<Project>
+  <!-- ============================================ -->
+  <!-- DIRECTORY.BUILD.PROPS - CALIDAD CENTRALIZADA -->
+  <!-- Aplica a TODOS los proyectos de la solución  -->
+  <!-- ============================================ -->
+
+  <PropertyGroup>
+    <!-- Análisis de código -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Nullable habilitado globalmente -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Información del ensamblado -->
+    <Company>POPSManager</Company>
+    <Authors>Raidel</Authors>
+    <Product>POPSManager</Product>
+    <Copyright>Copyright (c) Raidel 2026</Copyright>
+
+    <!-- Deterministic builds para reproducibilidad -->
+    <Deterministic>true</Deterministic>
+
+    <!-- SourceLink para diagnóstico en producción -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!-- ============================================ -->
+  <!-- ANALYZERS (aplican a todos los proyectos)    -->
+  <!-- ============================================ -->
+  <ItemGroup>
+    <PackageReference
+      Include="Microsoft.SourceLink.GitHub"
+      Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- ============================================ -->
+  <!-- CI: Configuración específica para CI/CD      -->
+  <!-- ============================================ -->
+  <PropertyGroup Condition="'$(CI)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>
