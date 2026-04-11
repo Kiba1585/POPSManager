@@ -3,6 +3,8 @@ using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.Views;
 using POPSManager.Logic;
+using POPSManager.Settings;
+using POPSManager.UI.Windows;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -78,6 +80,37 @@ namespace POPSManager
         private void ProcessPops_Click(object sender, RoutedEventArgs e) => LoadView(new ProcessPopsView());
         private void Settings_Click(object sender, RoutedEventArgs e) => LoadView(new SettingsView());
         private void About_Click(object sender, RoutedEventArgs e) => LoadView(new AboutView());
+
+        // ============================================================
+        //  NUEVO: CONFIGURACIÓN DE CHEATS
+        // ============================================================
+        private void CheatsSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Crear servicio de configuración de cheats
+                var cheatSettings = new CheatSettingsService(
+                    _services.Paths.RootFolder,
+                    _services.LogService.Info
+                );
+
+                // Abrir ventana
+                var win = new CheatSettingsWindow(cheatSettings)
+                {
+                    Owner = this
+                };
+
+                win.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Notifications.Show(new UiNotification
+                {
+                    Type = NotificationType.Error,
+                    Message = $"Error abriendo configuración de cheats: {ex.Message}"
+                });
+            }
+        }
 
         // ============================================================
         //  LOGS
