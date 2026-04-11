@@ -21,7 +21,8 @@ namespace POPSManager.Logic
             // 1. NameCleanerBase (nuevo sistema)
             // ============================================================
             NameCleanerBase.Clean(name, out string? cdTag);
-            if (cdTag != null && cdTag.StartsWith("CD"))
+            // ✅ FIX CA1310: Agregar StringComparison.Ordinal
+            if (cdTag != null && cdTag.StartsWith("CD", StringComparison.Ordinal))
             {
                 if (int.TryParse(cdTag.Substring(2), out int n))
                 {
