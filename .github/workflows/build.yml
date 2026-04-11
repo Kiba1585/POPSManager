@@ -19,7 +19,8 @@ permissions:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  PROJECT_PATH: 'POPSManager/POPSManager.csproj'
+  # ✅ CORREGIDO — el .csproj está en la raíz, no en subcarpeta
+  PROJECT_PATH: 'POPSManager.csproj'
 
 jobs:
   build:
