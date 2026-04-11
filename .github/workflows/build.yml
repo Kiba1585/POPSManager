@@ -58,6 +58,13 @@ jobs:
       - name: Publish portable EXE
         run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o portable
 
+      # Crear ZIP limpio del portable
+      - name: Create clean portable ZIP
+        run: |
+          mkdir PortableClean
+          Copy-Item portable\* PortableClean\ -Recurse -Force -Exclude *.pdb
+          Compress-Archive -Path PortableClean\* -DestinationPath POPSManager_Portable.zip
+
       # ================================
       #   BUILD 3: INSTALLER EXE
       # ================================
@@ -79,11 +86,11 @@ jobs:
           name: POPSManager_MSIX
           path: "POPSManager_${{ github.ref_name }}.msix"
 
-      - name: Upload Portable EXE
+      - name: Upload Portable ZIP
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager_Portable
-          path: portable
+          path: POPSManager_Portable.zip
 
       - name: Upload Installer EXE
         uses: actions/upload-artifact@v4
