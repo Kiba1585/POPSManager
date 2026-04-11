@@ -37,7 +37,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  GENERAR DISCS.TXT (TU VERSIÓN ORIGINAL)
+        //  GENERAR DISCS.TXT (ULTRA PRO)
         // ============================================================
         public static void GenerateDiscsTxt(
             string popsFolder,
@@ -45,6 +45,9 @@ namespace POPSManager.Logic
             List<string> discPaths,
             Action<string> log)
         {
+            log("[MultiDisc] Iniciando validación multidisco…");
+
+            // Crear DiscInfo para cada disco detectado
             var discs = discPaths
                 .Select(path => new DiscInfo
                 {
@@ -56,15 +59,28 @@ namespace POPSManager.Logic
                 })
                 .ToList();
 
+            // ============================================================
+            //  VALIDACIÓN ESTRICTA MULTIDISCO
+            // ============================================================
             if (!DiscValidator.Validate(discs, log))
+            {
+                log("[MultiDisc] ERROR: Validación multidisco falló. No se generará DISCS.TXT.");
                 return;
+            }
 
+            // Ordenar discos por número
             discs = discs.OrderBy(d => d.DiscNumber).ToList();
 
+            // ============================================================
+            //  GENERAR LÍNEAS DE DISCS.TXT
+            // ============================================================
             List<string> lines = discs
                 .Select(d => $"mass:/POPS/{d.FolderName}/{d.FileName}")
                 .ToList();
 
+            // ============================================================
+            //  ESCRIBIR DISCS.TXT EN CADA CARPETA CDX
+            // ============================================================
             foreach (var d in discs)
             {
                 string folder = Path.GetDirectoryName(d.Path)!;
@@ -73,6 +89,8 @@ namespace POPSManager.Logic
                 File.WriteAllLines(discsTxtPath, lines);
                 log($"[MultiDisc] DISCS.TXT generado → {discsTxtPath}");
             }
+
+            log("[MultiDisc] DISCS.TXT generado correctamente para todos los discos.");
         }
     }
 }
