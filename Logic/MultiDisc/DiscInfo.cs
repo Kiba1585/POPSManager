@@ -18,7 +18,7 @@ namespace POPSManager.Logic
         public string FileName { get; set; } = "";
 
         // ============================================================
-        //  PROPIEDADES DERIVADAS (ÚTILES PARA VALIDACIÓN E INFORMES)
+        // PROPIEDADES DERIVADAS (ÚTILES PARA VALIDACIÓN E INFORMES)
         // ============================================================
 
         // Nombre del archivo sin extensión
@@ -34,8 +34,10 @@ namespace POPSManager.Logic
             NameCleanerBase.CleanTitleOnly(FileNameNoExt);
 
         // ¿La carpeta está correctamente nombrada como CDX?
+        // ✅ FIX CA1310: Reemplazar ToUpper().StartsWith("CD")
+        //    por StartsWith con StringComparison.OrdinalIgnoreCase
         public bool FolderMatchesDisc =>
-            FolderName.ToUpper().StartsWith("CD") &&
+            FolderName.StartsWith("CD", StringComparison.OrdinalIgnoreCase) &&
             int.TryParse(FolderName.Substring(2), out int n) &&
             n == DiscNumber;
     }
