@@ -18,26 +18,17 @@ namespace POPSManager.Services
         // ============================
         // ACCESO TIPADO A SERVICIOS
         // ============================
-        public ILoggingService LogService
-            => _provider.GetRequiredService<ILoggingService>();
-        public INotificationService Notifications
-            => _provider.GetRequiredService<INotificationService>();
-        public IProgressService Progress
-            => _provider.GetRequiredService<IProgressService>();
-        public SettingsService Settings
-            => _provider.GetRequiredService<SettingsService>();
-        public PathsService Paths
-            => _provider.GetRequiredService<PathsService>();
-        public ConverterService Converter
-            => _provider.GetRequiredService<ConverterService>();
-        public CheatSettingsService CheatSettings
-            => _provider.GetRequiredService<CheatSettingsService>();
-        public CheatManagerService CheatManager
-            => _provider.GetRequiredService<CheatManagerService>();
+        public ILoggingService LogService => _provider.GetRequiredService<ILoggingService>();
+        public INotificationService Notifications => _provider.GetRequiredService<INotificationService>();
+        public IProgressService Progress => _provider.GetRequiredService<IProgressService>();
+        public SettingsService Settings => _provider.GetRequiredService<SettingsService>();
+        public PathsService Paths => _provider.GetRequiredService<PathsService>();
+        public ConverterService Converter => _provider.GetRequiredService<ConverterService>();
+        public CheatSettingsService CheatSettings => _provider.GetRequiredService<CheatSettingsService>();
+        public CheatManagerService CheatManager => _provider.GetRequiredService<CheatManagerService>();
 
         // GameProcessor se inicializa bajo demanda (Lazy)
-        public GameProcessor GameProcessor
-            => _provider.GetRequiredService<Lazy<GameProcessor>>().Value;
+        public GameProcessor GameProcessor => _provider.GetRequiredService<Lazy<GameProcessor>>().Value;
 
         public AppServices()
         {
@@ -47,8 +38,7 @@ namespace POPSManager.Services
             // LOGGING (PRIMERO SIEMPRE)
             // ============================
             services.AddSingleton<LoggingService>();
-            services.AddSingleton<ILoggingService>(sp
-                => sp.GetRequiredService<LoggingService>());
+            services.AddSingleton<ILoggingService>(sp => sp.GetRequiredService<LoggingService>());
 
             // ============================
             // SETTINGS (depende de Logging)
@@ -73,15 +63,13 @@ namespace POPSManager.Services
             // NOTIFICACIONES
             // ============================
             services.AddSingleton<NotificationService>();
-            services.AddSingleton<INotificationService>(sp
-                => sp.GetRequiredService<NotificationService>());
+            services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
 
             // ============================
             // PROGRESO GLOBAL
             // ============================
             services.AddSingleton<ProgressService>();
-            services.AddSingleton<IProgressService>(sp
-                => sp.GetRequiredService<ProgressService>());
+            services.AddSingleton<IProgressService>(sp => sp.GetRequiredService<ProgressService>());
 
             // ============================
             // CHEATS (CONFIG + MANAGER)
@@ -91,16 +79,17 @@ namespace POPSManager.Services
                 var paths = sp.GetRequiredService<PathsService>();
                 var log = sp.GetRequiredService<ILoggingService>();
                 return new CheatSettingsService(
-                    paths.RootFolder, log.Write);
+                    paths.RootFolder,
+                    log.Write);
             });
 
             services.AddSingleton(sp =>
             {
-                var cheatSettings =
-                    sp.GetRequiredService<CheatSettingsService>();
+                var cheatSettings = sp.GetRequiredService<CheatSettingsService>();
                 var log = sp.GetRequiredService<ILoggingService>();
                 return new CheatManagerService(
-                    cheatSettings, log.Write);
+                    cheatSettings,
+                    log.Write);
             });
 
             // ============================
@@ -110,12 +99,9 @@ namespace POPSManager.Services
             {
                 var log = sp.GetRequiredService<ILoggingService>();
                 var paths = sp.GetRequiredService<PathsService>();
-                var settings =
-                    sp.GetRequiredService<SettingsService>();
-                var notif =
-                    sp.GetRequiredService<INotificationService>();
-                var progress =
-                    sp.GetRequiredService<IProgressService>();
+                var settings = sp.GetRequiredService<SettingsService>();
+                var notif = sp.GetRequiredService<INotificationService>();
+                var progress = sp.GetRequiredService<IProgressService>();
                 return new ConverterService(
                     log.Write,
                     paths,
@@ -127,28 +113,30 @@ namespace POPSManager.Services
 
             // ============================
             // GAME PROCESSOR (PS1 + PS2) - LAZY
+            // ════════════════════════════
+            // FIX CS1503: Resolver tipos CONCRETOS, no interfaces.
+            // GameProcessor espera ProgressService, LoggingService,
+            // NotificationService — no las interfaces.
             // ============================
-            services.AddSingleton(sp =>
-                new Lazy<GameProcessor>(() =>
+            services.AddSingleton(sp => new Lazy<GameProcessor>(() =>
             {
-                var progress =
-                    sp.GetRequiredService<IProgressService>();
-                var log =
-                    sp.GetRequiredService<ILoggingService>();
-                var notif =
-                    sp.GetRequiredService<INotificationService>();
-                var paths =
-                    sp.GetRequiredService<PathsService>();
-                var cheatSettings =
-                    sp.GetRequiredService<CheatSettingsService>();
-                var cheatManager =
-                    sp.GetRequiredService<CheatManagerService>();
-                var settings =
-                    sp.GetRequiredService<SettingsService>();
+                var progress = sp.GetRequiredService<ProgressService>();
+                var log = sp.GetRequiredService<LoggingService>();
+                var notif = sp.GetRequiredService<NotificationService>();
+                var paths = sp.GetRequiredService<PathsService>();
+                var cheatSettings = sp.GetRequiredService<CheatSettingsService>();
+                var cheatManager = sp.GetRequiredService<CheatManagerService>();
+                var settings = sp.GetRequiredService<SettingsService>();
+
                 return new GameProcessor(
-                    progress, log, notif, paths,
-                    cheatSettings, cheatManager,
-                    settings.UseDatabase, settings.UseCovers
+                    progress,
+                    log,
+                    notif,
+                    paths,
+                    cheatSettings,
+                    cheatManager,
+                    settings.UseDatabase,
+                    settings.UseCovers
                 );
             }));
 
