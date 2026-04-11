@@ -1,5 +1,7 @@
 using POPSManager.Logic;
 using POPSManager.Models;
+using POPSManager.Settings;
+using POPSManager.Logic.Cheats;
 
 namespace POPSManager.Services
 {
@@ -14,6 +16,10 @@ namespace POPSManager.Services
         public NotificationService Notifications { get; } = null!;
         public ProgressService Progress { get; } = null!;
         public ConverterService Converter { get; } = null!;
+
+        // Cheats
+        public CheatSettingsService CheatSettings { get; } = null!;
+        public CheatManagerService CheatManager { get; } = null!;
 
         // GameProcessor se inicializa bajo demanda (Lazy)
         public GameProcessor GameProcessor => _gameProcessor.Value;
@@ -47,13 +53,19 @@ namespace POPSManager.Services
             Progress = new ProgressService();
 
             // ============================
+            //  CHEATS (CONFIG + MANAGER)
+            // ============================
+            CheatSettings = new CheatSettingsService(Paths.RootFolder, LogService.Write);
+            CheatManager = new CheatManagerService(CheatSettings, LogService.Write);
+
+            // ============================
             //  CONVERSIÓN PS1 (BIN/CUE → VCD)
             // ============================
             Converter = new ConverterService(
                 LogService.Write,
                 Paths,
                 Settings,
-                (msg, type) => Notifications.Show(msg, type), // Firma correcta
+                (msg, type) => Notifications.Show(msg, type),
                 Progress.SetStatus
             );
 
@@ -66,6 +78,8 @@ namespace POPSManager.Services
                     LogService,
                     Notifications,
                     Paths,
+                    CheatSettings,
+                    CheatManager,
                     Settings.UseDatabase,
                     Settings.UseCovers
                 ));
