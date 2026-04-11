@@ -19,6 +19,9 @@
     <!-- Calidad y seguridad -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 
     <!-- Para MSIX y compatibilidad -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -26,15 +29,43 @@
     <!-- Evita warnings de recursos -->
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
 
-    <!-- Icono del ejecutable (si lo agregas más adelante) -->
-    <!-- <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon> -->
+    <!-- ============================================ -->
+    <!-- OPTIMIZACIONES DE RENDIMIENTO (AVANZADO)     -->
+    <!-- ============================================ -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>true</TieredPGO>
+
+    <!-- SourceLink para diagnóstico en producción -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <DebugType>embedded</DebugType>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild
+      Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Librerías necesarias -->
-    <PackageReference Include="WindowsAPICodePack-Core" Version="1.1.1" />
-    <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
-    <PackageReference Include="DiscUtils" Version="0.16.13" />
+    <!-- Librerías existentes -->
+    <PackageReference
+      Include="WindowsAPICodePack-Core"
+      Version="1.1.1" />
+    <PackageReference
+      Include="WindowsAPICodePack-Shell"
+      Version="1.1.1" />
+    <PackageReference
+      Include="DiscUtils"
+      Version="0.16.13" />
+
+    <!-- DI Container -->
+    <PackageReference
+      Include="Microsoft.Extensions.DependencyInjection"
+      Version="8.0.1" />
+
+    <!-- SourceLink -->
+    <PackageReference
+      Include="Microsoft.SourceLink.GitHub"
+      Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
