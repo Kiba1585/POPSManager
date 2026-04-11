@@ -3,6 +3,7 @@ using POPSManager.Services;
 using POPSManager.Logic.Covers;
 using POPSManager.Settings;
 using POPSManager.Logic.Cheats;
+using POPSManager.Core.Integrity;   // ✔ FIX: Inspector unificado
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -291,7 +292,7 @@ namespace POPSManager.Logic
                         cleanTitle
                     );
 
-                    string destVcd = Path.Combine(discFolder, finalFileName);
+                    string destVcd = Path.Combine(discFolder, finalFolder: finalFileName);
 
                     File.Copy(disc, destVcd, true);
                     discPaths.Add(destVcd);
@@ -332,11 +333,9 @@ namespace POPSManager.Logic
                     break;
 
                 case CheatMode.AskEachTime:
-                    // Opción C: por ahora se comporta como AutoForPal a nivel de lógica,
-                    // la interacción visual se maneja desde la UI (menú/ventanas).
                     if (GameIdDetector.IsPalRegion(detectedId))
                     {
-                        logService.Info("[Cheats] Modo: Preguntar cada vez (lógica base). Generando CHEAT.TXT automático para PAL.");
+                        logService.Info("[Cheats] Modo: Preguntar cada vez. Generando CHEAT.TXT automático para PAL.");
                         CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, logService.Info);
                     }
                     break;
