@@ -1,0 +1,54 @@
+<Window x:Class="POPSManager.UI.Windows.GameSelectorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Seleccionar juego"
+        Width="520"
+        Height="600"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Brush.Background}"
+        ResizeMode="NoResize">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- TÍTULO -->
+        <TextBlock Text="Seleccionar juego procesado"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="{StaticResource Brush.TextPrimary}"
+                   Margin="0 0 0 20"/>
+
+        <!-- LISTA DE JUEGOS -->
+        <ListBox x:Name="GamesList"
+                 Grid.Row="1"
+                 BorderBrush="{StaticResource Brush.Border}"
+                 BorderThickness="1"
+                 Background="{StaticResource Brush.Panel}"
+                 Foreground="{StaticResource Brush.TextPrimary}"
+                 SelectionMode="Single"/>
+
+        <!-- BOTONES -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0 20 0 0">
+
+            <Button Content="Cancelar"
+                    Width="100"
+                    Margin="0 0 10 0"
+                    Style="{StaticResource SecondaryButton}"
+                    Click="Cancel_Click"/>
+
+            <Button Content="Editar Cheats"
+                    Width="140"
+                    Style="{StaticResource PrimaryButton}"
+                    Click="Edit_Click"/>
+        </StackPanel>
+
+    </Grid>
+</Window>
