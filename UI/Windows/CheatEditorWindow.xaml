@@ -1,0 +1,108 @@
+<Window x:Class="POPSManager.UI.Windows.CheatEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Editor de Cheats"
+        Width="700"
+        Height="650"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Brush.Background}"
+        ResizeMode="NoResize">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- TÍTULO -->
+        <TextBlock x:Name="TitleText"
+                   Text="Editar Cheats"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="{StaticResource Brush.TextPrimary}"
+                   Margin="0 0 0 20"/>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LISTA DE CHEATS -->
+            <ListBox x:Name="CheatsList"
+                     Grid.Column="0"
+                     BorderBrush="{StaticResource Brush.Border}"
+                     BorderThickness="1"
+                     Background="{StaticResource Brush.Panel}"
+                     Foreground="{StaticResource Brush.TextPrimary}"
+                     SelectionMode="Single"
+                     Margin="0 0 10 0"
+                     SelectionChanged="CheatsList_SelectionChanged"/>
+
+            <!-- PANEL DE DETALLES -->
+            <StackPanel Grid.Column="1"
+                        Margin="10 0 0 0">
+
+                <TextBlock x:Name="CheatName"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource Brush.TextPrimary}"
+                           Margin="0 0 0 10"/>
+
+                <TextBlock x:Name="CheatCategory"
+                           FontSize="14"
+                           Foreground="{StaticResource Brush.TextMuted}"
+                           Margin="0 0 0 10"/>
+
+                <TextBlock x:Name="CheatDescription"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource Brush.TextPrimary}"
+                           Margin="0 0 0 20"/>
+
+                <CheckBox x:Name="CheatEnabledCheck"
+                          Content="Activar este cheat"
+                          Margin="0 0 0 20"
+                          FontSize="14"
+                          Foreground="{StaticResource Brush.TextPrimary}"/>
+
+                <!-- CHEATS PERSONALIZADOS -->
+                <StackPanel Orientation="Horizontal" Margin="0 20 0 0">
+                    <Button Content="Añadir cheat personalizado"
+                            Width="200"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="AddCustomCheat_Click"/>
+
+                    <Button Content="Eliminar cheat"
+                            Width="150"
+                            Margin="10 0 0 0"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="DeleteCustomCheat_Click"/>
+                </StackPanel>
+
+            </StackPanel>
+
+        </Grid>
+
+        <!-- BOTONES -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0 20 0 0">
+
+            <Button Content="Cancelar"
+                    Width="100"
+                    Margin="0 0 10 0"
+                    Style="{StaticResource SecondaryButton}"
+                    Click="Cancel_Click"/>
+
+            <Button Content="Guardar"
+                    Width="120"
+                    Style="{StaticResource PrimaryButton}"
+                    Click="Save_Click"/>
+        </StackPanel>
+
+    </Grid>
+</Window>
