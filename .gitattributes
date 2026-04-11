@@ -1,12 +1,5 @@
-# ============================================
-# POPSManager — .gitattributes
-# Normaliza line endings a LF en todo el repo
-# ============================================
-
-# Default: normalizar a LF
 * text=auto eol=lf
 
-# Código fuente: siempre LF
 *.cs        text eol=lf
 *.xaml      text eol=lf
 *.csproj    text eol=lf
@@ -22,7 +15,6 @@
 *.editorconfig text eol=lf
 *.gitattributes text eol=lf
 
-# Binarios: no tocar
 *.exe       binary
 *.dll       binary
 *.png       binary
