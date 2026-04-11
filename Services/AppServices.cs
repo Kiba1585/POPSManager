@@ -1,88 +1,175 @@
+using Microsoft.Extensions.DependencyInjection;
 using POPSManager.Logic;
-using POPSManager.Models;
-using POPSManager.Settings;
 using POPSManager.Logic.Cheats;
+using POPSManager.Services.Interfaces;
+using POPSManager.Settings;
 
 namespace POPSManager.Services
 {
-    public class AppServices
+    /// <summary>
+    /// Contenedor de Inyección de Dependencias profesional.
+    /// Reemplaza el Service Locator manual por
+    /// Microsoft.Extensions.DependencyInjection.
+    /// </summary>
+    public sealed class AppServices : IAsyncDisposable
     {
-        // ============================
-        //  SERVICIOS PRINCIPALES
-        // ============================
-        public SettingsService Settings { get; } = null!;
-        public PathsService Paths { get; } = null!;
-        public LoggingService LogService { get; } = null!;
-        public NotificationService Notifications { get; } = null!;
-        public ProgressService Progress { get; } = null!;
-        public ConverterService Converter { get; } = null!;
+        private readonly ServiceProvider _provider;
 
-        // Cheats
-        public CheatSettingsService CheatSettings { get; } = null!;
-        public CheatManagerService CheatManager { get; } = null!;
+        // ============================
+        // ACCESO TIPADO A SERVICIOS
+        // ============================
+        public ILoggingService LogService
+            => _provider.GetRequiredService<ILoggingService>();
+        public INotificationService Notifications
+            => _provider.GetRequiredService<INotificationService>();
+        public IProgressService Progress
+            => _provider.GetRequiredService<IProgressService>();
+        public SettingsService Settings
+            => _provider.GetRequiredService<SettingsService>();
+        public PathsService Paths
+            => _provider.GetRequiredService<PathsService>();
+        public ConverterService Converter
+            => _provider.GetRequiredService<ConverterService>();
+        public CheatSettingsService CheatSettings
+            => _provider.GetRequiredService<CheatSettingsService>();
+        public CheatManagerService CheatManager
+            => _provider.GetRequiredService<CheatManagerService>();
 
         // GameProcessor se inicializa bajo demanda (Lazy)
-        public GameProcessor GameProcessor => _gameProcessor.Value;
-        private readonly Lazy<GameProcessor> _gameProcessor;
+        public GameProcessor GameProcessor
+            => _provider.GetRequiredService<Lazy<GameProcessor>>().Value;
 
         public AppServices()
         {
-            // ============================
-            //  LOGGING (PRIMERO SIEMPRE)
-            // ============================
-            LogService = new LoggingService();
+            var services = new ServiceCollection();
 
             // ============================
-            //  SETTINGS (depende de Logging)
+            // LOGGING (PRIMERO SIEMPRE)
             // ============================
-            Settings = new SettingsService(LogService.Write);
+            services.AddSingleton<LoggingService>();
+            services.AddSingleton<ILoggingService>(sp
+                => sp.GetRequiredService<LoggingService>());
 
             // ============================
-            //  PATHS (depende de Settings + Logging)
+            // SETTINGS (depende de Logging)
             // ============================
-            Paths = new PathsService(LogService.Write, Settings);
+            services.AddSingleton(sp =>
+            {
+                var log = sp.GetRequiredService<ILoggingService>();
+                return new SettingsService(log.Write);
+            });
 
             // ============================
-            //  NOTIFICACIONES (ULTRA PRO)
+            // PATHS (depende de Settings + Logging)
             // ============================
-            Notifications = new NotificationService();
+            services.AddSingleton(sp =>
+            {
+                var log = sp.GetRequiredService<ILoggingService>();
+                var settings = sp.GetRequiredService<SettingsService>();
+                return new PathsService(log.Write, settings);
+            });
 
             // ============================
-            //  PROGRESO GLOBAL
+            // NOTIFICACIONES
             // ============================
-            Progress = new ProgressService();
+            services.AddSingleton<NotificationService>();
+            services.AddSingleton<INotificationService>(sp
+                => sp.GetRequiredService<NotificationService>());
 
             // ============================
-            //  CHEATS (CONFIG + MANAGER)
+            // PROGRESO GLOBAL
             // ============================
-            CheatSettings = new CheatSettingsService(Paths.RootFolder, LogService.Write);
-            CheatManager = new CheatManagerService(CheatSettings, LogService.Write);
+            services.AddSingleton<ProgressService>();
+            services.AddSingleton<IProgressService>(sp
+                => sp.GetRequiredService<ProgressService>());
 
             // ============================
-            //  CONVERSIÓN PS1 (BIN/CUE → VCD)
+            // CHEATS (CONFIG + MANAGER)
             // ============================
-            Converter = new ConverterService(
-                LogService.Write,
-                Paths,
-                Settings,
-                (msg, type) => Notifications.Show(msg, type),
-                Progress.SetStatus
-            );
+            services.AddSingleton(sp =>
+            {
+                var paths = sp.GetRequiredService<PathsService>();
+                var log = sp.GetRequiredService<ILoggingService>();
+                return new CheatSettingsService(
+                    paths.RootFolder, log.Write);
+            });
+
+            services.AddSingleton(sp =>
+            {
+                var cheatSettings =
+                    sp.GetRequiredService<CheatSettingsService>();
+                var log = sp.GetRequiredService<ILoggingService>();
+                return new CheatManagerService(
+                    cheatSettings, log.Write);
+            });
 
             // ============================
-            //  GAME PROCESSOR (PS1 + PS2)
+            // CONVERSIÓN PS1 (BIN/CUE -> VCD)
             // ============================
-            _gameProcessor = new Lazy<GameProcessor>(() =>
-                new GameProcessor(
-                    Progress,
-                    LogService,
-                    Notifications,
-                    Paths,
-                    CheatSettings,
-                    CheatManager,
-                    Settings.UseDatabase,
-                    Settings.UseCovers
-                ));
+            services.AddSingleton(sp =>
+            {
+                var log = sp.GetRequiredService<ILoggingService>();
+                var paths = sp.GetRequiredService<PathsService>();
+                var settings =
+                    sp.GetRequiredService<SettingsService>();
+                var notif =
+                    sp.GetRequiredService<INotificationService>();
+                var progress =
+                    sp.GetRequiredService<IProgressService>();
+                return new ConverterService(
+                    log.Write,
+                    paths,
+                    settings,
+                    (msg, type) => notif.Show(msg, type),
+                    progress.SetStatus
+                );
+            });
+
+            // ============================
+            // GAME PROCESSOR (PS1 + PS2) - LAZY
+            // ============================
+            services.AddSingleton(sp =>
+                new Lazy<GameProcessor>(() =>
+            {
+                var progress =
+                    sp.GetRequiredService<IProgressService>();
+                var log =
+                    sp.GetRequiredService<ILoggingService>();
+                var notif =
+                    sp.GetRequiredService<INotificationService>();
+                var paths =
+                    sp.GetRequiredService<PathsService>();
+                var cheatSettings =
+                    sp.GetRequiredService<CheatSettingsService>();
+                var cheatManager =
+                    sp.GetRequiredService<CheatManagerService>();
+                var settings =
+                    sp.GetRequiredService<SettingsService>();
+                return new GameProcessor(
+                    progress, log, notif, paths,
+                    cheatSettings, cheatManager,
+                    settings.UseDatabase, settings.UseCovers
+                );
+            }));
+
+            _provider = services.BuildServiceProvider();
+        }
+
+        // ============================
+        // RESOLVE GENÉRICO (para extensibilidad)
+        // ============================
+        public T GetService<T>() where T : notnull
+            => _provider.GetRequiredService<T>();
+
+        // ============================
+        // DISPOSE ASYNC (flush de logs)
+        // ============================
+        public async ValueTask DisposeAsync()
+        {
+            if (_provider is IAsyncDisposable asyncDisposable)
+                await asyncDisposable.DisposeAsync();
+            else
+                _provider.Dispose();
         }
     }
 }
