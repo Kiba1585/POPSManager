@@ -63,6 +63,7 @@ namespace POPSManager.Services
                 if (data == null)
                 {
                     log("[Settings] Archivo corrupto, regenerando settings.");
+                    Save(); // Regenera archivo limpio
                     return;
                 }
 
