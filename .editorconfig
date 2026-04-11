@@ -1,0 +1,72 @@
+# ============================================
+# POPSManager - EditorConfig Profesional
+# ============================================
+root = true
+
+# -- Todos los archivos --
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# -- C# --
+[*.cs]
+# Organización de usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Preferencias de lenguaje
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
+
+# Nullable
+dotnet_diagnostic.CS8600.severity = warning
+dotnet_diagnostic.CS8601.severity = warning
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8603.severity = warning
+dotnet_diagnostic.CS8604.severity = warning
+
+# Naming conventions
+dotnet_naming_rule.private_fields_should_be_camel_case.severity = suggestion
+dotnet_naming_rule.private_fields_should_be_camel_case.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be_camel_case.style = camel_case_underscore
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.camel_case_underscore.capitalization = camel_case
+dotnet_naming_style.camel_case_underscore.required_prefix = _
+
+dotnet_naming_rule.constants_should_be_pascal_case.severity = suggestion
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+# -- XAML --
+[*.xaml]
+indent_size = 4
+
+# -- JSON --
+[*.json]
+indent_size = 2
+
+# -- YAML --
+[*.{yml,yaml}]
+indent_size = 2
