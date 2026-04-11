@@ -3,7 +3,7 @@ using POPSManager.Services;
 using POPSManager.Logic.Covers;
 using POPSManager.Settings;
 using POPSManager.Logic.Cheats;
-using POPSManager.Core.Integrity;   // ✔ FIX: Inspector unificado
+using POPSManager.Core.Integrity;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -78,7 +78,6 @@ namespace POPSManager.Logic
                 {
                     var discs = group.Value;
 
-                    // PS1
                     if (discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
                     {
                         discs = discs.Where(ValidateVcd).ToList();
@@ -92,7 +91,6 @@ namespace POPSManager.Logic
                     }
                     else
                     {
-                        // PS2
                         var iso = discs.First();
                         if (!ValidateIso(iso))
                         {
@@ -178,7 +176,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  ANÁLISIS DE REPARACIÓN (SOLO SUGERENCIAS)
+        //  ANÁLISIS DE REPARACIÓN
         // ============================================================
         private void AnalyzeAndSuggestRepairs(string vcdPath)
         {
@@ -220,139 +218,95 @@ namespace POPSManager.Logic
             return groups;
         }
 
-// ============================================================
-//  PROCESAR PS1 (MULTIDISCO)
-// ============================================================
-private void ProcessPS1Group(string baseName, List<string> discs)
-{
-    logService.Info($"[PS1] Procesando grupo: {baseName}");
-
-    discs = discs.OrderBy(d =>
-    {
-        string fileName = Path.GetFileNameWithoutExtension(d);
-        NameCleanerBase.Clean(fileName, out string? cdTag);
-        return MultiDiscManager.ExtractDiscNumber(cdTag ?? fileName);
-    }).ToList();
-
-    string firstDisc = discs.First();
-    string? detectedId = GameIdDetector.DetectGameId(firstDisc);
-
-    if (string.IsNullOrWhiteSpace(detectedId))
-        detectedId = GameIdDetector.DetectFromName(baseName);
-
-    if (string.IsNullOrWhiteSpace(detectedId))
-    {
-        notifications.Warning($"No se pudo detectar ID para {baseName}");
-        return;
-    }
-
-    string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
-
-    GameEntry? dbEntry = null;
-
-    if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
-    {
-        dbEntry = entry;
-
-        if (dbEntry != null && !string.IsNullOrWhiteSpace(dbEntry.Name))
+        // ============================================================
+        //  PROCESAR PS1 (MULTIDISCO)
+        // ============================================================
+        private void ProcessPS1Group(string baseName, List<string> discs)
         {
-            cleanTitle = dbEntry.Name;
-            logService.Info($"[DB] Nombre oficial encontrado: {cleanTitle}");
-        }
-    }
+            logService.Info($"[PS1] Procesando grupo: {baseName}");
 
-    if (useCovers && dbEntry?.CoverUrl != null)
-    {
-        string artFolder = Path.Combine(paths.PopsFolder, "ART");
-        Directory.CreateDirectory(artFolder);
-
-        string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, logService.Info);
-
-        if (art != null)
-            logService.Info($"[COVER] PS1 ART generado → {art}");
-    }
-
-    string gameRootFolder = Path.Combine(paths.PopsFolder, $"{detectedId} - {cleanTitle}");
-    Directory.CreateDirectory(gameRootFolder);
-
-    int discNumber = 1;
-    List<string> discPaths = new();
-
-    foreach (var disc in discs)
-    {
-        try
-        {
-            string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
-            Directory.CreateDirectory(discFolder);
-
-            string finalFileName = NameFormatter.BuildPs1VcdName(
-                disc,
-                discNumber,
-                detectedId,
-                cleanTitle
-            );
-
-            // ✔ FIX: remover parámetro inválido finalFolder:
-            string destVcd = Path.Combine(discFolder, finalFileName);
-
-            File.Copy(disc, destVcd, true);
-            discPaths.Add(destVcd);
-
-            logService.Info($"[PS1] Copiado disco {discNumber} → {destVcd}");
-        }
-        catch (Exception ex)
-        {
-            logService.Error($"[PS1] Error copiando disco {discNumber}: {ex.Message}");
-        }
-
-        discNumber++;
-    }
-
-    MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, logService.Info);
-
-    // ============================================================
-    //  CHEAT.TXT (según configuración)
-    // ============================================================
-    string cd1Folder = Path.Combine(gameRootFolder, "CD1");
-
-    switch (cheatSettings.Current.Mode)
-    {
-        case CheatMode.Disabled:
-            logService.Info("[Cheats] Modo: Desactivado. No se genera CHEAT.TXT.");
-            break;
-
-        case CheatMode.AutoForPal:
-            if (GameIdDetector.IsPalRegion(detectedId))
+            discs = discs.OrderBy(d =>
             {
-                logService.Info("[Cheats] Modo: Auto PAL. Generando CHEAT.TXT automático.");
-                CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, logService.Info);
-            }
-            else
+                string fileName = Path.GetFileNameWithoutExtension(d);
+                NameCleanerBase.Clean(fileName, out string? cdTag);
+                return MultiDiscManager.ExtractDiscNumber(cdTag ?? fileName);
+            }).ToList();
+
+            string firstDisc = discs.First();
+            string? detectedId = GameIdDetector.DetectGameId(firstDisc);
+
+            if (string.IsNullOrWhiteSpace(detectedId))
+                detectedId = GameIdDetector.DetectFromName(baseName);
+
+            if (string.IsNullOrWhiteSpace(detectedId))
             {
-                logService.Info("[Cheats] Modo: Auto PAL, pero el juego no es PAL. No se genera CHEAT.TXT.");
+                notifications.Warning($"No se pudo detectar ID para {baseName}");
+                return;
             }
-            break;
 
-        case CheatMode.AskEachTime:
-            if (GameIdDetector.IsPalRegion(detectedId))
+            string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
+
+            GameEntry? dbEntry = null;
+
+            if (useDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
-                logService.Info("[Cheats] Modo: Preguntar cada vez. Generando CHEAT.TXT automático para PAL.");
-                CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, logService.Info);
+                dbEntry = entry;
+
+                if (dbEntry != null && !string.IsNullOrWhiteSpace(dbEntry.Name))
+                {
+                    cleanTitle = dbEntry.Name;
+                    logService.Info($"[DB] Nombre oficial encontrado: {cleanTitle}");
+                }
             }
-            break;
 
-        case CheatMode.ManualSelection:
-            logService.Info("[Cheats] Modo: Selección manual. No se genera CHEAT.TXT automáticamente.");
-            break;
-    }
+            if (useCovers && dbEntry?.CoverUrl != null)
+            {
+                string artFolder = Path.Combine(paths.PopsFolder, "ART");
+                Directory.CreateDirectory(artFolder);
 
-    GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder);
+                string? art = ArtDownloader.DownloadArt(detectedId, dbEntry.CoverUrl, artFolder, logService.Info);
 
-    notifications.Success($"{cleanTitle} procesado correctamente.");
-}
-            // ============================================================
-            //  CHEAT.TXT (según configuración)
-            // ============================================================
+                if (art != null)
+                    logService.Info($"[COVER] PS1 ART generado → {art}");
+            }
+
+            string gameRootFolder = Path.Combine(paths.PopsFolder, $"{detectedId} - {cleanTitle}");
+            Directory.CreateDirectory(gameRootFolder);
+
+            int discNumber = 1;
+            List<string> discPaths = new();
+
+            foreach (var disc in discs)
+            {
+                try
+                {
+                    string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
+                    Directory.CreateDirectory(discFolder);
+
+                    string finalFileName = NameFormatter.BuildPs1VcdName(
+                        disc,
+                        discNumber,
+                        detectedId,
+                        cleanTitle
+                    );
+
+                    string destVcd = Path.Combine(discFolder, finalFileName);
+
+                    File.Copy(disc, destVcd, true);
+                    discPaths.Add(destVcd);
+
+                    logService.Info($"[PS1] Copiado disco {discNumber} → {destVcd}");
+                }
+                catch (Exception ex)
+                {
+                    logService.Error($"[PS1] Error copiando disco {discNumber}: {ex.Message}");
+                }
+
+                discNumber++;
+            }
+
+            MultiDiscManager.GenerateDiscsTxt(paths.PopsFolder, detectedId, discPaths, logService.Info);
+
             string cd1Folder = Path.Combine(gameRootFolder, "CD1");
 
             switch (cheatSettings.Current.Mode)
