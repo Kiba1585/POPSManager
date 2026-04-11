@@ -24,7 +24,30 @@ ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
 
 ; ============================================
+;  ARCHIVOS DEL PROGRAMA
+; ============================================
+[Files]
+Source: "..\installer_build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+; ============================================
+;  ACCESOS DIRECTOS
+; ============================================
+[Icons]
+Name: "{group}\POPSManager"; Filename: "{app}\POPSManager.exe"
+Name: "{commondesktop}\POPSManager"; Filename: "{app}\POPSManager.exe"; Tasks: desktopicon
+
+[Tasks]
+Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"
+
+; ============================================
+;  EJECUTAR AL FINAL
+; ============================================
+[Run]
+Filename: "{app}\POPSManager.exe"; Description: "Iniciar POPSManager"; Flags: nowait postinstall skipifsilent
+
+; ============================================
 ;  DETECCIÓN DE VERSIONES PREVIAS
+;  (DEBE IR AL FINAL DEL ARCHIVO)
 ; ============================================
 [Code]
 function InitializeSetup(): Boolean;
@@ -45,26 +68,3 @@ begin
 
   Result := True;
 end;
-
-; ============================================
-;  ARCHIVOS DEL PROGRAMA
-;  (Se copian desde la carpeta installer_build)
-; ============================================
-[Files]
-Source: "..\installer_build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; ============================================
-;  ACCESOS DIRECTOS
-; ============================================
-[Icons]
-Name: "{group}\POPSManager"; Filename: "{app}\POPSManager.exe"
-Name: "{commondesktop}\POPSManager"; Filename: "{app}\POPSManager.exe"; Tasks: desktopicon
-
-[Tasks]
-Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"
-
-; ============================================
-;  EJECUTAR AL FINAL
-; ============================================
-[Run]
-Filename: "{app}\POPSManager.exe"; Description: "Iniciar POPSManager"; Flags: nowait postinstall skipifsilent
