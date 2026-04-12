@@ -1,97 +1,99 @@
 using System;
 using System.Windows;
-using POPSManager.Services;
-using POPSManager.Models;
 
 namespace POPSManager
 {
-    /// <summary>
-    /// Punto de entrada de la aplicación con DI y manejo global
-    /// de excepciones. Implementa shutdown seguro con flush de logs
-    /// vía IAsyncDisposable.
-    /// </summary>
     public partial class App : Application
     {
-        // Servicios globales accesibles desde toda la aplicación
-        public static AppServices Services { get; private set; }
-            = null!;
+        public AppServices Services { get; private set; } = null!;
 
+        // ============================================================
+        //  CONSTRUCTOR — Manejo global de excepciones
+        // ============================================================
         public App()
         {
-            // Inicialización de DI container
-            Services = new AppServices();
+            // Capturar excepciones no manejadas de UI
+            DispatcherUnhandledException += (s, e) =>
+            {
+                try
+                {
+                    Services?.LogService?.Error($"[FATAL] {e.Exception}");
+                }
+                catch { }
 
-            // Manejo global de excepciones
-            this.DispatcherUnhandledException
-                += App_DispatcherUnhandledException;
-            AppDomain.CurrentDomain.UnhandledException
-                += CurrentDomain_UnhandledException;
+                MessageBox.Show(
+                    $"Error inesperado:\n{e.Exception.Message}",
+                    "POPSManager — Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                e.Handled = true;
+            };
+
+            // Capturar excepciones de hilos secundarios
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                var ex = e.ExceptionObject as Exception;
+                try
+                {
+                    Services?.LogService?.Error($"[FATAL-THREAD] {ex}");
+                }
+                catch { }
+
+                MessageBox.Show(
+                    $"Error crítico en hilo secundario:\n{ex?.Message}",
+                    "POPSManager — Error Crítico",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            };
         }
 
-        protected override void OnStartup(
-            StartupEventArgs e)
+        // ============================================================
+        //  STARTUP — Inicialización protegida
+        // ============================================================
+        protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-        }
 
-        // ============================================================
-        // SHUTDOWN SEGURO (FLUSH DE LOGS)
-        // ============================================================
-        protected override async void OnExit(
-            ExitEventArgs e)
-        {
             try
             {
-                // Flush seguro de todos los servicios
-                // IAsyncDisposable (LoggingService)
-                await Services.DisposeAsync();
+                // 1. Inicializar DI Container
+                Services = new AppServices();
+                Services.LogService.Info("[APP] Servicios inicializados correctamente.");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[SHUTDOWN] Error durante dispose: {ex.Message}");
+                MessageBox.Show(
+                    $"Error inicializando servicios:\n{ex.Message}\n\n{ex.InnerException?.Message}",
+                    "POPSManager — Error de Arranque",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                Shutdown(1);
             }
+        }
+
+        // ============================================================
+        //  EXIT — Liberación segura de recursos
+        // ============================================================
+        protected override async void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                if (Services != null)
+                {
+                    Services.LogService.Info("[APP] Cerrando aplicación...");
+                    await Services.DisposeAsync();
+                }
+            }
+            catch { }
 
             base.OnExit(e);
         }
 
         // ============================================================
-        // MANEJO GLOBAL DE EXCEPCIONES
+        //  ACCESO GLOBAL (para Views y Windows)
         // ============================================================
-        private void App_DispatcherUnhandledException(
-            object sender,
-            System.Windows.Threading
-                .DispatcherUnhandledExceptionEventArgs e)
-        {
-            try
-            {
-                Services.Notifications.Show(
-                    $"Error inesperado: {e.Exception.Message}",
-                    NotificationType.Error);
-                Services.LogService.Error(
-                    $"[ERROR] {e.Exception}");
-            }
-            catch { }
-
-            e.Handled = true;
-        }
-
-        private void CurrentDomain_UnhandledException(
-            object sender,
-            UnhandledExceptionEventArgs e)
-        {
-            try
-            {
-                if (e.ExceptionObject is Exception ex)
-                {
-                    Services.Notifications.Show(
-                        $"Error crítico: {ex.Message}",
-                        NotificationType.Error);
-                    Services.LogService.Error(
-                        $"[CRITICAL] {ex}");
-                }
-            }
-            catch { }
-        }
+        public static new App Current => (App)Application.Current;
     }
 }
