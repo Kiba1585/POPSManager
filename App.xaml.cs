@@ -1,11 +1,16 @@
 using System;
 using System.Windows;
+using POPSManager.Services;
 
 namespace POPSManager
 {
     public partial class App : Application
     {
-        public AppServices Services { get; private set; } = null!;
+        // ============================================================
+        //  SERVICIOS — Estático para acceso global desde Views
+        //  Patrón: App.Services.LogService, App.Services.Paths, etc.
+        // ============================================================
+        public static AppServices Services { get; private set; } = null!;
 
         // ============================================================
         //  CONSTRUCTOR — Manejo global de excepciones
@@ -90,10 +95,5 @@ namespace POPSManager
 
             base.OnExit(e);
         }
-
-        // ============================================================
-        //  ACCESO GLOBAL (para Views y Windows)
-        // ============================================================
-        public static new App Current => (App)Application.Current;
     }
 }
