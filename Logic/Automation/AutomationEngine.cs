@@ -1,68 +1,133 @@
-using System;
-using POPSManager.Logic.Automation;
 using POPSManager.Settings;
-using POPSManager.Services.Interfaces;
+using POPSManager.Services;
+using System;
+using System.Threading.Tasks;
 
-namespace POPSManager.Logic
+namespace POPSManager.Logic.Automation
 {
+    /// <summary>
+    /// Motor de automatización con soporte async.
+    /// Mantiene compatibilidad con la API original.
+    /// </summary>
     public sealed class AutomationEngine
     {
-        private readonly AutomationSettings _auto;
-        private readonly INotificationService _notify;
+        private readonly SettingsService _settings;
+        private readonly NotificationService _notify;
+        private readonly LoggingService _log;
 
-        public Func<string, bool?>? AskUser { get; set; }
+        /// <summary>
+        /// Evento opcional para preguntar al usuario de forma async.
+        /// La UI puede suscribirse a esto.
+        /// </summary>
+        public Func<string, Task<bool>>? OnAskUserAsync { get; set; }
 
-        public AutomationEngine(AutomationSettings auto, INotificationService notify)
+        public AutomationEngine(SettingsService settings, NotificationService notify, LoggingService log)
         {
-            _auto = auto;
+            _settings = settings;
             _notify = notify;
+            _log = log;
         }
 
-        public bool ShouldConvert() =>
-            Decide(_auto.Conversion, "¿Convertir automáticamente estos juegos?");
+        // ============================================================
+        //  MODO GLOBAL
+        // ============================================================
+        public AutomationMode Mode => _settings.Automation.Mode;
 
-        public bool ShouldHandleMultiDisc() =>
-            Decide(_auto.MultiDisc, "¿Agrupar multidisco automáticamente?");
+        private bool IsAutomatic => Mode == AutomationMode.Automatico;
+        private bool IsAssisted => Mode == AutomationMode.Asistido;
+        private bool IsManual => Mode == AutomationMode.Manual;
 
-        public bool ShouldCreateFolders() =>
-            Decide(_auto.FolderCreation, "¿Crear carpetas OPL automáticamente?");
-
-        public bool ShouldDownloadCovers() =>
-            Decide(_auto.Covers, "¿Descargar carátulas automáticamente?");
-
-        public bool ShouldUseDatabase() =>
-            Decide(_auto.Database, "¿Usar base de datos para nombres oficiales?");
-
-        public bool ShouldGenerateCheats() =>
-            Decide(_auto.Cheats, "¿Generar CHEAT.TXT automáticamente?");
-
-        private bool Decide(AutoBehavior behavior, string question)
+        // ============================================================
+        //  MÉTODO CENTRAL (ASYNC)
+        // ============================================================
+        private async Task<bool> DecideAsync(string actionName, AutoBehavior behavior)
         {
-            if (_auto.Mode == AutomationMode.Manual)
-                return false;
-
-            if (_auto.Mode == AutomationMode.Automatico)
-                return behavior != AutoBehavior.Manual;
-
-            return behavior switch
+            // AUTOMÁTICO → siempre sí
+            if (behavior == AutoBehavior.Automatico || IsAutomatic)
             {
-                AutoBehavior.Automatico => true,
-                AutoBehavior.Manual => false,
-                AutoBehavior.Preguntar => Ask(question),
-                _ => false
-            };
-        }
+                _log.Info($"[AUTO] {actionName}: automático → permitido");
+                return true;
+            }
 
-        private bool Ask(string question)
-        {
-            if (AskUser == null)
+            // MANUAL → siempre no
+            if (behavior == AutoBehavior.Manual || IsManual)
             {
-                _notify.Info(question);
+                _log.Info($"[AUTO] {actionName}: manual → bloqueado");
                 return false;
             }
 
-            bool? result = AskUser.Invoke(question);
-            return result == true;
+            // ASISTIDO → preguntar
+            if (IsAssisted || behavior == AutoBehavior.Preguntar)
+            {
+                if (OnAskUserAsync == null)
+                {
+                    _log.Warn($"[AUTO] {actionName}: no hay UI para preguntar → denegado");
+                    return false;
+                }
+
+                _notify.Info($"¿Deseas permitir la acción: {actionName}?");
+                bool result = await OnAskUserAsync(actionName);
+
+                _log.Info($"[AUTO] {actionName}: usuario respondió → {result}");
+                return result;
+            }
+
+            // Fallback seguro
+            _log.Warn($"[AUTO] {actionName}: comportamiento desconocido → denegado");
+            return false;
         }
+
+        // ============================================================
+        //  MÉTODOS PÚBLICOS (SYNC + ASYNC)
+        // ============================================================
+
+        // Conversión BIN/CUE → VCD
+        public bool ShouldConvert() =>
+            DecideAsync("Conversión", _settings.Automation.Conversion).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldConvertAsync() =>
+            DecideAsync("Conversión", _settings.Automation.Conversion);
+
+        // Base de datos
+        public bool ShouldUseDatabase() =>
+            DecideAsync("Base de datos", _settings.Automation.Database).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldUseDatabaseAsync() =>
+            DecideAsync("Base de datos", _settings.Automation.Database);
+
+        // Carátulas
+        public bool ShouldDownloadCovers() =>
+            DecideAsync("Descarga de carátulas", _settings.Automation.Covers).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldDownloadCoversAsync() =>
+            DecideAsync("Descarga de carátulas", _settings.Automation.Covers);
+
+        // Multidisco
+        public bool ShouldHandleMultiDisc() =>
+            DecideAsync("Multidisco", _settings.Automation.MultiDisc).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldHandleMultiDiscAsync() =>
+            DecideAsync("Multidisco", _settings.Automation.MultiDisc);
+
+        // Cheats
+        public bool ShouldGenerateCheats() =>
+            DecideAsync("Generación de CHEAT.TXT", _settings.Automation.Cheats).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldGenerateCheatsAsync() =>
+            DecideAsync("Generación de CHEAT.TXT", _settings.Automation.Cheats);
+
+        // Creación de carpetas
+        public bool ShouldCreateFolders() =>
+            DecideAsync("Creación de carpetas", _settings.Automation.FolderCreation).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldCreateFoldersAsync() =>
+            DecideAsync("Creación de carpetas", _settings.Automation.FolderCreation);
+
+        // Notificaciones
+        public bool ShouldShowNotifications() =>
+            DecideAsync("Notificaciones", _settings.Automation.Notifications).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldShowNotificationsAsync() =>
+            DecideAsync("Notificaciones", _settings.Automation.Notifications);
     }
 }
