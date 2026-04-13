@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.UI.Windows;
+using POPSManager.UI.Localization;
 
 namespace POPSManager.Views
 {
@@ -20,9 +20,6 @@ namespace POPSManager.Views
             InitializeComponent();
         }
 
-        // ============================================================
-        //  SELECCIONAR CARPETA DE JUEGOS (VCD + ISO)
-        // ============================================================
         private void BrowseVcd_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog
@@ -38,9 +35,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  CARGAR LISTA DE JUEGOS (PS1 + PS2) — ASYNC
-        // ============================================================
         private async Task LoadGamesAsync()
         {
             GamesList.Items.Clear();
@@ -77,11 +71,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  PROCESAR JUEGOS (PS1 + PS2) — HÍBRIDO:
-        //  1 juego  -> panel global
-        //  2+ juegos -> ProgressWindow avanzada
-        // ============================================================
         private async void Process_Click(object sender, RoutedEventArgs e)
         {
             string folder = VcdPath.Text;
@@ -113,7 +102,7 @@ namespace POPSManager.Views
             else
             {
                 Services.Progress.Reset();
-                Services.Progress.Start("Procesando juego…");
+                Services.Progress.Start(LocalizationService.T("ProcessingGame"));
             }
 
             try
