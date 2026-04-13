@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -263,7 +262,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  TOGGLES (SYNC)
+        //  TOGGLES
         // ============================================================
         private async void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
         {
@@ -294,7 +293,7 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  AUTOMATIZACIÓN (SYNC)
+        //  AUTOMATIZACIÓN
         // ============================================================
         private async void AutomationMode_Checked(object sender, RoutedEventArgs e)
         {
@@ -349,6 +348,9 @@ namespace POPSManager.Views
             }
         }
 
+        // ============================================================
+        //  ABRIR CARPETA DEL PROGRAMA
+        // ============================================================
         private void OpenProgramFolder_Click(object sender, RoutedEventArgs e)
         {
             try
