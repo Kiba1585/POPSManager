@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Windows.Forms;
 using Microsoft.Win32;
 using POPSManager.Services;
 
@@ -10,7 +10,7 @@ namespace POPSManager.Views
 {
     public partial class SettingsView : UserControl
     {
-        private AppServices Services => App.Services!;
+        private static AppServices Services => App.Services!;
 
         public SettingsView()
         {
@@ -18,9 +18,6 @@ namespace POPSManager.Views
             LoadSettings();
         }
 
-        // ============================================================
-        //  CARGAR SETTINGS EN LA UI
-        // ============================================================
         private void LoadSettings()
         {
             try
@@ -34,6 +31,25 @@ namespace POPSManager.Views
 
                 DarkModeToggle.IsChecked = Services.Settings.DarkMode;
                 NotificationsToggle.IsChecked = Services.Settings.NotificationsEnabled;
+
+                // Modo global
+                switch (Services.Settings.GlobalAutomationMode)
+                {
+                    case AutomationMode.Automatic:
+                        AutoModeAutomatic.IsChecked = true;
+                        break;
+                    case AutomationMode.Intelligent:
+                        AutoModeIntelligent.IsChecked = true;
+                        break;
+                    case AutomationMode.Manual:
+                        AutoModeManual.IsChecked = true;
+                        break;
+                }
+
+                // Comportamientos por parte
+                SelectBehaviorItem(NormalizeNamesBehaviorBox, Services.Settings.NormalizeNamesBehavior);
+                SelectBehaviorItem(GroupMultiDiscBehaviorBox, Services.Settings.GroupMultiDiscBehavior);
+                SelectBehaviorItem(DownloadCoversBehaviorBox, Services.Settings.DownloadCoversBehavior);
             }
             catch (Exception ex)
             {
@@ -42,10 +58,21 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  VALIDAR RUTA RAÍZ (evitar PS2/PS1/POPSManager)
-        // ============================================================
-        private bool IsInvalidRoot(string path)
+        private static void SelectBehaviorItem(System.Windows.Controls.ComboBox combo, AutomationBehavior behavior)
+        {
+            foreach (System.Windows.Controls.ComboBoxItem item in combo.Items)
+            {
+                if (item.Tag is string tag &&
+                    Enum.TryParse<AutomationBehavior>(tag, out var value) &&
+                    value == behavior)
+                {
+                    combo.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+
+        private static bool IsInvalidRoot(string path)
         {
             string folder = Path.GetFileName(path).ToUpperInvariant();
 
@@ -54,21 +81,19 @@ namespace POPSManager.Views
                    folder == "POPSMANAGER";
         }
 
-        // ============================================================
-        //  CAMBIAR CARPETA RAÍZ DEL DISPOSITIVO OPL
-        // ============================================================
         private void ChangeRootFolder_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new CommonOpenFileDialog
+            using var dlg = new FolderBrowserDialog
             {
-                IsFolderPicker = true,
-                Title = "Seleccionar carpeta raíz del dispositivo OPL"
+                Description = "Seleccionar carpeta raíz del dispositivo OPL",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dlg.ShowDialog() != CommonFileDialogResult.Ok)
+            if (dlg.ShowDialog() != DialogResult.OK)
                 return;
 
-            string path = dlg.FileName;
+            string path = dlg.SelectedPath;
 
             if (!Directory.Exists(path))
             {
@@ -105,21 +130,19 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  CAMBIAR CARPETA POPS
-        // ============================================================
         private void ChangePopsPath_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new CommonOpenFileDialog
+            using var dlg = new FolderBrowserDialog
             {
-                IsFolderPicker = true,
-                Title = "Seleccionar carpeta POPS"
+                Description = "Seleccionar carpeta POPS",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dlg.ShowDialog() != CommonFileDialogResult.Ok)
+            if (dlg.ShowDialog() != DialogResult.OK)
                 return;
 
-            string path = dlg.FileName;
+            string path = dlg.SelectedPath;
 
             if (!Directory.Exists(path))
             {
@@ -150,21 +173,19 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  CAMBIAR CARPETA APPS
-        // ============================================================
         private void ChangeAppsPath_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new CommonOpenFileDialog
+            using var dlg = new FolderBrowserDialog
             {
-                IsFolderPicker = true,
-                Title = "Seleccionar carpeta APPS"
+                Description = "Seleccionar carpeta APPS",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dlg.ShowDialog() != CommonFileDialogResult.Ok)
+            if (dlg.ShowDialog() != DialogResult.OK)
                 return;
 
-            string path = dlg.FileName;
+            string path = dlg.SelectedPath;
 
             if (!Directory.Exists(path))
             {
@@ -195,9 +216,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  SELECCIONAR POPSTARTER.ELF
-        // ============================================================
         private void SelectElf_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog
@@ -231,9 +249,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  TOGGLE: MODO OSCURO
-        // ============================================================
         private void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.DarkMode = true;
@@ -248,9 +263,6 @@ namespace POPSManager.Views
             Services.Notifications.Info("Modo oscuro desactivado");
         }
 
-        // ============================================================
-        //  TOGGLE: NOTIFICACIONES
-        // ============================================================
         private void NotificationsToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.NotificationsEnabled = true;
@@ -265,9 +277,59 @@ namespace POPSManager.Views
             Services.Notifications.Info("Notificaciones desactivadas");
         }
 
-        // ============================================================
-        //  ABRIR CARPETA DEL PROGRAMA (FIX IL3000)
-        // ============================================================
+        private void AutomationMode_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsLoaded) return;
+
+            if (AutoModeAutomatic.IsChecked == true)
+                Services.Settings.GlobalAutomationMode = AutomationMode.Automatic;
+            else if (AutoModeIntelligent.IsChecked == true)
+                Services.Settings.GlobalAutomationMode = AutomationMode.Intelligent;
+            else if (AutoModeManual.IsChecked == true)
+                Services.Settings.GlobalAutomationMode = AutomationMode.Manual;
+
+            Services.Settings.Save();
+        }
+
+        private void NormalizeNamesBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+
+            if (NormalizeNamesBehaviorBox.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+                item.Tag is string tag &&
+                Enum.TryParse<AutomationBehavior>(tag, out var behavior))
+            {
+                Services.Settings.NormalizeNamesBehavior = behavior;
+                Services.Settings.Save();
+            }
+        }
+
+        private void GroupMultiDiscBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+
+            if (GroupMultiDiscBehaviorBox.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+                item.Tag is string tag &&
+                Enum.TryParse<AutomationBehavior>(tag, out var behavior))
+            {
+                Services.Settings.GroupMultiDiscBehavior = behavior;
+                Services.Settings.Save();
+            }
+        }
+
+        private void DownloadCoversBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+
+            if (DownloadCoversBehaviorBox.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+                item.Tag is string tag &&
+                Enum.TryParse<AutomationBehavior>(tag, out var behavior))
+            {
+                Services.Settings.DownloadCoversBehavior = behavior;
+                Services.Settings.Save();
+            }
+        }
+
         private void OpenProgramFolder_Click(object sender, RoutedEventArgs e)
         {
             try
