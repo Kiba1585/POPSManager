@@ -1,9 +1,10 @@
-using POPSManager.Services;
-using POPSManager.Settings;
-using POPSManager.Logic;
-using POPSManager.Logic.Automation;
 using System;
 using System.Threading.Tasks;
+using POPSManager.Logic;
+using POPSManager.Logic.Automation;
+using POPSManager.Logic.Cheats;
+using POPSManager.Services;
+using POPSManager.Settings;
 
 namespace POPSManager
 {
@@ -20,68 +21,71 @@ namespace POPSManager
         public SettingsService Settings { get; }
         public AutomationEngine Automation { get; }
         public ConverterService Converter { get; }
-        public GameProcessor Processor { get; }
+        public GameProcessor GameProcessor { get; }
 
         public AppServices()
         {
             // ============================================================
-            // 1. Servicios base (sync)
+            // 1. Servicios base
             // ============================================================
             LogService = new LoggingService();
             Notifications = new NotificationService();
             Progress = new ProgressService();
 
             // ============================================================
-            // 2. Settings (sync + async)
+            // 2. Settings
             // ============================================================
             Settings = new SettingsService(LogService.Info);
 
             // ============================================================
-            // 3. AutomationEngine (sync)
+            // 3. AutomationEngine
             // ============================================================
             Automation = new AutomationEngine(Settings, Notifications, LogService);
 
             // ============================================================
-            // 4. PathsService (async-ready)
+            // 4. PathsService
             // ============================================================
             Paths = new PathsService(LogService.Info, Settings, Automation);
 
             // ============================================================
-            // 5. ConverterService (async)
+            // 5. ConverterService
             // ============================================================
             Converter = new ConverterService(
                 LogService.Info,
                 Paths,
                 Settings,
                 Automation,
-                Notifications.Show,
+                Notifications.Show,     // Firma correcta: (string, NotificationType)
                 Progress.SetStatus
             );
 
             // ============================================================
-            // 6. GameProcessor (async)
+            // 6. Cheat Services
             // ============================================================
-            Processor = new GameProcessor(
+            var cheatSettings = new CheatSettingsService(Settings);
+            var cheatManager = new CheatManagerService(cheatSettings, LogService.Info);
+
+            // ============================================================
+            // 7. GameProcessor
+            // ============================================================
+            GameProcessor = new GameProcessor(
                 Progress,
                 LogService,
                 Notifications,
                 Paths,
-                new CheatSettingsService(Settings),
-                new CheatManagerService(Settings),
+                cheatSettings,
+                cheatManager,
                 Settings,
                 Automation
             );
         }
 
         // ============================================================
-        //  MÉTODO DE INICIALIZACIÓN ASYNC (OPCIONAL)
+        //  Inicialización async
         // ============================================================
         public async Task InitializeAsync()
         {
-            // Recargar rutas async
             await Paths.ReloadAsync();
-
-            // Guardar settings async
             await Settings.SaveAsync();
 
             LogService.Info("[AppServices] Inicialización async completada.");
