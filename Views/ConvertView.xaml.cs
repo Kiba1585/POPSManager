@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
+using POPSManager.Models;
 using POPSManager.Services;
 
 namespace POPSManager.Views
 {
     public partial class ConvertView : UserControl
     {
-        // Acceso seguro a los servicios globales
         private AppServices Services => App.Services!;
 
         public ConvertView()
@@ -19,9 +19,6 @@ namespace POPSManager.Views
             InitializeComponent();
         }
 
-        // ============================================================
-        //  SELECCIONAR CARPETA DE ORIGEN
-        // ============================================================
         private void BrowseSource_Click(object sender, RoutedEventArgs e)
         {
             using var dlg = new FolderBrowserDialog
@@ -38,9 +35,6 @@ namespace POPSManager.Views
             LoadFiles();
         }
 
-        // ============================================================
-        //  SELECCIONAR CARPETA DE DESTINO
-        // ============================================================
         private void BrowseOutput_Click(object sender, RoutedEventArgs e)
         {
             using var dlg = new FolderBrowserDialog
@@ -56,9 +50,6 @@ namespace POPSManager.Views
             OutputPath.Text = dlg.SelectedPath;
         }
 
-        // ============================================================
-        //  CARGAR ARCHIVOS DETECTADOS
-        // ============================================================
         private void LoadFiles()
         {
             FilesList.Items.Clear();
@@ -76,30 +67,38 @@ namespace POPSManager.Views
             foreach (var file in files)
                 FilesList.Items.Add(Path.GetFileName(file));
 
-            Services.Notifications.Info(
-                $"Se detectaron {FilesList.Items.Count} archivos.");
+            Services.Notifications.Show(
+                $"Se detectaron {FilesList.Items.Count} archivos.",
+                NotificationType.Info
+            );
         }
 
-        // ============================================================
-        //  CONVERTIR ARCHIVOS
-        // ============================================================
         private async void Convert_Click(object sender, RoutedEventArgs e)
         {
             if (!Directory.Exists(SourcePath.Text))
             {
-                Services.Notifications.Error("La carpeta de origen no existe.");
+                Services.Notifications.Show(
+                    "La carpeta de origen no existe.",
+                    NotificationType.Error
+                );
                 return;
             }
 
             if (!Directory.Exists(OutputPath.Text))
             {
-                Services.Notifications.Error("La carpeta de destino no existe.");
+                Services.Notifications.Show(
+                    "La carpeta de destino no existe.",
+                    NotificationType.Error
+                );
                 return;
             }
 
             if (FilesList.Items.Count == 0)
             {
-                Services.Notifications.Warning("No hay archivos para convertir.");
+                Services.Notifications.Show(
+                    "No hay archivos para convertir.",
+                    NotificationType.Warning
+                );
                 return;
             }
 
@@ -112,11 +111,15 @@ namespace POPSManager.Views
                     Services.Converter.ConvertFolder(SourcePath.Text, OutputPath.Text);
                 });
 
+                Services.Progress.SetStatus("Listo");
                 Services.Notifications.Success("Conversión completada.");
             }
             catch (Exception ex)
             {
-                Services.Notifications.Error($"Error durante la conversión: {ex.Message}");
+                Services.Notifications.Show(
+                    $"Error durante la conversión: {ex.Message}",
+                    NotificationType.Error
+                );
             }
             finally
             {
