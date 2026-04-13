@@ -1,13 +1,13 @@
-using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Forms;
 using POPSManager.Services;
-using POPSManager.UI.Windows;
 using POPSManager.UI.Localization;
+using POPSManager.UI.Windows;
 
 namespace POPSManager.Views
 {
@@ -22,17 +22,18 @@ namespace POPSManager.Views
 
         private void BrowseVcd_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new CommonOpenFileDialog
+            using var dlg = new FolderBrowserDialog
             {
-                IsFolderPicker = true,
-                Title = "Seleccionar carpeta con juegos (VCD / ISO)"
+                Description = "Seleccionar carpeta con juegos (VCD / ISO)",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                VcdPath.Text = dlg.FileName;
-                _ = LoadGamesAsync();
-            }
+            if (dlg.ShowDialog() != DialogResult.OK)
+                return;
+
+            VcdPath.Text = dlg.SelectedPath;
+            _ = LoadGamesAsync();
         }
 
         private async Task LoadGamesAsync()
