@@ -32,9 +32,10 @@
   <!-- ANALYZERS (aplican a todos los proyectos)    -->
   <!-- ============================================ -->
   <ItemGroup>
-    <PackageReference
-      Include="Microsoft.SourceLink.GitHub"
-      Version="8.0.0" PrivateAssets="All" />
+    <!-- SourceLink centralizado (solo aquí) -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub"
+                      Version="8.0.0"
+                      PrivateAssets="All" />
   </ItemGroup>
 
   <!-- ============================================ -->
