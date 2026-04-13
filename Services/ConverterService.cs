@@ -38,9 +38,6 @@ namespace POPSManager.Services
             _setStatus = setStatus;
         }
 
-        // ============================================================
-        //  CONVERTIR CARPETA COMPLETA (ASYNC + PARALELO 2–4)
-        // ============================================================
         public async Task ConvertFolderAsync(string sourceFolder, string outputFolder, CancellationToken ct = default)
         {
             if (!Directory.Exists(sourceFolder))
@@ -117,7 +114,6 @@ namespace POPSManager.Services
             }
         }
 
-        // Wrapper síncrono (compatibilidad)
         public void ConvertFolder(string sourceFolder, string outputFolder)
         {
             ConvertFolderAsync(sourceFolder, outputFolder)
@@ -125,9 +121,6 @@ namespace POPSManager.Services
                 .GetResult();
         }
 
-        // ============================================================
-        //  CONVERTIR ARCHIVO INDIVIDUAL (ASYNC)
-        // ============================================================
         private async Task<ConvertedGame?> ConvertToVcdAsync(string inputPath, string outputFolder)
         {
             string ext = Path.GetExtension(inputPath).ToLowerInvariant();
@@ -160,9 +153,6 @@ namespace POPSManager.Services
             };
         }
 
-        // ============================================================
-        //  CONVERSIÓN PS1 → VCD (ASYNC REAL)
-        // ============================================================
         private async Task ConvertPs1ToVcdAsync(string inputPath, string outputPath, string name)
         {
             await using var input = File.OpenRead(inputPath);
@@ -201,9 +191,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  DETECTAR ISO PS2
-        // ============================================================
         private static bool IsPs2Iso(string isoPath)
         {
             try
@@ -225,9 +212,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  DETECTAR MULTIDISCO
-        // ============================================================
         private static (bool IsDisc, int DiscNumber) DetectDiscNumber(string path)
         {
             string name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
@@ -250,9 +234,6 @@ namespace POPSManager.Services
             return (false, 1);
         }
 
-        // ============================================================
-        //  LIMPIAR NOMBRE BASE
-        // ============================================================
         private static string CleanBaseName(string name)
         {
             string[] patterns =
