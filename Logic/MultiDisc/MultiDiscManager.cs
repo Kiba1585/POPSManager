@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using POPSManager.Logic.Automation;
 
 namespace POPSManager.Logic
@@ -31,9 +32,9 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  GENERAR DISCS.TXT (RESPETA AUTOMATIZACIÓN)
+        //  GENERAR DISCS.TXT (ASYNC + AUTOMATIZACIÓN)
         // ============================================================
-        public static void GenerateDiscsTxt(
+        public static async Task GenerateDiscsTxtAsync(
             string popsFolder,
             string gameId,
             List<string> discPaths,
@@ -47,13 +48,10 @@ namespace POPSManager.Logic
             }
 
             // AUTOMATIZACIÓN
-            if (auto != null)
+            if (auto != null && !auto.ShouldHandleMultiDisc())
             {
-                if (!auto.ShouldHandleMultiDisc())
-                {
-                    log("[MultiDisc] Automatización: multidisco desactivado. No se genera DISCS.TXT.");
-                    return;
-                }
+                log("[MultiDisc] Automatización: multidisco desactivado. No se genera DISCS.TXT.");
+                return;
             }
 
             log("[MultiDisc] Iniciando validación multidisco…");
@@ -81,16 +79,34 @@ namespace POPSManager.Logic
                 .Select(d => $"mass:/POPS/{d.FolderName}/{d.FileName}")
                 .ToList();
 
+            // Escritura async para cada carpeta CDX
             foreach (var d in discs)
             {
                 string folder = Path.GetDirectoryName(d.Path)!;
                 string discsTxtPath = Path.Combine(folder, "DISCS.TXT");
 
-                File.WriteAllLines(discsTxtPath, lines);
+                await File.WriteAllLinesAsync(discsTxtPath, lines)
+                    .ConfigureAwait(false);
+
                 log($"[MultiDisc] DISCS.TXT generado → {discsTxtPath}");
             }
 
             log("[MultiDisc] DISCS.TXT generado correctamente para todos los discos.");
+        }
+
+        // ============================================================
+        //  WRAPPER SÍNCRONO (COMPATIBILIDAD)
+        // ============================================================
+        public static void GenerateDiscsTxt(
+            string popsFolder,
+            string gameId,
+            List<string> discPaths,
+            Action<string> log,
+            AutomationEngine? auto = null)
+        {
+            GenerateDiscsTxtAsync(popsFolder, gameId, discPaths, log, auto)
+                .GetAwaiter()
+                .GetResult();
         }
     }
 }
