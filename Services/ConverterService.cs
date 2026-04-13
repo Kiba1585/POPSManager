@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using POPSManager.Models;
 using POPSManager.Logic;
 
@@ -38,9 +39,9 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERTIR CARPETA COMPLETA
+        //  CONVERTIR CARPETA COMPLETA (ASYNC)
         // ============================================================
-        public void ConvertFolder(string sourceFolder, string outputFolder)
+        public async Task ConvertFolderAsync(string sourceFolder, string outputFolder)
         {
             if (!Directory.Exists(sourceFolder))
             {
@@ -48,11 +49,10 @@ namespace POPSManager.Services
                 return;
             }
 
-            // Automatización: ¿convertir o no?
             if (!_auto.ShouldConvert())
             {
-                _log("[Convert] Automatización de conversión desactivada o en modo manual.");
-                _notify("Conversión cancelada por configuración de automatización.", NotificationType.Warning);
+                _log("[Convert] Automatización de conversión desactivada.");
+                _notify("Conversión cancelada por automatización.", NotificationType.Warning);
                 return;
             }
 
@@ -81,7 +81,7 @@ namespace POPSManager.Services
 
                 try
                 {
-                    var result = ConvertToVcd(file, outputFolder);
+                    var result = await ConvertToVcdAsync(file, outputFolder);
 
                     if (result != null)
                         _log($"Convertido: {file} → {result.VcdPath}");
@@ -98,9 +98,19 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERTIR ARCHIVO INDIVIDUAL
+        //  WRAPPER SÍNCRONO (COMPATIBILIDAD)
         // ============================================================
-        private ConvertedGame? ConvertToVcd(string inputPath, string outputFolder)
+        public void ConvertFolder(string sourceFolder, string outputFolder)
+        {
+            ConvertFolderAsync(sourceFolder, outputFolder)
+                .GetAwaiter()
+                .GetResult();
+        }
+
+        // ============================================================
+        //  CONVERTIR ARCHIVO INDIVIDUAL (ASYNC)
+        // ============================================================
+        private async Task<ConvertedGame?> ConvertToVcdAsync(string inputPath, string outputFolder)
         {
             string ext = Path.GetExtension(inputPath).ToLowerInvariant();
 
@@ -121,7 +131,7 @@ namespace POPSManager.Services
 
             string outputPath = Path.Combine(outputFolder, vcdName);
 
-            ConvertPs1ToVcd(inputPath, outputPath, baseName);
+            await ConvertPs1ToVcdAsync(inputPath, outputPath, baseName);
 
             return new ConvertedGame
             {
@@ -133,16 +143,16 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERSIÓN PS1 → VCD
+        //  CONVERSIÓN PS1 → VCD (ASYNC REAL)
         // ============================================================
-        private void ConvertPs1ToVcd(string inputPath, string outputPath, string name)
+        private async Task ConvertPs1ToVcdAsync(string inputPath, string outputPath, string name)
         {
-            using var input = File.OpenRead(inputPath);
-            using var output = File.Create(outputPath);
+            await using var input = File.OpenRead(inputPath);
+            await using var output = File.Create(outputPath);
 
             byte[] header = new byte[0x800];
             Array.Copy(Encoding.ASCII.GetBytes("PSX"), header, 3);
-            output.Write(header, 0, header.Length);
+            await output.WriteAsync(header, 0, header.Length);
 
             byte[] sector = new byte[SectorSize];
             byte[] userData = new byte[UserDataSize];
@@ -152,7 +162,7 @@ namespace POPSManager.Services
 
             while (true)
             {
-                int read = input.Read(sector, 0, SectorSize);
+                int read = await input.ReadAsync(sector, 0, SectorSize);
                 if (read == 0) break;
 
                 if (read != SectorSize)
@@ -162,7 +172,7 @@ namespace POPSManager.Services
                 }
 
                 Buffer.BlockCopy(sector, 24, userData, 0, UserDataSize);
-                output.Write(userData, 0, UserDataSize);
+                await output.WriteAsync(userData, 0, UserDataSize);
 
                 processed++;
                 if (processed % 200 == 0)
