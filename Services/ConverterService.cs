@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -118,9 +117,7 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  WRAPPER SÍNCRONO (COMPATIBILIDAD)
-        // ============================================================
+        // Wrapper síncrono (compatibilidad)
         public void ConvertFolder(string sourceFolder, string outputFolder)
         {
             ConvertFolderAsync(sourceFolder, outputFolder)
