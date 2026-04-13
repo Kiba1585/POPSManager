@@ -8,8 +8,6 @@
 
         <StackPanel Margin="20">
 
-            <!-- ... todo lo que ya tienes arriba igual ... -->
-
             <!-- ========================================================= -->
             <!--  SECCIÓN: OPCIONES GENERALES -->
             <!-- ========================================================= -->
@@ -91,7 +89,7 @@
                                      Margin="0 0 0 4"/>
 
                         <RadioButton x:Name="AutoModeIntelligent"
-                                     Content="Inteligente (pregunta antes de cambios importantes)"
+                                     Content="Asistido (pregunta antes de cambios importantes)"
                                      GroupName="AutomationMode"
                                      Checked="AutomationMode_Checked"
                                      Margin="0 0 0 4"/>
@@ -117,8 +115,8 @@
                         <ComboBox x:Name="NormalizeNamesBehaviorBox"
                                   Width="160"
                                   SelectionChanged="NormalizeNamesBehaviorBox_SelectionChanged">
-                            <ComboBoxItem Content="Automático" Tag="Auto"/>
-                            <ComboBoxItem Content="Preguntar" Tag="Ask"/>
+                            <ComboBoxItem Content="Automático" Tag="Automatico"/>
+                            <ComboBoxItem Content="Preguntar" Tag="Preguntar"/>
                             <ComboBoxItem Content="Manual" Tag="Manual"/>
                         </ComboBox>
                     </StackPanel>
@@ -133,8 +131,8 @@
                         <ComboBox x:Name="GroupMultiDiscBehaviorBox"
                                   Width="160"
                                   SelectionChanged="GroupMultiDiscBehaviorBox_SelectionChanged">
-                            <ComboBoxItem Content="Automático" Tag="Auto"/>
-                            <ComboBoxItem Content="Preguntar" Tag="Ask"/>
+                            <ComboBoxItem Content="Automático" Tag="Automatico"/>
+                            <ComboBoxItem Content="Preguntar" Tag="Preguntar"/>
                             <ComboBoxItem Content="Manual" Tag="Manual"/>
                         </ComboBox>
                     </StackPanel>
@@ -149,19 +147,14 @@
                         <ComboBox x:Name="DownloadCoversBehaviorBox"
                                   Width="160"
                                   SelectionChanged="DownloadCoversBehaviorBox_SelectionChanged">
-                            <ComboBoxItem Content="Automático" Tag="Auto"/>
-                            <ComboBoxItem Content="Preguntar" Tag="Ask"/>
+                            <ComboBoxItem Content="Automático" Tag="Automatico"/>
+                            <ComboBoxItem Content="Preguntar" Tag="Preguntar"/>
                             <ComboBoxItem Content="Manual" Tag="Manual"/>
                         </ComboBox>
                     </StackPanel>
 
                 </StackPanel>
             </Border>
-
-            <!-- ========================================================= -->
-            <!--  SECCIÓN: INFORMACIÓN -->
-            <!-- ========================================================= -->
-            <!-- ... tu sección de información tal cual ... -->
 
         </StackPanel>
 
