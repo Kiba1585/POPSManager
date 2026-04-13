@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using POPSManager.Services;
+using POPSManager.Logic.Automation;
 
 namespace POPSManager.Views
 {
@@ -32,24 +33,30 @@ namespace POPSManager.Views
                 DarkModeToggle.IsChecked = Services.Settings.DarkMode;
                 NotificationsToggle.IsChecked = Services.Settings.NotificationsEnabled;
 
-                // Modo global
-                switch (Services.Settings.GlobalAutomationMode)
+                // ============================
+                //  MODO GLOBAL
+                // ============================
+                switch (Services.Settings.Automation.Mode)
                 {
-                    case AutomationMode.Automatic:
+                    case AutomationMode.Automatico:
                         AutoModeAutomatic.IsChecked = true;
                         break;
-                    case AutomationMode.Intelligent:
+
+                    case AutomationMode.Asistido:
                         AutoModeIntelligent.IsChecked = true;
                         break;
+
                     case AutomationMode.Manual:
                         AutoModeManual.IsChecked = true;
                         break;
                 }
 
-                // Comportamientos por parte
-                SelectBehaviorItem(NormalizeNamesBehaviorBox, Services.Settings.NormalizeNamesBehavior);
-                SelectBehaviorItem(GroupMultiDiscBehaviorBox, Services.Settings.GroupMultiDiscBehavior);
-                SelectBehaviorItem(DownloadCoversBehaviorBox, Services.Settings.DownloadCoversBehavior);
+                // ============================
+                //  OPCIONES POR PARTE
+                // ============================
+                SelectBehaviorItem(NormalizeNamesBehaviorBox, Services.Settings.Automation.Conversion);
+                SelectBehaviorItem(GroupMultiDiscBehaviorBox, Services.Settings.Automation.MultiDisc);
+                SelectBehaviorItem(DownloadCoversBehaviorBox, Services.Settings.Automation.Covers);
             }
             catch (Exception ex)
             {
@@ -58,12 +65,12 @@ namespace POPSManager.Views
             }
         }
 
-        private static void SelectBehaviorItem(System.Windows.Controls.ComboBox combo, AutomationBehavior behavior)
+        private static void SelectBehaviorItem(ComboBox combo, AutoBehavior behavior)
         {
-            foreach (System.Windows.Controls.ComboBoxItem item in combo.Items)
+            foreach (ComboBoxItem item in combo.Items)
             {
                 if (item.Tag is string tag &&
-                    Enum.TryParse<AutomationBehavior>(tag, out var value) &&
+                    Enum.TryParse<AutoBehavior>(tag, out var value) &&
                     value == behavior)
                 {
                     combo.SelectedItem = item;
@@ -72,6 +79,9 @@ namespace POPSManager.Views
             }
         }
 
+        // ============================================================
+        //  CAMBIOS DE RUTAS
+        // ============================================================
         private static bool IsInvalidRoot(string path)
         {
             string folder = Path.GetFileName(path).ToUpperInvariant();
@@ -249,6 +259,9 @@ namespace POPSManager.Views
             }
         }
 
+        // ============================================================
+        //  TOGGLES
+        // ============================================================
         private void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.DarkMode = true;
@@ -277,16 +290,21 @@ namespace POPSManager.Views
             Services.Notifications.Info("Notificaciones desactivadas");
         }
 
+        // ============================================================
+        //  AUTOMATIZACIÓN
+        // ============================================================
         private void AutomationMode_Checked(object sender, RoutedEventArgs e)
         {
             if (!IsLoaded) return;
 
             if (AutoModeAutomatic.IsChecked == true)
-                Services.Settings.GlobalAutomationMode = AutomationMode.Automatic;
+                Services.Settings.Automation.Mode = AutomationMode.Automatico;
+
             else if (AutoModeIntelligent.IsChecked == true)
-                Services.Settings.GlobalAutomationMode = AutomationMode.Intelligent;
+                Services.Settings.Automation.Mode = AutomationMode.Asistido;
+
             else if (AutoModeManual.IsChecked == true)
-                Services.Settings.GlobalAutomationMode = AutomationMode.Manual;
+                Services.Settings.Automation.Mode = AutomationMode.Manual;
 
             Services.Settings.Save();
         }
@@ -295,11 +313,11 @@ namespace POPSManager.Views
         {
             if (!IsLoaded) return;
 
-            if (NormalizeNamesBehaviorBox.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+            if (NormalizeNamesBehaviorBox.SelectedItem is ComboBoxItem item &&
                 item.Tag is string tag &&
-                Enum.TryParse<AutomationBehavior>(tag, out var behavior))
+                Enum.TryParse<AutoBehavior>(tag, out var behavior))
             {
-                Services.Settings.NormalizeNamesBehavior = behavior;
+                Services.Settings.Automation.Conversion = behavior;
                 Services.Settings.Save();
             }
         }
@@ -308,11 +326,11 @@ namespace POPSManager.Views
         {
             if (!IsLoaded) return;
 
-            if (GroupMultiDiscBehaviorBox.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+            if (GroupMultiDiscBehaviorBox.SelectedItem is ComboBoxItem item &&
                 item.Tag is string tag &&
-                Enum.TryParse<AutomationBehavior>(tag, out var behavior))
+                Enum.TryParse<AutoBehavior>(tag, out var behavior))
             {
-                Services.Settings.GroupMultiDiscBehavior = behavior;
+                Services.Settings.Automation.MultiDisc = behavior;
                 Services.Settings.Save();
             }
         }
@@ -321,11 +339,11 @@ namespace POPSManager.Views
         {
             if (!IsLoaded) return;
 
-            if (DownloadCoversBehaviorBox.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+            if (DownloadCoversBehaviorBox.SelectedItem is ComboBoxItem item &&
                 item.Tag is string tag &&
-                Enum.TryParse<AutomationBehavior>(tag, out var behavior))
+                Enum.TryParse<AutoBehavior>(tag, out var behavior))
             {
-                Services.Settings.DownloadCoversBehavior = behavior;
+                Services.Settings.Automation.Covers = behavior;
                 Services.Settings.Save();
             }
         }
