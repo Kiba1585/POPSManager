@@ -5,6 +5,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
 
     <!-- Arquitectura obligatoria para MSIX -->
     <PlatformTarget>x64</PlatformTarget>
@@ -23,8 +24,9 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 
-    <!-- Para MSIX -->
+    <!-- Targeting Windows -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
 
     <!-- Evita warnings de recursos -->
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
@@ -50,7 +52,7 @@
     <!-- DI Container -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
 
-    <!-- SourceLink -->
+    <!-- SourceLink (solo una vez, sin duplicados) -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
