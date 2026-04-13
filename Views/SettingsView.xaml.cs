@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using POPSManager.Services;
-using POPSManager.Logic.Automation;
+using System.Threading.Tasks;
 
 namespace POPSManager.Views
 {
@@ -33,27 +33,21 @@ namespace POPSManager.Views
                 DarkModeToggle.IsChecked = Services.Settings.DarkMode;
                 NotificationsToggle.IsChecked = Services.Settings.NotificationsEnabled;
 
-                // ============================
-                //  MODO GLOBAL
-                // ============================
+                // Modo global
                 switch (Services.Settings.Automation.Mode)
                 {
                     case AutomationMode.Automatico:
                         AutoModeAutomatic.IsChecked = true;
                         break;
-
                     case AutomationMode.Asistido:
                         AutoModeIntelligent.IsChecked = true;
                         break;
-
                     case AutomationMode.Manual:
                         AutoModeManual.IsChecked = true;
                         break;
                 }
 
-                // ============================
-                //  OPCIONES POR PARTE
-                // ============================
+                // Comportamientos por parte
                 SelectBehaviorItem(NormalizeNamesBehaviorBox, Services.Settings.Automation.Conversion);
                 SelectBehaviorItem(GroupMultiDiscBehaviorBox, Services.Settings.Automation.MultiDisc);
                 SelectBehaviorItem(DownloadCoversBehaviorBox, Services.Settings.Automation.Covers);
@@ -79,9 +73,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  CAMBIOS DE RUTAS
-        // ============================================================
         private static bool IsInvalidRoot(string path)
         {
             string folder = Path.GetFileName(path).ToUpperInvariant();
@@ -91,7 +82,10 @@ namespace POPSManager.Views
                    folder == "POPSMANAGER";
         }
 
-        private void ChangeRootFolder_Click(object sender, RoutedEventArgs e)
+        // ============================================================
+        //  ROOT FOLDER (ASYNC)
+        // ============================================================
+        private async void ChangeRootFolder_Click(object sender, RoutedEventArgs e)
         {
             using var dlg = new FolderBrowserDialog
             {
@@ -123,9 +117,9 @@ namespace POPSManager.Views
             try
             {
                 Services.Settings.RootFolder = path;
-                Services.Settings.Save();
+                await Services.Settings.SaveAsync();
 
-                Services.Paths.Reload();
+                await Services.Paths.ReloadAsync();
 
                 RootPathBox.Text = Services.Paths.RootFolder;
                 PopsPath.Text = Services.Paths.PopsFolder;
@@ -140,7 +134,10 @@ namespace POPSManager.Views
             }
         }
 
-        private void ChangePopsPath_Click(object sender, RoutedEventArgs e)
+        // ============================================================
+        //  POPS FOLDER (ASYNC)
+        // ============================================================
+        private async void ChangePopsPath_Click(object sender, RoutedEventArgs e)
         {
             using var dlg = new FolderBrowserDialog
             {
@@ -171,7 +168,7 @@ namespace POPSManager.Views
 
             try
             {
-                Services.Paths.SetCustomPopsFolder(path);
+                await Services.Paths.SetCustomPopsFolderAsync(path);
                 PopsPath.Text = Services.Paths.PopsFolder;
 
                 Services.Notifications.Success("Ruta POPS actualizada correctamente.");
@@ -183,7 +180,10 @@ namespace POPSManager.Views
             }
         }
 
-        private void ChangeAppsPath_Click(object sender, RoutedEventArgs e)
+        // ============================================================
+        //  APPS FOLDER (ASYNC)
+        // ============================================================
+        private async void ChangeAppsPath_Click(object sender, RoutedEventArgs e)
         {
             using var dlg = new FolderBrowserDialog
             {
@@ -214,7 +214,7 @@ namespace POPSManager.Views
 
             try
             {
-                Services.Paths.SetCustomAppsFolder(path);
+                await Services.Paths.SetCustomAppsFolderAsync(path);
                 AppsPath.Text = Services.Paths.AppsFolder;
 
                 Services.Notifications.Success("Ruta APPS actualizada correctamente.");
@@ -226,7 +226,10 @@ namespace POPSManager.Views
             }
         }
 
-        private void SelectElf_Click(object sender, RoutedEventArgs e)
+        // ============================================================
+        //  ELF (ASYNC)
+        // ============================================================
+        private async void SelectElf_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog
             {
@@ -247,7 +250,7 @@ namespace POPSManager.Views
 
             try
             {
-                Services.Paths.SetCustomElfPath(path);
+                await Services.Paths.SetCustomElfPathAsync(path);
                 ElfPathBox.Text = Services.Paths.PopstarterElfPath;
 
                 Services.Notifications.Success("POPSTARTER.ELF configurado correctamente.");
@@ -260,56 +263,54 @@ namespace POPSManager.Views
         }
 
         // ============================================================
-        //  TOGGLES
+        //  TOGGLES (SYNC)
         // ============================================================
-        private void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
+        private async void DarkModeToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.DarkMode = true;
-            Services.Settings.Save();
+            await Services.Settings.SaveAsync();
             Services.Notifications.Info("Modo oscuro activado");
         }
 
-        private void DarkModeToggle_Unchecked(object sender, RoutedEventArgs e)
+        private async void DarkModeToggle_Unchecked(object sender, RoutedEventArgs e)
         {
             Services.Settings.DarkMode = false;
-            Services.Settings.Save();
+            await Services.Settings.SaveAsync();
             Services.Notifications.Info("Modo oscuro desactivado");
         }
 
-        private void NotificationsToggle_Checked(object sender, RoutedEventArgs e)
+        private async void NotificationsToggle_Checked(object sender, RoutedEventArgs e)
         {
             Services.Settings.NotificationsEnabled = true;
-            Services.Settings.Save();
+            await Services.Settings.SaveAsync();
             Services.Notifications.Info("Notificaciones activadas");
         }
 
-        private void NotificationsToggle_Unchecked(object sender, RoutedEventArgs e)
+        private async void NotificationsToggle_Unchecked(object sender, RoutedEventArgs e)
         {
             Services.Settings.NotificationsEnabled = false;
-            Services.Settings.Save();
+            await Services.Settings.SaveAsync();
             Services.Notifications.Info("Notificaciones desactivadas");
         }
 
         // ============================================================
-        //  AUTOMATIZACIÓN
+        //  AUTOMATIZACIÓN (SYNC)
         // ============================================================
-        private void AutomationMode_Checked(object sender, RoutedEventArgs e)
+        private async void AutomationMode_Checked(object sender, RoutedEventArgs e)
         {
             if (!IsLoaded) return;
 
             if (AutoModeAutomatic.IsChecked == true)
                 Services.Settings.Automation.Mode = AutomationMode.Automatico;
-
             else if (AutoModeIntelligent.IsChecked == true)
                 Services.Settings.Automation.Mode = AutomationMode.Asistido;
-
             else if (AutoModeManual.IsChecked == true)
                 Services.Settings.Automation.Mode = AutomationMode.Manual;
 
-            Services.Settings.Save();
+            await Services.Settings.SaveAsync();
         }
 
-        private void NormalizeNamesBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void NormalizeNamesBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!IsLoaded) return;
 
@@ -318,11 +319,11 @@ namespace POPSManager.Views
                 Enum.TryParse<AutoBehavior>(tag, out var behavior))
             {
                 Services.Settings.Automation.Conversion = behavior;
-                Services.Settings.Save();
+                await Services.Settings.SaveAsync();
             }
         }
 
-        private void GroupMultiDiscBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void GroupMultiDiscBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!IsLoaded) return;
 
@@ -331,11 +332,11 @@ namespace POPSManager.Views
                 Enum.TryParse<AutoBehavior>(tag, out var behavior))
             {
                 Services.Settings.Automation.MultiDisc = behavior;
-                Services.Settings.Save();
+                await Services.Settings.SaveAsync();
             }
         }
 
-        private void DownloadCoversBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void DownloadCoversBehaviorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!IsLoaded) return;
 
@@ -344,7 +345,7 @@ namespace POPSManager.Views
                 Enum.TryParse<AutoBehavior>(tag, out var behavior))
             {
                 Services.Settings.Automation.Covers = behavior;
-                Services.Settings.Save();
+                await Services.Settings.SaveAsync();
             }
         }
 
