@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using POPSManager.Logic.Automation;
 using POPSManager.Services.Interfaces;
 using POPSManager.Settings;
-using POPSManager.Logic.Automation;
 
 namespace POPSManager.Services
 {
@@ -39,16 +39,12 @@ namespace POPSManager.Services
             _customPopsFolder = settings.CustomPopsFolder;
             _customAppsFolder = settings.CustomAppsFolder;
 
-            // Estructura inicial (sync, pero rápida)
             EnsureFolderStructure();
 
             PopstarterElfPath = ResolveElf("POPSTARTER.ELF");
             PopstarterPs2ElfPath = ResolveElf("POPS2.ELF");
         }
 
-        // ============================================================
-        //  NORMALIZAR RAÍZ
-        // ============================================================
         private string NormalizeRoot(string? path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -71,9 +67,6 @@ namespace POPSManager.Services
             return full;
         }
 
-        // ============================================================
-        //  RESOLVER RUTAS
-        // ============================================================
         private string ResolvePath(string? custom, string defaultFolder)
         {
             if (!string.IsNullOrWhiteSpace(custom))
@@ -95,9 +88,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  CREAR ESTRUCTURA (SYNC)
-        // ============================================================
         private void EnsureFolderStructure()
         {
             if (!_auto.ShouldCreateFolders())
@@ -129,9 +119,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  DETECCIÓN ELF (SYNC)
-        // ============================================================
         private string ResolveElf(string elfName)
         {
             string? custom = elfName == "POPSTARTER.ELF"
@@ -171,9 +158,6 @@ namespace POPSManager.Services
             return "";
         }
 
-        // ============================================================
-        //  MÉTODOS ASYNC PARA SETTINGSVIEW
-        // ============================================================
         public async Task SetCustomPopsFolderAsync(string path)
         {
             _customPopsFolder = NormalizePath(path);
@@ -218,9 +202,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  RECARGAR RUTAS (ASYNC)
-        // ============================================================
         public async Task ReloadAsync()
         {
             _customPopsFolder = _settings.CustomPopsFolder;
@@ -238,9 +219,6 @@ namespace POPSManager.Services
             _log?.Invoke("[Paths] Rutas recargadas correctamente.");
         }
 
-        // ============================================================
-        //  GUARDAR SETTINGS (ASYNC)
-        // ============================================================
         public async Task SaveAsync()
         {
             _settings.RootFolder = RootFolder;
@@ -252,17 +230,29 @@ namespace POPSManager.Services
             await _settings.SaveAsync();
         }
 
-        // Wrapper síncrono (compatibilidad)
         public void Save() => SaveAsync().GetAwaiter().GetResult();
 
-        // ============================================================
-        //  UTILIDAD: RUTA POPSTARTER (mass:/POPS/...)
-        // ============================================================
         public string BuildMassPath(string fullPath)
         {
             string folder = Path.GetFileName(Path.GetDirectoryName(fullPath)) ?? "";
             string file = Path.GetFileName(fullPath) ?? "";
             return $"mass:/POPS/{folder}/{file}";
         }
+
+        // Wrappers síncronos para la interfaz
+        public void SetCustomPopsFolder(string path) =>
+            SetCustomPopsFolderAsync(path).GetAwaiter().GetResult();
+
+        public void SetCustomAppsFolder(string path) =>
+            SetCustomAppsFolderAsync(path).GetAwaiter().GetResult();
+
+        public void SetCustomElfPath(string path) =>
+            SetCustomElfPathAsync(path).GetAwaiter().GetResult();
+
+        public void SetCustomPs2ElfPath(string path) =>
+            SetCustomPs2ElfPathAsync(path).GetAwaiter().GetResult();
+
+        public void Reload() =>
+            ReloadAsync().GetAwaiter().GetResult();
     }
 }
