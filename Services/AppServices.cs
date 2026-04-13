@@ -1,171 +1,90 @@
-using Microsoft.Extensions.DependencyInjection;
+using POPSManager.Services;
+using POPSManager.Settings;
 using POPSManager.Logic;
 using POPSManager.Logic.Automation;
-using POPSManager.Logic.Cheats;
-using POPSManager.Services.Interfaces;
-using POPSManager.Settings;
+using System;
+using System.Threading.Tasks;
 
-namespace POPSManager.Services
+namespace POPSManager
 {
     /// <summary>
-    /// Contenedor de Inyección de Dependencias profesional.
-    /// Maneja todos los servicios centrales de POPSManager.
+    /// Contenedor global de servicios con soporte async.
+    /// Mantiene compatibilidad total con la arquitectura original.
     /// </summary>
-    public sealed class AppServices : IAsyncDisposable
+    public sealed class AppServices
     {
-        private readonly ServiceProvider _provider;
-
-        // ============================
-        // ACCESO TIPADO A SERVICIOS
-        // ============================
-        public ILoggingService LogService => _provider.GetRequiredService<ILoggingService>();
-        public INotificationService Notifications => _provider.GetRequiredService<INotificationService>();
-        public IProgressService Progress => _provider.GetRequiredService<IProgressService>();
-        public SettingsService Settings => _provider.GetRequiredService<SettingsService>();
-        public PathsService Paths => _provider.GetRequiredService<PathsService>();
-        public ConverterService Converter => _provider.GetRequiredService<ConverterService>();
-        public CheatSettingsService CheatSettings => _provider.GetRequiredService<CheatSettingsService>();
-        public CheatManagerService CheatManager => _provider.GetRequiredService<CheatManagerService>();
-        public AutomationEngine Automation => _provider.GetRequiredService<AutomationEngine>();
-
-        // GameProcessor se inicializa bajo demanda (Lazy)
-        public GameProcessor GameProcessor => _provider.GetRequiredService<Lazy<GameProcessor>>().Value;
+        public LoggingService LogService { get; }
+        public NotificationService Notifications { get; }
+        public ProgressService Progress { get; }
+        public PathsService Paths { get; }
+        public SettingsService Settings { get; }
+        public AutomationEngine Automation { get; }
+        public ConverterService Converter { get; }
+        public GameProcessor Processor { get; }
 
         public AppServices()
         {
-            var services = new ServiceCollection();
+            // ============================================================
+            // 1. Servicios base (sync)
+            // ============================================================
+            LogService = new LoggingService();
+            Notifications = new NotificationService();
+            Progress = new ProgressService();
 
-            // ============================
-            // LOGGING (PRIMERO SIEMPRE)
-            // ============================
-            services.AddSingleton<LoggingService>();
-            services.AddSingleton<ILoggingService>(sp => sp.GetRequiredService<LoggingService>());
+            // ============================================================
+            // 2. Settings (sync + async)
+            // ============================================================
+            Settings = new SettingsService(LogService.Info);
 
-            // ============================
-            // NOTIFICACIONES (ANTES DE SETTINGS)
-            // ============================
-            services.AddSingleton<NotificationService>();
-            services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
+            // ============================================================
+            // 3. AutomationEngine (sync)
+            // ============================================================
+            Automation = new AutomationEngine(Settings, Notifications, LogService);
 
-            // ============================
-            // SETTINGS (depende de Logging + Notifications)
-            // ============================
-            services.AddSingleton(sp =>
-            {
-                var log = sp.GetRequiredService<ILoggingService>();
-                var notif = sp.GetRequiredService<INotificationService>();
-                return new SettingsService(log.Write, notif);
-            });
+            // ============================================================
+            // 4. PathsService (async-ready)
+            // ============================================================
+            Paths = new PathsService(LogService.Info, Settings, Automation);
 
-            // ============================
-            // AUTOMATION ENGINE
-            // ============================
-            services.AddSingleton(sp =>
-            {
-                var settings = sp.GetRequiredService<SettingsService>();
-                var notif = sp.GetRequiredService<INotificationService>();
-                return new AutomationEngine(settings.Automation, notif);
-            });
+            // ============================================================
+            // 5. ConverterService (async)
+            // ============================================================
+            Converter = new ConverterService(
+                LogService.Info,
+                Paths,
+                Settings,
+                Automation,
+                Notifications.Show,
+                Progress.SetStatus
+            );
 
-            // ============================
-            // PATHS (depende de Settings + Logging)
-            // ============================
-            services.AddSingleton(sp =>
-            {
-                var log = sp.GetRequiredService<ILoggingService>();
-                var settings = sp.GetRequiredService<SettingsService>();
-                return new PathsService(log.Write, settings);
-            });
-
-            // ============================
-            // PROGRESO GLOBAL
-            // ============================
-            services.AddSingleton<ProgressService>();
-            services.AddSingleton<IProgressService>(sp => sp.GetRequiredService<ProgressService>());
-
-            // ============================
-            // CHEATS (CONFIG + MANAGER)
-            // ============================
-            services.AddSingleton(sp =>
-            {
-                var paths = sp.GetRequiredService<PathsService>();
-                var log = sp.GetRequiredService<ILoggingService>();
-                return new CheatSettingsService(paths.RootFolder, log.Write);
-            });
-
-            services.AddSingleton(sp =>
-            {
-                var cheatSettings = sp.GetRequiredService<CheatSettingsService>();
-                var log = sp.GetRequiredService<ILoggingService>();
-                return new CheatManagerService(cheatSettings, log.Write);
-            });
-
-            // ============================
-            // CONVERSIÓN PS1 (BIN/CUE -> VCD)
-            // ============================
-            services.AddSingleton(sp =>
-            {
-                var log = sp.GetRequiredService<ILoggingService>();
-                var paths = sp.GetRequiredService<PathsService>();
-                var settings = sp.GetRequiredService<SettingsService>();
-                var notif = sp.GetRequiredService<INotificationService>();
-                var progress = sp.GetRequiredService<IProgressService>();
-                var auto = sp.GetRequiredService<AutomationEngine>();
-
-                return new ConverterService(
-                    log.Write,
-                    paths,
-                    settings,
-                    auto,
-                    (msg, type) => notif.Show(msg, type),
-                    progress.SetStatus
-                );
-            });
-
-            // ============================
-            // GAME PROCESSOR (PS1 + PS2) - LAZY
-            // ============================
-            services.AddSingleton(sp => new Lazy<GameProcessor>(() =>
-            {
-                var progress = sp.GetRequiredService<ProgressService>();
-                var log = sp.GetRequiredService<LoggingService>();
-                var notif = sp.GetRequiredService<NotificationService>();
-                var paths = sp.GetRequiredService<PathsService>();
-                var cheatSettings = sp.GetRequiredService<CheatSettingsService>();
-                var cheatManager = sp.GetRequiredService<CheatManagerService>();
-                var settings = sp.GetRequiredService<SettingsService>();
-                var auto = sp.GetRequiredService<AutomationEngine>();
-
-                return new GameProcessor(
-                    progress,
-                    log,
-                    notif,
-                    paths,
-                    cheatSettings,
-                    cheatManager,
-                    settings,
-                    auto
-                );
-            }));
-
-            _provider = services.BuildServiceProvider();
+            // ============================================================
+            // 6. GameProcessor (async)
+            // ============================================================
+            Processor = new GameProcessor(
+                Progress,
+                LogService,
+                Notifications,
+                Paths,
+                new CheatSettingsService(Settings),
+                new CheatManagerService(Settings),
+                Settings,
+                Automation
+            );
         }
 
-        // ============================
-        // RESOLVE GENÉRICO (para extensibilidad)
-        // ============================
-        public T GetService<T>() where T : notnull
-            => _provider.GetRequiredService<T>();
-
-        // ============================
-        // DISPOSE ASYNC (flush de logs)
-        // ============================
-        public async ValueTask DisposeAsync()
+        // ============================================================
+        //  MÉTODO DE INICIALIZACIÓN ASYNC (OPCIONAL)
+        // ============================================================
+        public async Task InitializeAsync()
         {
-            if (_provider is IAsyncDisposable asyncDisposable)
-                await asyncDisposable.DisposeAsync();
-            else
-                _provider.Dispose();
+            // Recargar rutas async
+            await Paths.ReloadAsync();
+
+            // Guardar settings async
+            await Settings.SaveAsync();
+
+            LogService.Info("[AppServices] Inicialización async completada.");
         }
     }
 }
