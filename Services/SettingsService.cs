@@ -6,6 +6,20 @@ using POPSManager.Services.Interfaces;
 
 namespace POPSManager.Services
 {
+    public enum AutomationMode
+    {
+        Automatic,
+        Intelligent,
+        Manual
+    }
+
+    public enum AutomationBehavior
+    {
+        Auto,
+        Ask,
+        Manual
+    }
+
     /// <summary>
     /// Servicio centralizado de configuración.
     /// Seguro, robusto, validado y optimizado para .NET 8.
@@ -16,9 +30,6 @@ namespace POPSManager.Services
         private readonly Action<string> log;
         private readonly INotificationService notifications;
 
-        // ============================
-        //  JSON OPTIONS (OPTIMIZADO)
-        // ============================
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
             WriteIndented = true,
@@ -43,7 +54,15 @@ namespace POPSManager.Services
         public string? CustomPopsFolder { get; set; }
         public string? CustomAppsFolder { get; set; }
 
-        // Evento para notificar cambios globales
+        // ============================
+        //  AUTOMATIZACIÓN INTELIGENTE
+        // ============================
+        public AutomationMode GlobalAutomationMode { get; set; } = AutomationMode.Intelligent;
+
+        public AutomationBehavior NormalizeNamesBehavior { get; set; } = AutomationBehavior.Auto;
+        public AutomationBehavior GroupMultiDiscBehavior { get; set; } = AutomationBehavior.Auto;
+        public AutomationBehavior DownloadCoversBehavior { get; set; } = AutomationBehavior.Ask;
+
         public event Action? OnSettingsChanged;
 
         public SettingsService(Action<string> log, INotificationService notifications)
@@ -63,9 +82,6 @@ namespace POPSManager.Services
             EnsureDefaults();
         }
 
-        // ============================================================
-        //  CARGAR SETTINGS
-        // ============================================================
         public void Load()
         {
             try
@@ -101,6 +117,11 @@ namespace POPSManager.Services
                 CustomPopsFolder = data.CustomPopsFolder;
                 CustomAppsFolder = data.CustomAppsFolder;
 
+                GlobalAutomationMode = data.GlobalAutomationMode;
+                NormalizeNamesBehavior = data.NormalizeNamesBehavior;
+                GroupMultiDiscBehavior = data.GroupMultiDiscBehavior;
+                DownloadCoversBehavior = data.DownloadCoversBehavior;
+
                 log("[Settings] Settings cargados correctamente.");
             }
             catch (Exception ex)
@@ -110,9 +131,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  GUARDAR SETTINGS
-        // ============================================================
         public void Save()
         {
             try
@@ -131,7 +149,12 @@ namespace POPSManager.Services
                     CustomElfPath = CustomElfPath,
                     CustomPs2ElfPath = CustomPs2ElfPath,
                     CustomPopsFolder = CustomPopsFolder,
-                    CustomAppsFolder = CustomAppsFolder
+                    CustomAppsFolder = CustomAppsFolder,
+
+                    GlobalAutomationMode = GlobalAutomationMode,
+                    NormalizeNamesBehavior = NormalizeNamesBehavior,
+                    GroupMultiDiscBehavior = GroupMultiDiscBehavior,
+                    DownloadCoversBehavior = DownloadCoversBehavior
                 };
 
                 var json = JsonSerializer.Serialize(data, JsonOptions);
@@ -148,9 +171,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  NORMALIZAR VALORES
-        // ============================================================
         private void NormalizeValues()
         {
             RootFolder = Normalize(RootFolder);
@@ -181,9 +201,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  ASEGURAR VALORES POR DEFECTO
-        // ============================================================
         private void EnsureDefaults()
         {
             if (string.IsNullOrWhiteSpace(RootFolder))
@@ -198,9 +215,6 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  SETTERS SEGUROS
-        // ============================================================
         public void SetRootFolder(string path)
         {
             if (!Directory.Exists(path))
@@ -240,9 +254,6 @@ namespace POPSManager.Services
             Save();
         }
 
-        // ============================================================
-        //  CLASE INTERNA PARA JSON
-        // ============================================================
         private sealed class SettingsData
         {
             public bool DarkMode { get; set; }
@@ -256,6 +267,11 @@ namespace POPSManager.Services
             public string? CustomPs2ElfPath { get; set; }
             public string? CustomPopsFolder { get; set; }
             public string? CustomAppsFolder { get; set; }
+
+            public AutomationMode GlobalAutomationMode { get; set; } = AutomationMode.Intelligent;
+            public AutomationBehavior NormalizeNamesBehavior { get; set; } = AutomationBehavior.Auto;
+            public AutomationBehavior GroupMultiDiscBehavior { get; set; } = AutomationBehavior.Auto;
+            public AutomationBehavior DownloadCoversBehavior { get; set; } = AutomationBehavior.Ask;
         }
     }
 }
