@@ -1,44 +1,41 @@
+using System;
+using System.IO;
+
 namespace POPSManager.Logic
 {
-    public class DiscInfo
+    public sealed class DiscInfo
     {
         // Ruta completa al archivo VCD
-        public string Path { get; set; } = "";
+        public string Path { get; set; } = string.Empty;
 
         // Número de disco detectado (CD1, CD2, etc.)
         public int DiscNumber { get; set; }
 
         // GameID detectado (opcional, usado para validaciones avanzadas)
-        public string GameId { get; set; } = "";
+        public string GameId { get; set; } = string.Empty;
 
         // Nombre de la carpeta donde está el disco (CD1, CD2...)
-        public string FolderName { get; set; } = "";
+        public string FolderName { get; set; } = string.Empty;
 
-        // Nombre del archivo (ej: SLUS_123.45 - Final Fantasy VII (CD1).VCD)
-        public string FileName { get; set; } = "";
-
-        // ============================================================
-        // PROPIEDADES DERIVADAS (ÚTILES PARA VALIDACIÓN E INFORMES)
-        // ============================================================
+        // Nombre del archivo (ej: Final Fantasy VII (Disc 1).VCD)
+        public string FileName { get; set; } = string.Empty;
 
         // Nombre del archivo sin extensión
         public string FileNameNoExt =>
-            System.IO.Path.GetFileNameWithoutExtension(FileName) ?? "";
+            Path.GetFileNameWithoutExtension(FileName) ?? string.Empty;
 
         // Carpeta completa donde está el disco
         public string FolderPath =>
-            System.IO.Path.GetDirectoryName(Path) ?? "";
+            Path.GetDirectoryName(Path) ?? string.Empty;
 
         // Título limpio (sin región, idioma, versión, etc.)
         public string CleanTitle =>
             NameCleanerBase.CleanTitleOnly(FileNameNoExt);
 
         // ¿La carpeta está correctamente nombrada como CDX?
-        // ✅ FIX CA1310: Reemplazar ToUpper().StartsWith("CD")
-        //    por StartsWith con StringComparison.OrdinalIgnoreCase
         public bool FolderMatchesDisc =>
             FolderName.StartsWith("CD", StringComparison.OrdinalIgnoreCase) &&
-            int.TryParse(FolderName.Substring(2), out int n) &&
+            int.TryParse(FolderName.AsSpan(2), out int n) &&
             n == DiscNumber;
     }
 }
