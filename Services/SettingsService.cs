@@ -1,18 +1,36 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using POPSManager.Services.Interfaces;
 
 namespace POPSManager.Services
 {
-    public class SettingsService
+    /// <summary>
+    /// Servicio centralizado de configuración.
+    /// Seguro, robusto, validado y optimizado para .NET 8.
+    /// </summary>
+    public sealed class SettingsService
     {
         private readonly string settingsPath;
         private readonly Action<string> log;
+        private readonly INotificationService notifications;
+
+        // ============================
+        //  JSON OPTIONS (OPTIMIZADO)
+        // ============================
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
 
         // ============================
         //  PROPIEDADES DEL USUARIO
         // ============================
-        public bool DarkMode { get; set; } = false;
+        public bool DarkMode { get; set; }
         public bool NotificationsEnabled { get; set; } = true;
 
         public bool UseDatabase { get; set; } = true;
@@ -28,9 +46,10 @@ namespace POPSManager.Services
         // Evento para notificar cambios globales
         public event Action? OnSettingsChanged;
 
-        public SettingsService(Action<string> log)
+        public SettingsService(Action<string> log, INotificationService notifications)
         {
-            this.log = log;
+            this.log = log ?? throw new ArgumentNullException(nameof(log));
+            this.notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string folder = Path.Combine(appData, "POPSManager");
@@ -54,16 +73,18 @@ namespace POPSManager.Services
                 if (!File.Exists(settingsPath))
                 {
                     log("[Settings] No existe settings.json, usando valores por defecto.");
+                    notifications.Info("Configuración inicial creada");
                     return;
                 }
 
                 var json = File.ReadAllText(settingsPath);
-                var data = JsonSerializer.Deserialize<SettingsData>(json);
+                var data = JsonSerializer.Deserialize<SettingsData>(json, JsonOptions);
 
                 if (data == null)
                 {
-                    log("[Settings] Archivo corrupto, regenerando settings.");
-                    Save(); // Regenera archivo limpio
+                    log("[Settings] Archivo corrupto → regenerando settings.");
+                    notifications.Warning("Archivo de configuración corrupto. Se regenerará.");
+                    Save();
                     return;
                 }
 
@@ -85,6 +106,7 @@ namespace POPSManager.Services
             catch (Exception ex)
             {
                 log($"[Settings] ERROR cargando settings: {ex.Message}");
+                notifications.Error("Error cargando configuración");
             }
         }
 
@@ -112,15 +134,17 @@ namespace POPSManager.Services
                     CustomAppsFolder = CustomAppsFolder
                 };
 
-                var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+                var json = JsonSerializer.Serialize(data, JsonOptions);
                 File.WriteAllText(settingsPath, json);
 
                 log("[Settings] Settings guardados correctamente.");
+                notifications.Success("Configuración guardada");
                 OnSettingsChanged?.Invoke();
             }
             catch (Exception ex)
             {
                 log($"[Settings] ERROR guardando settings: {ex.Message}");
+                notifications.Error("Error guardando configuración");
             }
         }
 
@@ -152,6 +176,7 @@ namespace POPSManager.Services
             catch
             {
                 log($"[Settings] Ruta inválida: {path}");
+                notifications.Warning($"Ruta inválida: {path}");
                 return path;
             }
         }
@@ -169,6 +194,7 @@ namespace POPSManager.Services
                 );
 
                 log("[Settings] RootFolder vacío → asignado valor por defecto.");
+                notifications.Info("Se asignó carpeta raíz por defecto");
             }
         }
 
@@ -180,6 +206,7 @@ namespace POPSManager.Services
             if (!Directory.Exists(path))
             {
                 log($"[Settings] ERROR: Carpeta inválida: {path}");
+                notifications.Error("Carpeta inválida");
                 return;
             }
 
@@ -192,6 +219,7 @@ namespace POPSManager.Services
             if (!File.Exists(path))
             {
                 log($"[Settings] ERROR: Archivo no encontrado: {path}");
+                notifications.Error("Archivo ELF no encontrado");
                 return;
             }
 
@@ -204,6 +232,7 @@ namespace POPSManager.Services
             if (!File.Exists(path))
             {
                 log($"[Settings] ERROR: Archivo no encontrado: {path}");
+                notifications.Error("Archivo PS2 ELF no encontrado");
                 return;
             }
 
@@ -214,7 +243,7 @@ namespace POPSManager.Services
         // ============================================================
         //  CLASE INTERNA PARA JSON
         // ============================================================
-        private class SettingsData
+        private sealed class SettingsData
         {
             public bool DarkMode { get; set; }
             public bool NotificationsEnabled { get; set; }
