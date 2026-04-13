@@ -6,7 +6,7 @@ namespace POPSManager.Services
 {
     /// <summary>
     /// Servicio de progreso global optimizado.
-    /// Usa Stopwatch monotónico en lugar de DateTime.Now para throttling.
+    /// Usa Stopwatch monotónico para throttling preciso.
     /// </summary>
     public class ProgressService : IProgressService
     {
@@ -19,6 +19,7 @@ namespace POPSManager.Services
 
         private readonly Stopwatch _throttleWatch = new();
         private int _lastReportedValue = -1;
+
         private const int ThrottleMs = 50;
 
         // ============================================================
@@ -29,6 +30,7 @@ namespace POPSManager.Services
             IsRunning = true;
             _lastReportedValue = -1;
             _throttleWatch.Restart();
+
             OnStart?.Invoke();
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -36,24 +38,24 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        // ACTUALIZAR PORCENTAJE (Stopwatch + skip duplicados)
+        // ACTUALIZAR PORCENTAJE
         // ============================================================
         public void SetProgress(int value)
         {
-            if (!IsRunning) return;
+            if (!IsRunning)
+                return;
 
-            // Clamp 0-100
             value = Math.Clamp(value, 0, 100);
 
-            // Skip valores repetidos
-            if (value == _lastReportedValue) return;
+            if (value == _lastReportedValue)
+                return;
 
-            // Throttling monotónico (no depende del reloj del sistema)
-            if (_throttleWatch.ElapsedMilliseconds < ThrottleMs
-                && value < 100) return;
+            if (_throttleWatch.ElapsedMilliseconds < ThrottleMs && value < 100)
+                return;
 
             _lastReportedValue = value;
             _throttleWatch.Restart();
+
             OnProgress?.Invoke(value);
         }
 
@@ -62,7 +64,9 @@ namespace POPSManager.Services
         // ============================================================
         public void SetStatus(string text)
         {
-            if (!IsRunning) return;
+            if (!IsRunning)
+                return;
+
             if (!string.IsNullOrWhiteSpace(text))
                 OnStatus?.Invoke(text);
         }
@@ -72,9 +76,12 @@ namespace POPSManager.Services
         // ============================================================
         public void Stop()
         {
-            if (!IsRunning) return;
+            if (!IsRunning)
+                return;
+
             IsRunning = false;
             _throttleWatch.Stop();
+
             OnStop?.Invoke();
         }
 
