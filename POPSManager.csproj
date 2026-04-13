@@ -24,9 +24,8 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 
-    <!-- Targeting Windows -->
+    <!-- Para MSIX -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
 
     <!-- Evita warnings de recursos -->
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
@@ -46,13 +45,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- DiscUtils (compatible con .NET 8) -->
     <PackageReference Include="DiscUtils" Version="0.16.13" />
-
-    <!-- DI Container -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-
-    <!-- SourceLink (solo una vez, sin duplicados) -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
