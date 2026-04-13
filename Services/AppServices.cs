@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using POPSManager.Logic;
+using POPSManager.Logic.Automation;
 using POPSManager.Logic.Cheats;
 using POPSManager.Services.Interfaces;
 using POPSManager.Settings;
@@ -8,8 +9,7 @@ namespace POPSManager.Services
 {
     /// <summary>
     /// Contenedor de Inyección de Dependencias profesional.
-    /// Reemplaza el Service Locator manual por
-    /// Microsoft.Extensions.DependencyInjection.
+    /// Maneja todos los servicios centrales de POPSManager.
     /// </summary>
     public sealed class AppServices : IAsyncDisposable
     {
@@ -26,6 +26,7 @@ namespace POPSManager.Services
         public ConverterService Converter => _provider.GetRequiredService<ConverterService>();
         public CheatSettingsService CheatSettings => _provider.GetRequiredService<CheatSettingsService>();
         public CheatManagerService CheatManager => _provider.GetRequiredService<CheatManagerService>();
+        public AutomationEngine Automation => _provider.GetRequiredService<AutomationEngine>();
 
         // GameProcessor se inicializa bajo demanda (Lazy)
         public GameProcessor GameProcessor => _provider.GetRequiredService<Lazy<GameProcessor>>().Value;
@@ -41,12 +42,29 @@ namespace POPSManager.Services
             services.AddSingleton<ILoggingService>(sp => sp.GetRequiredService<LoggingService>());
 
             // ============================
-            // SETTINGS (depende de Logging)
+            // NOTIFICACIONES (ANTES DE SETTINGS)
+            // ============================
+            services.AddSingleton<NotificationService>();
+            services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
+
+            // ============================
+            // SETTINGS (depende de Logging + Notifications)
             // ============================
             services.AddSingleton(sp =>
             {
                 var log = sp.GetRequiredService<ILoggingService>();
-                return new SettingsService(log.Write);
+                var notif = sp.GetRequiredService<INotificationService>();
+                return new SettingsService(log.Write, notif);
+            });
+
+            // ============================
+            // AUTOMATION ENGINE
+            // ============================
+            services.AddSingleton(sp =>
+            {
+                var settings = sp.GetRequiredService<SettingsService>();
+                var notif = sp.GetRequiredService<INotificationService>();
+                return new AutomationEngine(settings.Automation, notif);
             });
 
             // ============================
@@ -58,12 +76,6 @@ namespace POPSManager.Services
                 var settings = sp.GetRequiredService<SettingsService>();
                 return new PathsService(log.Write, settings);
             });
-
-            // ============================
-            // NOTIFICACIONES
-            // ============================
-            services.AddSingleton<NotificationService>();
-            services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
 
             // ============================
             // PROGRESO GLOBAL
@@ -78,18 +90,14 @@ namespace POPSManager.Services
             {
                 var paths = sp.GetRequiredService<PathsService>();
                 var log = sp.GetRequiredService<ILoggingService>();
-                return new CheatSettingsService(
-                    paths.RootFolder,
-                    log.Write);
+                return new CheatSettingsService(paths.RootFolder, log.Write);
             });
 
             services.AddSingleton(sp =>
             {
                 var cheatSettings = sp.GetRequiredService<CheatSettingsService>();
                 var log = sp.GetRequiredService<ILoggingService>();
-                return new CheatManagerService(
-                    cheatSettings,
-                    log.Write);
+                return new CheatManagerService(cheatSettings, log.Write);
             });
 
             // ============================
@@ -102,10 +110,13 @@ namespace POPSManager.Services
                 var settings = sp.GetRequiredService<SettingsService>();
                 var notif = sp.GetRequiredService<INotificationService>();
                 var progress = sp.GetRequiredService<IProgressService>();
+                var auto = sp.GetRequiredService<AutomationEngine>();
+
                 return new ConverterService(
                     log.Write,
                     paths,
                     settings,
+                    auto,
                     (msg, type) => notif.Show(msg, type),
                     progress.SetStatus
                 );
@@ -113,10 +124,6 @@ namespace POPSManager.Services
 
             // ============================
             // GAME PROCESSOR (PS1 + PS2) - LAZY
-            // ════════════════════════════
-            // FIX CS1503: Resolver tipos CONCRETOS, no interfaces.
-            // GameProcessor espera ProgressService, LoggingService,
-            // NotificationService — no las interfaces.
             // ============================
             services.AddSingleton(sp => new Lazy<GameProcessor>(() =>
             {
@@ -127,6 +134,7 @@ namespace POPSManager.Services
                 var cheatSettings = sp.GetRequiredService<CheatSettingsService>();
                 var cheatManager = sp.GetRequiredService<CheatManagerService>();
                 var settings = sp.GetRequiredService<SettingsService>();
+                var auto = sp.GetRequiredService<AutomationEngine>();
 
                 return new GameProcessor(
                     progress,
@@ -135,8 +143,8 @@ namespace POPSManager.Services
                     paths,
                     cheatSettings,
                     cheatManager,
-                    settings.UseDatabase,
-                    settings.UseCovers
+                    settings,
+                    auto
                 );
             }));
 
