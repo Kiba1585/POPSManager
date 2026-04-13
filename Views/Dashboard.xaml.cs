@@ -1,10 +1,10 @@
-using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using POPSManager.Models;
 using POPSManager.Services;
 
 namespace POPSManager.Views
@@ -26,9 +26,6 @@ namespace POPSManager.Views
             LoadPaths();
         }
 
-        // ============================================================
-        //  ESTADÍSTICAS (placeholder)
-        // ============================================================
         private void LoadStats()
         {
             ProcessedCount.Text = "0";
@@ -36,9 +33,6 @@ namespace POPSManager.Views
             ErrorCount.Text = "0";
         }
 
-        // ============================================================
-        //  INFORMACIÓN DEL SISTEMA
-        // ============================================================
         private void LoadSystemInfo()
         {
             SystemInfo.Text =
@@ -51,18 +45,12 @@ namespace POPSManager.Views
                 $"POPS2.ELF: {_paths.PopstarterPs2ElfPath}";
         }
 
-        // ============================================================
-        //  CARGAR RUTAS EN LA UI
-        // ============================================================
         private void LoadPaths()
         {
             RootPath.Text = _paths.RootFolder ?? "";
             ElfPath.Text = _paths.PopstarterElfPath ?? "";
         }
 
-        // ============================================================
-        //  ACCIONES RÁPIDAS
-        // ============================================================
         private void OpenConvert_Click(object sender, RoutedEventArgs e)
         {
             if (Application.Current.MainWindow is MainWindow main)
@@ -75,9 +63,6 @@ namespace POPSManager.Views
                 main.LoadView(new ProcessPopsView());
         }
 
-        // ============================================================
-        //  ABRIR CARPETA RAÍZ
-        // ============================================================
         private void OpenRootFolder_Click(object sender, RoutedEventArgs e)
         {
             if (!Directory.Exists(_paths.RootFolder))
@@ -100,9 +85,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  ABRIR UBICACIÓN DEL ELF
-        // ============================================================
         private void OpenElfFolder_Click(object sender, RoutedEventArgs e)
         {
             string elf = _paths.PopstarterElfPath;
@@ -135,9 +117,6 @@ namespace POPSManager.Views
             }
         }
 
-        // ============================================================
-        //  CAMBIAR RUTA RAÍZ
-        // ============================================================
         private void ChangeRootPath_Click(object sender, RoutedEventArgs e)
         {
             using var dialog = new FolderBrowserDialog
@@ -166,9 +145,6 @@ namespace POPSManager.Views
             _services.Notifications.Success("Ruta raíz actualizada correctamente.");
         }
 
-        // ============================================================
-        //  SELECCIONAR POPSTARTER.ELF
-        // ============================================================
         private void SelectElf_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog
