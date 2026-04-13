@@ -1,31 +1,22 @@
 using System;
 using System.IO;
 using POPSManager.Services.Interfaces;
+using POPSManager.Settings;
+using POPSManager.Logic.Automation;
 
 namespace POPSManager.Services
 {
-    /// <summary>
-    /// Servicio de rutas del sistema para POPSManager.
-    /// Gestiona rutas de OPL, ELF, carpetas personalizadas y estructura de archivos.
-    /// Implementa IPathsService para desacoplamiento vía DI.
-    /// </summary>
     public class PathsService : IPathsService
     {
-        // ============================================================
-        //  PROPIEDADES PRINCIPALES
-        // ============================================================
         public string RootFolder { get; private set; }
 
-        // Carpetas OPL (respetan rutas personalizadas)
         public string PopsFolder => ResolvePath(_customPopsFolder, "POPS");
         public string AppsFolder => ResolvePath(_customAppsFolder, "APPS");
 
-        // Carpetas dependientes de POPS (no de RootFolder)
         public string CfgFolder => Path.Combine(PopsFolder, "CFG");
         public string ArtFolder => Path.Combine(PopsFolder, "ART");
         public string DvdFolder => Path.Combine(RootFolder, "DVD");
 
-        // ELF base
         public string PopstarterElfPath { get; private set; } = "";
         public string PopstarterPs2ElfPath { get; private set; } = "";
 
@@ -33,34 +24,26 @@ namespace POPSManager.Services
         private string? _customAppsFolder;
 
         private readonly Action<string>? _log;
-        private readonly SettingsService? _settings;
+        private readonly SettingsService _settings;
+        private readonly AutomationEngine _auto;
 
-        // ============================================================
-        //  CONSTRUCTOR
-        // ============================================================
-        public PathsService(Action<string>? log = null, SettingsService? settings = null)
+        public PathsService(Action<string>? log, SettingsService settings, AutomationEngine auto)
         {
             _log = log;
             _settings = settings;
+            _auto = auto;
 
-            // Normalizar raíz
-            RootFolder = NormalizeRoot(settings?.RootFolder);
+            RootFolder = NormalizeRoot(settings.RootFolder);
 
-            // Cargar rutas personalizadas
-            _customPopsFolder = settings?.CustomPopsFolder;
-            _customAppsFolder = settings?.CustomAppsFolder;
+            _customPopsFolder = settings.CustomPopsFolder;
+            _customAppsFolder = settings.CustomAppsFolder;
 
-            // Crear estructura
             EnsureFolderStructure();
 
-            // Resolver ELF
             PopstarterElfPath = ResolveElf("POPSTARTER.ELF");
             PopstarterPs2ElfPath = ResolveElf("POPS2.ELF");
         }
 
-        // ============================================================
-        //  NORMALIZAR RAÍZ
-        // ============================================================
         private string NormalizeRoot(string? path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -75,7 +58,6 @@ namespace POPSManager.Services
 
             string full = Path.GetFullPath(path);
 
-            // Evitar seleccionar carpetas internas
             string folderName = Path.GetFileName(full).ToUpperInvariant();
             if (folderName is "PS2" or "POPSMANAGER")
                 full = Path.GetDirectoryName(full) ?? full;
@@ -84,9 +66,6 @@ namespace POPSManager.Services
             return full;
         }
 
-        // ============================================================
-        //  RESOLVER RUTAS PERSONALIZADAS O POR DEFECTO
-        // ============================================================
         private string ResolvePath(string? custom, string defaultFolder)
         {
             if (!string.IsNullOrWhiteSpace(custom))
@@ -108,11 +87,14 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  CREAR ESTRUCTURA DE CARPETAS
-        // ============================================================
         private void EnsureFolderStructure()
         {
+            if (!_auto.ShouldCreateFolders())
+            {
+                _log?.Invoke("[Paths] Automatización: creación de carpetas desactivada.");
+                return;
+            }
+
             CreateFolder(PopsFolder);
             CreateFolder(AppsFolder);
             CreateFolder(CfgFolder);
@@ -136,22 +118,16 @@ namespace POPSManager.Services
             }
         }
 
-        // ============================================================
-        //  DETECCIÓN AUTOMÁTICA DE ELF (PS1 + PS2)
-        // ============================================================
         private string ResolveElf(string elfName)
         {
-            if (_settings != null)
-            {
-                string? custom = elfName == "POPSTARTER.ELF"
-                    ? _settings.CustomElfPath
-                    : _settings.CustomPs2ElfPath;
+            string? custom = elfName == "POPSTARTER.ELF"
+                ? _settings.CustomElfPath
+                : _settings.CustomPs2ElfPath;
 
-                if (!string.IsNullOrWhiteSpace(custom) && File.Exists(custom))
-                {
-                    _log?.Invoke($"[Paths] Usando {elfName} personalizado: {custom}");
-                    return NormalizePath(custom);
-                }
+            if (!string.IsNullOrWhiteSpace(custom) && File.Exists(custom))
+            {
+                _log?.Invoke($"[Paths] Usando {elfName} personalizado: {custom}");
+                return NormalizePath(custom);
             }
 
             return FindElf(elfName);
@@ -181,15 +157,11 @@ namespace POPSManager.Services
             return "";
         }
 
-        // ============================================================
-        //  MÉTODOS PARA SETTINGSVIEW
-        // ============================================================
         public void SetCustomPopsFolder(string path)
         {
             _customPopsFolder = NormalizePath(path);
             CreateFolder(_customPopsFolder);
             Save();
-            _log?.Invoke($"[Paths] Ruta POPS personalizada: {_customPopsFolder}");
         }
 
         public void SetCustomAppsFolder(string path)
@@ -197,7 +169,6 @@ namespace POPSManager.Services
             _customAppsFolder = NormalizePath(path);
             CreateFolder(_customAppsFolder);
             Save();
-            _log?.Invoke($"[Paths] Ruta APPS personalizada: {_customAppsFolder}");
         }
 
         public void SetCustomElfPath(string path)
@@ -206,11 +177,6 @@ namespace POPSManager.Services
             {
                 PopstarterElfPath = NormalizePath(path);
                 Save();
-                _log?.Invoke($"[Paths] POPSTARTER.ELF configurado manualmente: {path}");
-            }
-            else
-            {
-                _log?.Invoke($"[Paths] ERROR: Archivo no encontrado: {path}");
             }
         }
 
@@ -220,23 +186,15 @@ namespace POPSManager.Services
             {
                 PopstarterPs2ElfPath = NormalizePath(path);
                 Save();
-                _log?.Invoke($"[Paths] POPS2.ELF configurado manualmente: {path}");
-            }
-            else
-            {
-                _log?.Invoke($"[Paths] ERROR: Archivo no encontrado: {path}");
             }
         }
 
-        // ============================================================
-        //  RECARGAR RUTAS
-        // ============================================================
         public void Reload()
         {
-            _customPopsFolder = _settings?.CustomPopsFolder;
-            _customAppsFolder = _settings?.CustomAppsFolder;
+            _customPopsFolder = _settings.CustomPopsFolder;
+            _customAppsFolder = _settings.CustomAppsFolder;
 
-            RootFolder = NormalizeRoot(_settings?.RootFolder);
+            RootFolder = NormalizeRoot(_settings.RootFolder);
 
             EnsureFolderStructure();
 
@@ -246,14 +204,8 @@ namespace POPSManager.Services
             _log?.Invoke("[Paths] Rutas recargadas correctamente.");
         }
 
-        // ============================================================
-        //  GUARDAR SETTINGS
-        // ============================================================
         public void Save()
         {
-            if (_settings == null)
-                return;
-
             _settings.RootFolder = RootFolder;
             _settings.CustomElfPath = PopstarterElfPath;
             _settings.CustomPs2ElfPath = PopstarterPs2ElfPath;
@@ -262,9 +214,6 @@ namespace POPSManager.Services
             _settings.Save();
         }
 
-        // ============================================================
-        //  UTILIDAD: RUTA POPSTARTER (mass:/POPS/...)
-        // ============================================================
         public string BuildMassPath(string fullPath)
         {
             string folder = Path.GetFileName(Path.GetDirectoryName(fullPath)) ?? "";
