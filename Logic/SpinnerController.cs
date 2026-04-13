@@ -8,13 +8,14 @@ namespace POPSManager.Logic
     /// Controlador de spinner asíncrono, seguro, cancelable y sin fugas.
     /// Compatible con WPF (UI thread-safe).
     /// </summary>
-    public class SpinnerController
+    public sealed class SpinnerController : IDisposable
     {
         private readonly Action<string> update;
         private CancellationTokenSource? cts;
         private readonly string frames = "|/-\\";
-        private int index = 0;
+        private int index; // CA1805 corregido (sin inicialización redundante)
         private readonly object sync = new();
+        private bool disposed;
 
         public SpinnerController(Action<string> update)
         {
@@ -26,6 +27,8 @@ namespace POPSManager.Logic
         /// </summary>
         public void Start(int intervalMs = 100)
         {
+            ThrowIfDisposed();
+
             lock (sync)
             {
                 StopInternal();
@@ -41,7 +44,6 @@ namespace POPSManager.Logic
 
                         while (!token.IsCancellationRequested)
                         {
-                            // UI-safe update
                             update(frames[index % frames.Length].ToString());
                             index++;
 
@@ -54,12 +56,10 @@ namespace POPSManager.Logic
                     }
                     catch (Exception ex)
                     {
-                        // Nunca dejamos que el spinner rompa la app
                         update($"ERR:{ex.Message}");
                     }
                     finally
                     {
-                        // Limpia el spinner al detenerse
                         update("");
                     }
                 }, token);
@@ -71,6 +71,8 @@ namespace POPSManager.Logic
         /// </summary>
         public void Stop()
         {
+            ThrowIfDisposed();
+
             lock (sync)
             {
                 StopInternal();
@@ -79,18 +81,42 @@ namespace POPSManager.Logic
 
         private void StopInternal()
         {
-            if (cts != null && !cts.IsCancellationRequested)
+            if (cts != null)
             {
                 try
                 {
-                    cts.Cancel();
+                    if (!cts.IsCancellationRequested)
+                        cts.Cancel();
                 }
-                catch { }
+                catch
+                {
+                    // Ignorar errores de cancelación
+                }
 
                 cts.Dispose();
+                cts = null;
             }
+        }
 
-            cts = null;
+        private void ThrowIfDisposed()
+        {
+            if (disposed)
+                throw new ObjectDisposedException(nameof(SpinnerController));
+        }
+
+        /// <summary>
+        /// Libera los recursos del spinner.
+        /// </summary>
+        public void Dispose()
+        {
+            if (disposed)
+                return;
+
+            lock (sync)
+            {
+                StopInternal();
+                disposed = true;
+            }
         }
     }
 }
