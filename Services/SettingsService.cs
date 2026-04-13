@@ -3,32 +3,20 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using POPSManager.Services.Interfaces;
+using POPSManager.Settings;
+using POPSManager.Logic.Automation;
 
 namespace POPSManager.Services
 {
-    public enum AutomationMode
-    {
-        Automatic,
-        Intelligent,
-        Manual
-    }
-
-    public enum AutomationBehavior
-    {
-        Auto,
-        Ask,
-        Manual
-    }
-
     /// <summary>
     /// Servicio centralizado de configuración.
     /// Seguro, robusto, validado y optimizado para .NET 8.
     /// </summary>
     public sealed class SettingsService
     {
-        private readonly string settingsPath;
-        private readonly Action<string> log;
-        private readonly INotificationService notifications;
+        private readonly string _settingsPath;
+        private readonly Action<string> _log;
+        private readonly INotificationService _notifications;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -57,25 +45,21 @@ namespace POPSManager.Services
         // ============================
         //  AUTOMATIZACIÓN INTELIGENTE
         // ============================
-        public AutomationMode GlobalAutomationMode { get; set; } = AutomationMode.Intelligent;
-
-        public AutomationBehavior NormalizeNamesBehavior { get; set; } = AutomationBehavior.Auto;
-        public AutomationBehavior GroupMultiDiscBehavior { get; set; } = AutomationBehavior.Auto;
-        public AutomationBehavior DownloadCoversBehavior { get; set; } = AutomationBehavior.Ask;
+        public AutomationSettings Automation { get; set; } = new();
 
         public event Action? OnSettingsChanged;
 
         public SettingsService(Action<string> log, INotificationService notifications)
         {
-            this.log = log ?? throw new ArgumentNullException(nameof(log));
-            this.notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+            _log = log ?? throw new ArgumentNullException(nameof(log));
+            _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string folder = Path.Combine(appData, "POPSManager");
 
             Directory.CreateDirectory(folder);
 
-            settingsPath = Path.Combine(folder, "settings.json");
+            _settingsPath = Path.Combine(folder, "settings.json");
 
             Load();
             NormalizeValues();
@@ -86,20 +70,20 @@ namespace POPSManager.Services
         {
             try
             {
-                if (!File.Exists(settingsPath))
+                if (!File.Exists(_settingsPath))
                 {
-                    log("[Settings] No existe settings.json, usando valores por defecto.");
-                    notifications.Info("Configuración inicial creada");
+                    _log("[Settings] No existe settings.json, usando valores por defecto.");
+                    _notifications.Info("Configuración inicial creada");
                     return;
                 }
 
-                var json = File.ReadAllText(settingsPath);
+                var json = File.ReadAllText(_settingsPath);
                 var data = JsonSerializer.Deserialize<SettingsData>(json, JsonOptions);
 
                 if (data == null)
                 {
-                    log("[Settings] Archivo corrupto → regenerando settings.");
-                    notifications.Warning("Archivo de configuración corrupto. Se regenerará.");
+                    _log("[Settings] Archivo corrupto → regenerando settings.");
+                    _notifications.Warning("Archivo de configuración corrupto. Se regenerará.");
                     Save();
                     return;
                 }
@@ -117,17 +101,14 @@ namespace POPSManager.Services
                 CustomPopsFolder = data.CustomPopsFolder;
                 CustomAppsFolder = data.CustomAppsFolder;
 
-                GlobalAutomationMode = data.GlobalAutomationMode;
-                NormalizeNamesBehavior = data.NormalizeNamesBehavior;
-                GroupMultiDiscBehavior = data.GroupMultiDiscBehavior;
-                DownloadCoversBehavior = data.DownloadCoversBehavior;
+                Automation = data.Automation ?? new AutomationSettings();
 
-                log("[Settings] Settings cargados correctamente.");
+                _log("[Settings] Settings cargados correctamente.");
             }
             catch (Exception ex)
             {
-                log($"[Settings] ERROR cargando settings: {ex.Message}");
-                notifications.Error("Error cargando configuración");
+                _log($"[Settings] ERROR cargando settings: {ex.Message}");
+                _notifications.Error("Error cargando configuración");
             }
         }
 
@@ -151,23 +132,20 @@ namespace POPSManager.Services
                     CustomPopsFolder = CustomPopsFolder,
                     CustomAppsFolder = CustomAppsFolder,
 
-                    GlobalAutomationMode = GlobalAutomationMode,
-                    NormalizeNamesBehavior = NormalizeNamesBehavior,
-                    GroupMultiDiscBehavior = GroupMultiDiscBehavior,
-                    DownloadCoversBehavior = DownloadCoversBehavior
+                    Automation = Automation
                 };
 
                 var json = JsonSerializer.Serialize(data, JsonOptions);
-                File.WriteAllText(settingsPath, json);
+                File.WriteAllText(_settingsPath, json);
 
-                log("[Settings] Settings guardados correctamente.");
-                notifications.Success("Configuración guardada");
+                _log("[Settings] Settings guardados correctamente.");
+                _notifications.Success("Configuración guardada");
                 OnSettingsChanged?.Invoke();
             }
             catch (Exception ex)
             {
-                log($"[Settings] ERROR guardando settings: {ex.Message}");
-                notifications.Error("Error guardando configuración");
+                _log($"[Settings] ERROR guardando settings: {ex.Message}");
+                _notifications.Error("Error guardando configuración");
             }
         }
 
@@ -195,8 +173,8 @@ namespace POPSManager.Services
             }
             catch
             {
-                log($"[Settings] Ruta inválida: {path}");
-                notifications.Warning($"Ruta inválida: {path}");
+                _log($"[Settings] Ruta inválida: {path}");
+                _notifications.Warning($"Ruta inválida: {path}");
                 return path;
             }
         }
@@ -210,8 +188,8 @@ namespace POPSManager.Services
                     "POPSManager"
                 );
 
-                log("[Settings] RootFolder vacío → asignado valor por defecto.");
-                notifications.Info("Se asignó carpeta raíz por defecto");
+                _log("[Settings] RootFolder vacío → asignado valor por defecto.");
+                _notifications.Info("Se asignó carpeta raíz por defecto");
             }
         }
 
@@ -219,8 +197,8 @@ namespace POPSManager.Services
         {
             if (!Directory.Exists(path))
             {
-                log($"[Settings] ERROR: Carpeta inválida: {path}");
-                notifications.Error("Carpeta inválida");
+                _log($"[Settings] ERROR: Carpeta inválida: {path}");
+                _notifications.Error("Carpeta inválida");
                 return;
             }
 
@@ -232,8 +210,8 @@ namespace POPSManager.Services
         {
             if (!File.Exists(path))
             {
-                log($"[Settings] ERROR: Archivo no encontrado: {path}");
-                notifications.Error("Archivo ELF no encontrado");
+                _log($"[Settings] ERROR: Archivo no encontrado: {path}");
+                _notifications.Error("Archivo ELF no encontrado");
                 return;
             }
 
@@ -245,8 +223,8 @@ namespace POPSManager.Services
         {
             if (!File.Exists(path))
             {
-                log($"[Settings] ERROR: Archivo no encontrado: {path}");
-                notifications.Error("Archivo PS2 ELF no encontrado");
+                _log($"[Settings] ERROR: Archivo no encontrado: {path}");
+                _notifications.Error("Archivo PS2 ELF no encontrado");
                 return;
             }
 
@@ -268,10 +246,7 @@ namespace POPSManager.Services
             public string? CustomPopsFolder { get; set; }
             public string? CustomAppsFolder { get; set; }
 
-            public AutomationMode GlobalAutomationMode { get; set; } = AutomationMode.Intelligent;
-            public AutomationBehavior NormalizeNamesBehavior { get; set; } = AutomationBehavior.Auto;
-            public AutomationBehavior GroupMultiDiscBehavior { get; set; } = AutomationBehavior.Auto;
-            public AutomationBehavior DownloadCoversBehavior { get; set; } = AutomationBehavior.Ask;
+            public AutomationSettings? Automation { get; set; } = new();
         }
     }
 }
