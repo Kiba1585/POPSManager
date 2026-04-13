@@ -76,7 +76,7 @@ namespace POPSManager.Logic
 
             var options = new ParallelOptions
             {
-                MaxDegreeOfParallelism = 2, // 2 juegos en paralelo (opción B)
+                MaxDegreeOfParallelism = 2, // 2 juegos en paralelo (tu opción B)
                 CancellationToken = ct
             };
 
