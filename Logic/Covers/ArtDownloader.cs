@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace POPSManager.Logic.Covers
 {
@@ -9,10 +10,13 @@ namespace POPSManager.Logic.Covers
         private static readonly HttpClient http = new HttpClient();
 
         /// <summary>
-        /// Descarga una carátula JPG desde una URL, la redimensiona a formato ART
-        /// y la guarda en la carpeta especificada.
+        /// Versión principal async: descarga JPG, lo pasa a ART y devuelve la ruta.
         /// </summary>
-        public static string? DownloadArt(string gameId, string url, string artFolder, Action<string> log)
+        public static async Task<string?> DownloadArtAsync(
+            string gameId,
+            string url,
+            string artFolder,
+            Action<string> log)
         {
             try
             {
@@ -21,14 +25,13 @@ namespace POPSManager.Logic.Covers
                 string tempJpg = Path.Combine(artFolder, $"{gameId}.jpg");
                 string artPath = Path.Combine(artFolder, $"{gameId}.ART");
 
-                // Descargar imagen (sin bloquear UI)
-                byte[] bytes = http.GetByteArrayAsync(url).GetAwaiter().GetResult();
-                File.WriteAllBytes(tempJpg, bytes);
+                // Descargar imagen sin bloquear hilo
+                byte[] bytes = await http.GetByteArrayAsync(url).ConfigureAwait(false);
+                await File.WriteAllBytesAsync(tempJpg, bytes).ConfigureAwait(false);
 
-                // Redimensionar usando ArtResizer (WPF Imaging)
+                // Redimensionar usando ArtResizer (síncrono, pero rápido)
                 ArtResizer.ResizeToArt(tempJpg, artPath);
 
-                // Eliminar temporal
                 if (File.Exists(tempJpg))
                     File.Delete(tempJpg);
 
@@ -50,6 +53,20 @@ namespace POPSManager.Logic.Covers
                 log($"[COVER] Error inesperado generando ART: {ex.Message}");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Wrapper síncrono para código antiguo que aún no es async.
+        /// </summary>
+        public static string? DownloadArt(
+            string gameId,
+            string url,
+            string artFolder,
+            Action<string> log)
+        {
+            return DownloadArtAsync(gameId, url, artFolder, log)
+                .GetAwaiter()
+                .GetResult();
         }
     }
 }
