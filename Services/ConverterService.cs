@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using POPSManager.Models;
 using POPSManager.Logic;
@@ -39,9 +40,9 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERTIR CARPETA COMPLETA (ASYNC)
+        //  CONVERTIR CARPETA COMPLETA (ASYNC + PARALELO 2–4)
         // ============================================================
-        public async Task ConvertFolderAsync(string sourceFolder, string outputFolder)
+        public async Task ConvertFolderAsync(string sourceFolder, string outputFolder, CancellationToken ct = default)
         {
             if (!Directory.Exists(sourceFolder))
             {
@@ -72,29 +73,49 @@ namespace POPSManager.Services
                 return;
             }
 
+            int total = files.Length;
             int index = 0;
 
-            foreach (var file in files)
+            int cpu = Environment.ProcessorCount;
+            int maxParallel = Math.Clamp(cpu, 2, 4);
+
+            var options = new ParallelOptions
             {
-                index++;
-                _setStatus($"Convirtiendo {index}/{files.Length}: {Path.GetFileName(file)}");
+                MaxDegreeOfParallelism = maxParallel,
+                CancellationToken = ct
+            };
 
-                try
+            try
+            {
+                await Parallel.ForEachAsync(files, options, async (file, token) =>
                 {
-                    var result = await ConvertToVcdAsync(file, outputFolder);
+                    token.ThrowIfCancellationRequested();
 
-                    if (result != null)
-                        _log($"Convertido: {file} → {result.VcdPath}");
-                }
-                catch (Exception ex)
-                {
-                    _log($"ERROR al convertir {file}: {ex.Message}");
-                    _notify($"Error con {Path.GetFileName(file)}", NotificationType.Error);
-                }
+                    int current = Interlocked.Increment(ref index);
+                    _setStatus($"Convirtiendo {current}/{total}: {Path.GetFileName(file)}");
+
+                    try
+                    {
+                        var result = await ConvertToVcdAsync(file, outputFolder).ConfigureAwait(false);
+
+                        if (result != null)
+                            _log($"Convertido: {file} → {result.VcdPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _log($"ERROR al convertir {file}: {ex.Message}");
+                        _notify($"Error con {Path.GetFileName(file)}", NotificationType.Error);
+                    }
+                }).ConfigureAwait(false);
+
+                _notify("Conversión completada.", NotificationType.Success);
+                _setStatus("Conversión finalizada.");
             }
-
-            _notify("Conversión completada.", NotificationType.Success);
-            _setStatus("Conversión finalizada.");
+            catch (OperationCanceledException)
+            {
+                _notify("Conversión cancelada.", NotificationType.Warning);
+                _log("[Convert] Conversión cancelada por el usuario.");
+            }
         }
 
         // ============================================================
@@ -131,7 +152,7 @@ namespace POPSManager.Services
 
             string outputPath = Path.Combine(outputFolder, vcdName);
 
-            await ConvertPs1ToVcdAsync(inputPath, outputPath, baseName);
+            await ConvertPs1ToVcdAsync(inputPath, outputPath, baseName).ConfigureAwait(false);
 
             return new ConvertedGame
             {
@@ -152,7 +173,7 @@ namespace POPSManager.Services
 
             byte[] header = new byte[0x800];
             Array.Copy(Encoding.ASCII.GetBytes("PSX"), header, 3);
-            await output.WriteAsync(header, 0, header.Length);
+            await output.WriteAsync(header, 0, header.Length).ConfigureAwait(false);
 
             byte[] sector = new byte[SectorSize];
             byte[] userData = new byte[UserDataSize];
@@ -162,7 +183,7 @@ namespace POPSManager.Services
 
             while (true)
             {
-                int read = await input.ReadAsync(sector, 0, SectorSize);
+                int read = await input.ReadAsync(sector, 0, SectorSize).ConfigureAwait(false);
                 if (read == 0) break;
 
                 if (read != SectorSize)
@@ -172,7 +193,7 @@ namespace POPSManager.Services
                 }
 
                 Buffer.BlockCopy(sector, 24, userData, 0, UserDataSize);
-                await output.WriteAsync(userData, 0, UserDataSize);
+                await output.WriteAsync(userData, 0, UserDataSize).ConfigureAwait(false);
 
                 processed++;
                 if (processed % 200 == 0)
