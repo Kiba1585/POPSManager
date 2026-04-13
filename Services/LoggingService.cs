@@ -48,6 +48,9 @@ namespace POPSManager.Services
         public void Warn(string msg) => WriteInternal(msg, "WARN");
         public void Error(string msg) => WriteInternal(msg, "ERROR");
 
+        public void WriteWarn(string msg) => Warn(msg);
+        public void WriteError(string msg) => Error(msg);
+
         private void WriteInternal(string message, string level)
         {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
