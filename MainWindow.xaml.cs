@@ -5,6 +5,7 @@ using POPSManager.Views;
 using POPSManager.Logic;
 using POPSManager.Settings;
 using POPSManager.UI.Windows;
+using POPSManager.UI.Localization;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -88,13 +89,11 @@ namespace POPSManager
         {
             try
             {
-                // Crear servicio de configuración de cheats
                 var cheatSettings = new CheatSettingsService(
                     _services.Paths.RootFolder,
                     _services.LogService.Info
                 );
 
-                // Abrir ventana
                 var win = new CheatSettingsWindow(cheatSettings)
                 {
                     Owner = this
@@ -138,7 +137,8 @@ namespace POPSManager
             {
                 ProgressPanelControl.StopSpinner();
                 ProgressPanelControl.UpdateProgress(0);
-                ProgressPanelControl.UpdateStatus("Listo");
+                // Usamos el texto dinámico "Completed" del LocalizationService
+                ProgressPanelControl.UpdateStatus(LocalizationService.T("Completed"));
                 ProgressPanelControl.Visibility = Visibility.Collapsed;
             });
         }
@@ -155,6 +155,7 @@ namespace POPSManager
         {
             Dispatcher.Invoke(() =>
             {
+                // Aquí asumimos que 'text' ya viene listo para mostrar
                 ProgressPanelControl.UpdateStatus(text);
                 StatusText.Text = text;
             });
