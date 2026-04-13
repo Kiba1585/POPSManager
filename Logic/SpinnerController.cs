@@ -1,13 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using POPSManager.Services.Interfaces;
 
 namespace POPSManager.Logic
 {
-    /// <summary>
-    /// Spinner asíncrono avanzado con múltiples modos de animación,
-    /// seguro para WPF, cancelable, sin fugas y ultra optimizado.
-    /// </summary>
     public sealed class SpinnerController : IDisposable
     {
         public enum SpinnerMode
@@ -18,13 +15,12 @@ namespace POPSManager.Logic
         }
 
         private readonly Action<string> update;
+        private readonly INotificationService notifications;
         private CancellationTokenSource? cts;
         private readonly object sync = new();
         private bool disposed;
-
         private int index;
 
-        // Animaciones premium
         private static readonly string[] BrailleFrames =
         {
             "⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"
@@ -42,30 +38,27 @@ namespace POPSManager.Logic
 
         public SpinnerMode Mode { get; private set; } = SpinnerMode.Braille;
 
-        public SpinnerController(Action<string> update)
+        public SpinnerController(Action<string> update, INotificationService notifications)
         {
             this.update = update ?? throw new ArgumentNullException(nameof(update));
+            this.notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
         }
 
-        /// <summary>
-        /// Cambia el modo de animación en tiempo real.
-        /// </summary>
         public void SetMode(SpinnerMode mode)
         {
             ThrowIfDisposed();
             Mode = mode;
         }
 
-        /// <summary>
-        /// Inicia el spinner. Si ya está corriendo, se reinicia limpiamente.
-        /// </summary>
-        public void Start(int intervalMs = 80)
+        public void Start(int intervalMs = 80, string? message = "Procesando…")
         {
             ThrowIfDisposed();
 
             lock (sync)
             {
                 StopInternal();
+
+                notifications.Info(message ?? "Procesando…");
 
                 cts = new CancellationTokenSource();
                 var token = cts.Token;
@@ -86,23 +79,21 @@ namespace POPSManager.Logic
                     }
                     catch (TaskCanceledException)
                     {
-                        // Cancelación normal
+                        notifications.Warning("Operación cancelada");
                     }
                     catch (Exception ex)
                     {
-                        update($"ERR:{ex.Message}");
+                        notifications.Error($"Error: {ex.Message}");
                     }
                     finally
                     {
                         update("");
+                        notifications.Success("Completado");
                     }
                 }, token);
             }
         }
 
-        /// <summary>
-        /// Obtiene el frame actual según el modo seleccionado.
-        /// </summary>
         private string GetFrame()
         {
             return Mode switch
@@ -114,9 +105,6 @@ namespace POPSManager.Logic
             };
         }
 
-        /// <summary>
-        /// Detiene el spinner inmediatamente.
-        /// </summary>
         public void Stop()
         {
             ThrowIfDisposed();
@@ -136,10 +124,7 @@ namespace POPSManager.Logic
                     if (!cts.IsCancellationRequested)
                         cts.Cancel();
                 }
-                catch
-                {
-                    // Ignorar errores de cancelación
-                }
+                catch { }
 
                 cts.Dispose();
                 cts = null;
@@ -152,9 +137,6 @@ namespace POPSManager.Logic
                 throw new ObjectDisposedException(nameof(SpinnerController));
         }
 
-        /// <summary>
-        /// Libera los recursos del spinner.
-        /// </summary>
         public void Dispose()
         {
             if (disposed)
