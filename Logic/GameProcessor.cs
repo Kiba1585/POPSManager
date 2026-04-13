@@ -4,6 +4,8 @@ using POPSManager.Settings;
 using POPSManager.Logic;
 using POPSManager.Logic.Cheats;
 using POPSManager.Logic.Covers;
+using POPSManager.Logic.Automation;
+using POPSManager.UI.Progress;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +26,6 @@ namespace POPSManager.Logic
         private readonly SettingsService _settings;
         private readonly AutomationEngine _auto;
 
-        // Límite global para descargas de covers (5–10 según hardware)
         private static readonly int _maxCoverParallel =
             Math.Clamp(Environment.ProcessorCount * 2, 5, 10);
 
@@ -52,13 +53,28 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR CARPETA (ASYNC REAL + PARALELO POR JUEGO)
+        //  API PÚBLICA
         // ============================================================
-        public async Task ProcessFolderAsync(string folder, CancellationToken ct = default)
+        public void ProcessFolder(string folder)
         {
+            ProcessFolderAsync(folder, null).GetAwaiter().GetResult();
+        }
+
+        public async Task ProcessFolderAsync(
+            string folder,
+            ProgressViewModel? perGameProgress,
+            CancellationToken ct = default)
+        {
+            if (!Directory.Exists(folder))
+            {
+                _notify.Error("La carpeta seleccionada no existe.");
+                return;
+            }
+
             var files = Directory.GetFiles(folder)
-                .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)
-                         || f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                .Where(f =>
+                    f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
+                    f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(f => f)
                 .ToArray();
 
@@ -76,7 +92,7 @@ namespace POPSManager.Logic
 
             var options = new ParallelOptions
             {
-                MaxDegreeOfParallelism = 2, // 2 juegos en paralelo (tu opción B)
+                MaxDegreeOfParallelism = 2,
                 CancellationToken = ct
             };
 
@@ -86,48 +102,91 @@ namespace POPSManager.Logic
                 {
                     token.ThrowIfCancellationRequested();
 
-                    string title = group.Key;
+                    string baseTitle = group.Key;
                     var discs = group.Value;
 
-                    _progress.SetStatus($"Procesando {title}");
+                    string gameIdForUi = baseTitle; // se ajusta luego si detectamos ID
 
                     try
                     {
-                        if (discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
+                        // Detectar tipo PS1/PS2
+                        bool isPs1 = discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase));
+
+                        if (isPs1)
                         {
+                            string firstDisc = discs.First();
+                            string? detectedId = GameIdDetector.DetectGameId(firstDisc)
+                                                ?? GameIdDetector.DetectFromName(baseTitle);
+
+                            if (!string.IsNullOrWhiteSpace(detectedId))
+                                gameIdForUi = detectedId;
+
+                            perGameProgress?.AddGame(baseTitle, gameIdForUi);
+                            perGameProgress?.UpdateStatus(gameIdForUi, "Preparando juego…");
+
                             var valid = discs.Where(ValidateVcd).ToList();
                             if (valid.Count == 0)
                             {
-                                _log.Warn($"[PS1] Todos los VCD de {title} fueron inválidos.");
+                                _log.Warn($"[PS1] Todos los VCD de {baseTitle} fueron inválidos.");
+                                perGameProgress?.MarkError(gameIdForUi, "VCD inválidos.");
                             }
                             else
                             {
-                                await ProcessPS1GroupAsync(title, valid, token).ConfigureAwait(false);
+                                await ProcessPS1GroupAsync(
+                                    baseTitle,
+                                    valid,
+                                    gameIdForUi,
+                                    perGameProgress,
+                                    token
+                                ).ConfigureAwait(false);
+
+                                perGameProgress?.MarkCompleted(gameIdForUi);
                             }
                         }
                         else
                         {
-                            var iso = discs.First();
+                            string iso = discs.First();
+
+                            string originalName = Path.GetFileNameWithoutExtension(iso);
+                            string? detectedId = GameIdDetector.DetectGameId(iso)
+                                                ?? GameIdDetector.DetectFromName(originalName);
+
+                            if (!string.IsNullOrWhiteSpace(detectedId))
+                                gameIdForUi = detectedId;
+
+                            perGameProgress?.AddGame(originalName, gameIdForUi);
+                            perGameProgress?.UpdateStatus(gameIdForUi, "Preparando juego…");
+
                             if (!ValidateIso(iso))
                             {
                                 _log.Warn($"[PS2] ISO inválido: {iso}");
+                                perGameProgress?.MarkError(gameIdForUi, "ISO inválido.");
                             }
                             else
                             {
-                                await ProcessPS2Async(iso, token).ConfigureAwait(false);
+                                await ProcessPS2Async(
+                                    iso,
+                                    gameIdForUi,
+                                    perGameProgress,
+                                    token
+                                ).ConfigureAwait(false);
+
+                                perGameProgress?.MarkCompleted(gameIdForUi);
                             }
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        _log.Warn($"Procesamiento cancelado en {title}.");
+                        _log.Warn($"Procesamiento cancelado en {baseTitle}.");
                         _notify.Warning("Procesamiento cancelado.");
+                        perGameProgress?.MarkError(gameIdForUi, "Cancelado.");
                         throw;
                     }
                     catch (Exception ex)
                     {
-                        _log.Error($"Error procesando {title}: {ex.Message}");
-                        _notify.Error($"Error procesando {title}");
+                        _log.Error($"Error procesando {baseTitle}: {ex.Message}");
+                        _notify.Error($"Error procesando {baseTitle}");
+                        perGameProgress?.MarkError(gameIdForUi, "Error en el procesamiento.");
                     }
                     finally
                     {
@@ -145,6 +204,9 @@ namespace POPSManager.Logic
             }
         }
 
+        // ============================================================
+        //  AGRUPAR POR JUEGO REAL
+        // ============================================================
         private Dictionary<string, List<string>> GroupByRealGame(string[] files)
         {
             var groups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
@@ -194,9 +256,14 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR PS1 MULTIDISCO (ASYNC)
+        //  PS1 MULTIDISCO
         // ============================================================
-        private async Task ProcessPS1GroupAsync(string baseName, List<string> discs, CancellationToken ct)
+        private async Task ProcessPS1GroupAsync(
+            string baseName,
+            List<string> discs,
+            string gameIdForUi,
+            ProgressViewModel? perGameProgress,
+            CancellationToken ct)
         {
             _log.Info($"[PS1] Procesando grupo: {baseName}");
 
@@ -214,6 +281,7 @@ namespace POPSManager.Logic
             if (string.IsNullOrWhiteSpace(detectedId))
             {
                 _notify.Warning($"No se pudo detectar ID para {baseName}");
+                perGameProgress?.MarkError(gameIdForUi, "No se pudo detectar ID.");
                 return;
             }
 
@@ -239,6 +307,8 @@ namespace POPSManager.Logic
             {
                 string artFolder = Path.Combine(_paths.PopsFolder, "ART");
                 Directory.CreateDirectory(artFolder);
+
+                perGameProgress?.UpdateStatus(gameIdForUi, "Descargando cover…");
 
                 await _coverSemaphore.WaitAsync(ct).ConfigureAwait(false);
                 try
@@ -268,6 +338,8 @@ namespace POPSManager.Logic
 
                 try
                 {
+                    perGameProgress?.UpdateStatus(gameIdForUi, $"Copiando CD{discNumber}…");
+
                     string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
                     Directory.CreateDirectory(discFolder);
 
@@ -289,19 +361,18 @@ namespace POPSManager.Logic
 
             if (handleMultiDisc)
             {
+                perGameProgress?.UpdateStatus(gameIdForUi, "Generando DISCS.TXT…");
                 MultiDiscManager.GenerateDiscsTxt(_paths.PopsFolder, detectedId, discPaths, _log.Info, _auto);
-            }
-            else
-            {
-                _log.Info("[PS1] Automatización multidisco desactivada. No se genera DISCS.TXT.");
             }
 
             if (genCheats && GameIdDetector.IsPalRegion(detectedId))
             {
+                perGameProgress?.UpdateStatus(gameIdForUi, "Generando cheats…");
                 string cd1Folder = Path.Combine(gameRootFolder, "CD1");
                 CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, _log.Info);
             }
 
+            perGameProgress?.UpdateStatus(gameIdForUi, "Generando ELF…");
             GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder);
 
             _notify.Success($"{cleanTitle} procesado correctamente.");
@@ -338,9 +409,13 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR PS2 (ASYNC + COVERS LIMITADOS)
+        //  PS2
         // ============================================================
-        private async Task ProcessPS2Async(string isoPath, CancellationToken ct)
+        private async Task ProcessPS2Async(
+            string isoPath,
+            string gameIdForUi,
+            ProgressViewModel? perGameProgress,
+            CancellationToken ct)
         {
             string originalName = Path.GetFileNameWithoutExtension(isoPath);
             _log.Info($"[PS2] Procesando: {originalName}");
@@ -374,6 +449,8 @@ namespace POPSManager.Logic
                     string artFolder = Path.Combine(_paths.DvdFolder, "ART");
                     Directory.CreateDirectory(artFolder);
 
+                    perGameProgress?.UpdateStatus(gameIdForUi, "Descargando cover…");
+
                     await _coverSemaphore.WaitAsync(ct).ConfigureAwait(false);
                     try
                     {
@@ -392,6 +469,8 @@ namespace POPSManager.Logic
             }
 
             Directory.CreateDirectory(_paths.DvdFolder);
+
+            perGameProgress?.UpdateStatus(gameIdForUi, "Copiando ISO…");
 
             string dest = Path.Combine(_paths.DvdFolder, $"{cleanTitle}.ISO");
 
