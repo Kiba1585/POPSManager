@@ -17,6 +17,7 @@ namespace POPSManager.Logic
     /// Procesador principal de juegos PS1 (VCD) y PS2 (ISO).
     /// Versión Ultra Pro Max: multidisco antes de convertir, nombres reales,
     /// estructura OPL automática, covers opcionales, validación avanzada.
+    /// Integrado con AutomationEngine.
     /// </summary>
     public sealed class GameProcessor
     {
@@ -27,6 +28,7 @@ namespace POPSManager.Logic
         private readonly CheatSettingsService _cheatSettings;
         private readonly CheatManagerService _cheatManager;
         private readonly SettingsService _settings;
+        private readonly AutomationEngine _auto;
 
         public GameProcessor(
             ProgressService progress,
@@ -35,7 +37,8 @@ namespace POPSManager.Logic
             PathsService paths,
             CheatSettingsService cheatSettings,
             CheatManagerService cheatManager,
-            SettingsService settings)
+            SettingsService settings,
+            AutomationEngine auto)
         {
             _progress = progress;
             _log = log;
@@ -44,6 +47,7 @@ namespace POPSManager.Logic
             _cheatSettings = cheatSettings;
             _cheatManager = cheatManager;
             _settings = settings;
+            _auto = auto;
         }
 
         // ============================================================
@@ -201,12 +205,18 @@ namespace POPSManager.Logic
                 return;
             }
 
+            // Flags de automatización
+            bool useDb = _settings.UseDatabase && _auto.ShouldUseDatabase();
+            bool useCovers = _settings.UseCovers && _auto.ShouldDownloadCovers();
+            bool genCheats = _auto.ShouldGenerateCheats();
+            bool handleMultiDisc = _auto.ShouldHandleMultiDisc();
+
             // Nombre real del juego
             string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
 
             // Base de datos opcional
             GameEntry? dbEntry = null;
-            if (_settings.UseDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
+            if (useDb && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
                 dbEntry = entry;
                 if (!string.IsNullOrWhiteSpace(dbEntry.Name))
@@ -217,7 +227,7 @@ namespace POPSManager.Logic
             }
 
             // Covers opcionales
-            if (_settings.UseCovers && dbEntry?.CoverUrl != null)
+            if (useCovers && dbEntry?.CoverUrl != null)
             {
                 string artFolder = Path.Combine(_paths.PopsFolder, "ART");
                 Directory.CreateDirectory(artFolder);
@@ -259,11 +269,18 @@ namespace POPSManager.Logic
                 discNumber++;
             }
 
-            // DISCS.TXT
-            MultiDiscManager.GenerateDiscsTxt(_paths.PopsFolder, detectedId, discPaths, _log.Info);
+            // DISCS.TXT (solo si automatización lo permite)
+            if (handleMultiDisc)
+            {
+                MultiDiscManager.GenerateDiscsTxt(_paths.PopsFolder, detectedId, discPaths, _log.Info);
+            }
+            else
+            {
+                _log.Info("[PS1] Automatización multidisco desactivada. No se genera DISCS.TXT.");
+            }
 
-            // CHEAT.TXT (solo PAL)
-            if (GameIdDetector.IsPalRegion(detectedId))
+            // CHEAT.TXT (solo PAL + automatización)
+            if (genCheats && GameIdDetector.IsPalRegion(detectedId))
             {
                 string cd1Folder = Path.Combine(gameRootFolder, "CD1");
                 CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, _log.Info);
@@ -325,11 +342,15 @@ namespace POPSManager.Logic
                 detectedId = originalName.Replace(" ", "_");
             }
 
+            // Flags de automatización
+            bool useDb = _settings.UseDatabase && _auto.ShouldUseDatabase();
+            bool useCovers = _settings.UseCovers && _auto.ShouldDownloadCovers();
+
             string cleanTitle = NameCleanerBase.CleanTitleOnly(originalName);
 
             // Base de datos opcional
             GameEntry? dbEntry = null;
-            if (_settings.UseDatabase && GameDatabase.TryGetEntry(detectedId, out var entry))
+            if (useDb && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
                 dbEntry = entry;
                 if (!string.IsNullOrWhiteSpace(dbEntry.Name))
@@ -339,7 +360,7 @@ namespace POPSManager.Logic
                 }
 
                 // Cover PS2
-                if (_settings.UseCovers && dbEntry?.CoverUrl != null)
+                if (useCovers && dbEntry?.CoverUrl != null)
                 {
                     string artFolder = Path.Combine(_paths.DvdFolder, "ART");
                     Directory.CreateDirectory(artFolder);
