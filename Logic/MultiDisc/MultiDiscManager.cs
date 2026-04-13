@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -8,6 +9,11 @@ namespace POPSManager.Logic
 {
     public static class MultiDiscManager
     {
+        // Regex reutilizable para extracción simple de CD/DISC/DISK + número
+        private static readonly Regex SimpleDiscRegex =
+            new(@"(?:disc|disk|cd)[\s\-_]*0?(\d{1,2})",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         // ============================================================
         //  DETECTAR NÚMERO DE DISCO (ULTRA PRO)
         // ============================================================
@@ -16,22 +22,13 @@ namespace POPSManager.Logic
             if (string.IsNullOrWhiteSpace(input))
                 return 1;
 
-            input = input.ToLower();
-
-            // CD1, CD 1, (CD1), [CD1]
-            var cdMatch = Regex.Match(input, @"cd[\s\-_]*([0-9])");
-            if (cdMatch.Success && int.TryParse(cdMatch.Groups[1].Value, out int cdNum))
-                return cdNum;
-
-            // DISC1, DISC 1, (DISC1)
-            var discMatch = Regex.Match(input, @"disc[\s\-_]*([0-9])");
-            if (discMatch.Success && int.TryParse(discMatch.Groups[1].Value, out int discNum))
-                return discNum;
-
-            // DISK1, DISK 1
-            var diskMatch = Regex.Match(input, @"disk[\s\-_]*([0-9])");
-            if (diskMatch.Success && int.TryParse(diskMatch.Groups[1].Value, out int diskNum))
-                return diskNum;
+            var match = SimpleDiscRegex.Match(input);
+            if (match.Success &&
+                int.TryParse(match.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) &&
+                n > 0)
+            {
+                return n;
+            }
 
             return 1;
         }
@@ -45,42 +42,37 @@ namespace POPSManager.Logic
             List<string> discPaths,
             Action<string> log)
         {
+            if (discPaths == null || discPaths.Count == 0)
+            {
+                log("[MultiDisc] No hay discos para generar DISCS.TXT.");
+                return;
+            }
+
             log("[MultiDisc] Iniciando validación multidisco…");
 
-            // Crear DiscInfo para cada disco detectado
             var discs = discPaths
                 .Select(path => new DiscInfo
                 {
                     Path = path,
                     DiscNumber = DiscDetector.DetectDiscNumber(path, log),
-                    GameId = GameIdDetector.DetectGameId(path) ?? "",
-                    FolderName = Path.GetFileName(Path.GetDirectoryName(path)) ?? "",
-                    FileName = Path.GetFileName(path) ?? ""
+                    GameId = GameIdDetector.DetectGameId(path) ?? string.Empty,
+                    FolderName = Path.GetFileName(Path.GetDirectoryName(path)) ?? string.Empty,
+                    FileName = Path.GetFileName(path) ?? string.Empty
                 })
                 .ToList();
 
-            // ============================================================
-            //  VALIDACIÓN ESTRICTA MULTIDISCO
-            // ============================================================
             if (!DiscValidator.Validate(discs, log))
             {
                 log("[MultiDisc] ERROR: Validación multidisco falló. No se generará DISCS.TXT.");
                 return;
             }
 
-            // Ordenar discos por número
             discs = discs.OrderBy(d => d.DiscNumber).ToList();
 
-            // ============================================================
-            //  GENERAR LÍNEAS DE DISCS.TXT
-            // ============================================================
-            List<string> lines = discs
+            var lines = discs
                 .Select(d => $"mass:/POPS/{d.FolderName}/{d.FileName}")
                 .ToList();
 
-            // ============================================================
-            //  ESCRIBIR DISCS.TXT EN CADA CARPETA CDX
-            // ============================================================
             foreach (var d in discs)
             {
                 string folder = Path.GetDirectoryName(d.Path)!;
