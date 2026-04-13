@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using POPSManager.Logic.Automation;
 using POPSManager.Services;
-using System.Threading.Tasks;
 
 namespace POPSManager.Views
 {
@@ -39,9 +40,11 @@ namespace POPSManager.Views
                     case AutomationMode.Automatico:
                         AutoModeAutomatic.IsChecked = true;
                         break;
+
                     case AutomationMode.Asistido:
                         AutoModeIntelligent.IsChecked = true;
                         break;
+
                     case AutomationMode.Manual:
                         AutoModeManual.IsChecked = true;
                         break;
@@ -64,7 +67,7 @@ namespace POPSManager.Views
             foreach (ComboBoxItem item in combo.Items)
             {
                 if (item.Tag is string tag &&
-                    Enum.TryParse<AutoBehavior>(tag, out var value) &&
+                    Enum.TryParse(tag, out AutoBehavior value) &&
                     value == behavior)
                 {
                     combo.SelectedItem = item;
@@ -76,10 +79,7 @@ namespace POPSManager.Views
         private static bool IsInvalidRoot(string path)
         {
             string folder = Path.GetFileName(path).ToUpperInvariant();
-
-            return folder == "PS2" ||
-                   folder == "PS1" ||
-                   folder == "POPSMANAGER";
+            return folder == "PS2" || folder == "PS1" || folder == "POPSMANAGER";
         }
 
         // ============================================================
@@ -316,7 +316,7 @@ namespace POPSManager.Views
 
             if (NormalizeNamesBehaviorBox.SelectedItem is ComboBoxItem item &&
                 item.Tag is string tag &&
-                Enum.TryParse<AutoBehavior>(tag, out var behavior))
+                Enum.TryParse(tag, out AutoBehavior behavior))
             {
                 Services.Settings.Automation.Conversion = behavior;
                 await Services.Settings.SaveAsync();
@@ -329,7 +329,7 @@ namespace POPSManager.Views
 
             if (GroupMultiDiscBehaviorBox.SelectedItem is ComboBoxItem item &&
                 item.Tag is string tag &&
-                Enum.TryParse<AutoBehavior>(tag, out var behavior))
+                Enum.TryParse(tag, out AutoBehavior behavior))
             {
                 Services.Settings.Automation.MultiDisc = behavior;
                 await Services.Settings.SaveAsync();
@@ -342,7 +342,7 @@ namespace POPSManager.Views
 
             if (DownloadCoversBehaviorBox.SelectedItem is ComboBoxItem item &&
                 item.Tag is string tag &&
-                Enum.TryParse<AutoBehavior>(tag, out var behavior))
+                Enum.TryParse(tag, out AutoBehavior behavior))
             {
                 Services.Settings.Automation.Covers = behavior;
                 await Services.Settings.SaveAsync();
