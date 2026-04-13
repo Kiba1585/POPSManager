@@ -4,8 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using POPSManager.Models;
 using POPSManager.Logic;
+using POPSManager.Logic.Automation;
+using POPSManager.Models;
+using POPSManager.Services.Interfaces;
+using POPSManager.Settings;
 
 namespace POPSManager.Services
 {
@@ -38,6 +41,9 @@ namespace POPSManager.Services
             _setStatus = setStatus;
         }
 
+        // ============================================================
+        //  CONVERTIR CARPETA COMPLETA
+        // ============================================================
         public async Task ConvertFolderAsync(string sourceFolder, string outputFolder, CancellationToken ct = default)
         {
             if (!Directory.Exists(sourceFolder))
@@ -121,6 +127,9 @@ namespace POPSManager.Services
                 .GetResult();
         }
 
+        // ============================================================
+        //  CONVERTIR ARCHIVO INDIVIDUAL
+        // ============================================================
         private async Task<ConvertedGame?> ConvertToVcdAsync(string inputPath, string outputFolder)
         {
             string ext = Path.GetExtension(inputPath).ToLowerInvariant();
@@ -153,6 +162,9 @@ namespace POPSManager.Services
             };
         }
 
+        // ============================================================
+        //  CONVERSIÓN PS1 → VCD
+        // ============================================================
         private async Task ConvertPs1ToVcdAsync(string inputPath, string outputPath, string name)
         {
             await using var input = File.OpenRead(inputPath);
@@ -191,6 +203,9 @@ namespace POPSManager.Services
             }
         }
 
+        // ============================================================
+        //  DETECTAR SI ES PS2
+        // ============================================================
         private static bool IsPs2Iso(string isoPath)
         {
             try
@@ -212,6 +227,9 @@ namespace POPSManager.Services
             }
         }
 
+        // ============================================================
+        //  DETECTAR NÚMERO DE DISCO
+        // ============================================================
         private static (bool IsDisc, int DiscNumber) DetectDiscNumber(string path)
         {
             string name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
