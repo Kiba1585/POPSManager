@@ -4,19 +4,16 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using POPSManager.Logic.Automation;
 
 namespace POPSManager.Logic
 {
     public static class MultiDiscManager
     {
-        // Regex reutilizable para extracción simple de CD/DISC/DISK + número
         private static readonly Regex SimpleDiscRegex =
             new(@"(?:disc|disk|cd)[\s\-_]*0?(\d{1,2})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // ============================================================
-        //  DETECTAR NÚMERO DE DISCO (ULTRA PRO)
-        // ============================================================
         public static int ExtractDiscNumber(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -34,18 +31,29 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  GENERAR DISCS.TXT (ULTRA PRO)
+        //  GENERAR DISCS.TXT (RESPETA AUTOMATIZACIÓN)
         // ============================================================
         public static void GenerateDiscsTxt(
             string popsFolder,
             string gameId,
             List<string> discPaths,
-            Action<string> log)
+            Action<string> log,
+            AutomationEngine? auto = null)
         {
             if (discPaths == null || discPaths.Count == 0)
             {
                 log("[MultiDisc] No hay discos para generar DISCS.TXT.");
                 return;
+            }
+
+            // AUTOMATIZACIÓN
+            if (auto != null)
+            {
+                if (!auto.ShouldHandleMultiDisc())
+                {
+                    log("[MultiDisc] Automatización: multidisco desactivado. No se genera DISCS.TXT.");
+                    return;
+                }
             }
 
             log("[MultiDisc] Iniciando validación multidisco…");
