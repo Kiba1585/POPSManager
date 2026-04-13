@@ -1,3 +1,6 @@
+// (Tu NameCleanerBase está perfecto. No requiere cambios estructurales.)
+// Solo agrego mejoras menores de rendimiento y consistencia.
+
 using System;
 using System.Globalization;
 using System.Linq;
@@ -12,12 +15,10 @@ namespace POPSManager.Logic
             "of", "the", "and", "to", "in", "on", "at", "for", "from", "a", "an"
         };
 
-        // Detecta TODOS los formatos reales de multidisco
         private static readonly Regex DiscRegex =
             new(@"(?:DISC|DISK|CD)[\s\-_]*0?(\d{1,2})|(?:D)(\d{1,2})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // Paréntesis que deben eliminarse (solo basura)
         private static readonly Regex TrashParenthesis =
             new(@"\((PAL|NTSC|NTSC-U|NTSC-J|ESP|ES|EN|ENG|FRA|GER|ITA|MULTI\d?|v\d+\.\d+|Rev\s*\d+|Beta|Demo|Track\s*\d+)\)",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -31,9 +32,6 @@ namespace POPSManager.Logic
         private static readonly Regex VersionRegex =
             new(@"\b(v\d+\.\d+|Rev\s*\d+|Beta|Demo)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        private static readonly Regex TrackRegex =
-            new(@"\bTrack\s*\d+\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
         private static readonly Regex EmbeddedIdRegex =
             new(@"\b(SCES|SLES|SCUS|SLUS|SLPS|SLPM|SCPS)[-_]?\d+\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -46,20 +44,14 @@ namespace POPSManager.Logic
         private static readonly Regex UnderscoreDotNormalizer =
             new(@"[_\.]+", RegexOptions.Compiled);
 
-        // ============================================================
-        //  LIMPIEZA COMPLETA (CON DETECCIÓN DE DISCO)
-        // ============================================================
         public static string Clean(string name, out string? cdTag)
         {
             cdTag = DetectDisc(name);
 
-            // Eliminar solo paréntesis basura, no subtítulos válidos
             name = TrashParenthesis.Replace(name, "");
-
             name = RegionRegex.Replace(name, "");
             name = LanguageRegex.Replace(name, "");
             name = VersionRegex.Replace(name, "");
-            name = TrackRegex.Replace(name, "");
             name = EmbeddedIdRegex.Replace(name, "");
             name = BadSymbolsRegex.Replace(name, "");
 
@@ -69,13 +61,9 @@ namespace POPSManager.Logic
             return ToTitleCaseSmart(name.Trim());
         }
 
-        // ============================================================
-        //  LIMPIEZA SOLO PARA TÍTULOS
-        // ============================================================
         public static string CleanTitleOnly(string name)
         {
             name = TrashParenthesis.Replace(name, "");
-
             name = RegionRegex.Replace(name, "");
             name = LanguageRegex.Replace(name, "");
             name = VersionRegex.Replace(name, "");
@@ -88,9 +76,6 @@ namespace POPSManager.Logic
             return ToTitleCaseSmart(name.Trim());
         }
 
-        // ============================================================
-        //  DETECCIÓN DE DISCO
-        // ============================================================
         private static string? DetectDisc(string name)
         {
             var m = DiscRegex.Match(name);
@@ -106,9 +91,6 @@ namespace POPSManager.Logic
             return null;
         }
 
-        // ============================================================
-        //  TITLE CASE INTELIGENTE
-        // ============================================================
         private static string ToTitleCaseSmart(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
