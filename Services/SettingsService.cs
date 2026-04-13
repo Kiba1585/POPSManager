@@ -8,10 +8,13 @@ using POPSManager.Logic.Automation;
 
 namespace POPSManager.Services
 {
-    /// <summary>
-    /// Servicio centralizado de configuración.
-    /// Seguro, robusto, validado y optimizado para .NET 8.
-    /// </summary>
+    public enum AppLanguage
+    {
+        Auto = 0,
+        Spanish = 1,
+        English = 2
+    }
+
     public sealed class SettingsService
     {
         private readonly string _settingsPath;
@@ -41,6 +44,11 @@ namespace POPSManager.Services
 
         public string? CustomPopsFolder { get; set; }
         public string? CustomAppsFolder { get; set; }
+
+        // ============================
+        //  IDIOMA
+        // ============================
+        public AppLanguage Language { get; set; } = AppLanguage.Auto;
 
         // ============================
         //  AUTOMATIZACIÓN INTELIGENTE
@@ -103,6 +111,8 @@ namespace POPSManager.Services
 
                 Automation = data.Automation ?? new AutomationSettings();
 
+                Language = data.Language;
+
                 _log("[Settings] Settings cargados correctamente.");
             }
             catch (Exception ex)
@@ -132,7 +142,8 @@ namespace POPSManager.Services
                     CustomPopsFolder = CustomPopsFolder,
                     CustomAppsFolder = CustomAppsFolder,
 
-                    Automation = Automation
+                    Automation = Automation,
+                    Language = Language
                 };
 
                 var json = JsonSerializer.Serialize(data, JsonOptions);
@@ -193,45 +204,6 @@ namespace POPSManager.Services
             }
         }
 
-        public void SetRootFolder(string path)
-        {
-            if (!Directory.Exists(path))
-            {
-                _log($"[Settings] ERROR: Carpeta inválida: {path}");
-                _notifications.Error("Carpeta inválida");
-                return;
-            }
-
-            RootFolder = Normalize(path);
-            Save();
-        }
-
-        public void SetCustomElfPath(string path)
-        {
-            if (!File.Exists(path))
-            {
-                _log($"[Settings] ERROR: Archivo no encontrado: {path}");
-                _notifications.Error("Archivo ELF no encontrado");
-                return;
-            }
-
-            CustomElfPath = Normalize(path);
-            Save();
-        }
-
-        public void SetCustomPs2ElfPath(string path)
-        {
-            if (!File.Exists(path))
-            {
-                _log($"[Settings] ERROR: Archivo no encontrado: {path}");
-                _notifications.Error("Archivo PS2 ELF no encontrado");
-                return;
-            }
-
-            CustomPs2ElfPath = Normalize(path);
-            Save();
-        }
-
         private sealed class SettingsData
         {
             public bool DarkMode { get; set; }
@@ -247,6 +219,8 @@ namespace POPSManager.Services
             public string? CustomAppsFolder { get; set; }
 
             public AutomationSettings? Automation { get; set; } = new();
+
+            public AppLanguage Language { get; set; } = AppLanguage.Auto;
         }
     }
 }
