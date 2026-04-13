@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,15 +8,13 @@ using POPSManager.Logic;
 
 namespace POPSManager.Services
 {
-    public class ConverterService
+    public sealed class ConverterService
     {
         private readonly Action<string> _log;
         private readonly PathsService _paths;
         private readonly SettingsService _settings;
 
-        // Nuevo sistema de notificaciones
         private readonly Action<string, NotificationType> _notify;
-
         private readonly Action<string> _setStatus;
 
         private const int SectorSize = 2352;
@@ -36,7 +35,7 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERTIR CARPETA COMPLETA (PS1 → VCD)
+        //  CONVERTIR CARPETA COMPLETA
         // ============================================================
         public void ConvertFolder(string sourceFolder, string outputFolder)
         {
@@ -49,11 +48,12 @@ namespace POPSManager.Services
             Directory.CreateDirectory(outputFolder);
 
             var files = Directory.GetFiles(sourceFolder)
-                                 .Where(f => f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) ||
-                                             f.EndsWith(".cue", StringComparison.OrdinalIgnoreCase) ||
-                                             f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                                 .OrderBy(f => f)
-                                 .ToArray();
+                .Where(f =>
+                    f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) ||
+                    f.EndsWith(".cue", StringComparison.OrdinalIgnoreCase) ||
+                    f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(f => f)
+                .ToArray();
 
             if (files.Length == 0)
             {
@@ -87,33 +87,28 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERTIR UN ARCHIVO PS1 A VCD (OPTIMIZADO + MULTIDISCO)
+        //  CONVERTIR ARCHIVO INDIVIDUAL
         // ============================================================
         private ConvertedGame? ConvertToVcd(string inputPath, string outputFolder)
         {
             string ext = Path.GetExtension(inputPath).ToLowerInvariant();
 
-            // Detectar PS2 ISO real
             if (ext == ".iso" && IsPs2Iso(inputPath))
             {
                 _log($"Detectado PS2 ISO, no se convierte: {inputPath}");
                 return null;
             }
 
-            // Detectar multidisco real
             var discInfo = DetectDiscNumber(inputPath);
 
-            // Nombre base limpio
             string baseName = CleanBaseName(Path.GetFileNameWithoutExtension(inputPath));
 
-            // Nombre final del VCD
             string vcdName = discInfo.IsDisc
                 ? $"{baseName} (CD{discInfo.DiscNumber}).vcd"
                 : $"{baseName}.vcd";
 
             string outputPath = Path.Combine(outputFolder, vcdName);
 
-            // Conversión optimizada
             ConvertPs1ToVcd(inputPath, outputPath, baseName);
 
             return new ConvertedGame
@@ -126,14 +121,13 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  CONVERSIÓN PS1 → VCD (OPTIMIZADA + VALIDADA)
+        //  CONVERSIÓN PS1 → VCD
         // ============================================================
         private void ConvertPs1ToVcd(string inputPath, string outputPath, string name)
         {
             using var input = File.OpenRead(inputPath);
             using var output = File.Create(outputPath);
 
-            // Header POPStarter
             byte[] header = new byte[0x800];
             Array.Copy(Encoding.ASCII.GetBytes("PSX"), header, 3);
             output.Write(header, 0, header.Length);
@@ -148,13 +142,13 @@ namespace POPSManager.Services
             {
                 int read = input.Read(sector, 0, SectorSize);
                 if (read == 0) break;
+
                 if (read != SectorSize)
                 {
                     _log($"[WARN] Sector incompleto detectado en {name}");
                     break;
                 }
 
-                // Extraer user data
                 Buffer.BlockCopy(sector, 24, userData, 0, UserDataSize);
                 output.Write(userData, 0, UserDataSize);
 
@@ -168,9 +162,9 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  DETECTAR SI UN ISO ES PS2 (ROBUSTO)
+        //  DETECTAR ISO PS2
         // ============================================================
-        private bool IsPs2Iso(string isoPath)
+        private static bool IsPs2Iso(string isoPath)
         {
             try
             {
@@ -181,11 +175,9 @@ namespace POPSManager.Services
 
                 string text = Encoding.ASCII.GetString(buffer);
 
-                if (text.Contains("BOOT2", StringComparison.OrdinalIgnoreCase)) return true;
-                if (text.Contains("PLAYSTATION 2", StringComparison.OrdinalIgnoreCase)) return true;
-                if (text.Contains("PS2", StringComparison.OrdinalIgnoreCase)) return true;
-
-                return false;
+                return text.Contains("BOOT2", StringComparison.OrdinalIgnoreCase)
+                    || text.Contains("PLAYSTATION 2", StringComparison.OrdinalIgnoreCase)
+                    || text.Contains("PS2", StringComparison.OrdinalIgnoreCase);
             }
             catch
             {
@@ -194,22 +186,22 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  DETECTAR MULTIDISCO (ULTRA PRO)
+        //  DETECTAR MULTIDISCO
         // ============================================================
-        private (bool IsDisc, int DiscNumber) DetectDiscNumber(string path)
+        private static (bool IsDisc, int DiscNumber) DetectDiscNumber(string path)
         {
-            string name = Path.GetFileNameWithoutExtension(path).ToLower();
+            string name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
 
             for (int i = 1; i <= 9; i++)
             {
-                if (name.Contains($"disc {i}") ||
-                    name.Contains($"disc{i}") ||
-                    name.Contains($"cd{i}") ||
-                    name.Contains($"cd {i}") ||
-                    name.Contains($"disk{i}") ||
-                    name.Contains($"disk {i}") ||
-                    name.Contains($"(cd{i})") ||
-                    name.Contains($"(disc{i})"))
+                if (name.Contains($"disc {i}", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"disc{i}", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"cd{i}", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"cd {i}", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"disk{i}", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"disk {i}", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"(cd{i})", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"(disc{i})", StringComparison.OrdinalIgnoreCase))
                 {
                     return (true, i);
                 }
@@ -219,9 +211,9 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        //  LIMPIAR NOMBRE BASE (ULTRA PRO)
+        //  LIMPIAR NOMBRE BASE
         // ============================================================
-        private string CleanBaseName(string name)
+        private static string CleanBaseName(string name)
         {
             string[] patterns =
             {
