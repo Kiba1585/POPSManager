@@ -1,11 +1,11 @@
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Forms;
 using Microsoft.Win32;
-using Microsoft.WindowsAPICodePack.Dialogs;
 using POPSManager.Services;
-using POPSManager.Models;
 
 namespace POPSManager.Views
 {
@@ -140,16 +140,17 @@ namespace POPSManager.Views
         // ============================================================
         private void ChangeRootPath_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CommonOpenFileDialog
+            using var dialog = new FolderBrowserDialog
             {
-                Title = "Selecciona la carpeta raíz",
-                IsFolderPicker = true
+                Description = "Selecciona la carpeta raíz",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dialog.ShowDialog() != CommonFileDialogResult.Ok)
+            if (dialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            string newPath = dialog.FileName;
+            string newPath = dialog.SelectedPath;
 
             if (!Directory.Exists(newPath))
             {
