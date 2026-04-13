@@ -24,6 +24,13 @@ namespace POPSManager.Logic
         private readonly SettingsService _settings;
         private readonly AutomationEngine _auto;
 
+        // Límite global para descargas de covers (5–10 según hardware)
+        private static readonly int _maxCoverParallel =
+            Math.Clamp(Environment.ProcessorCount * 2, 5, 10);
+
+        private static readonly SemaphoreSlim _coverSemaphore =
+            new SemaphoreSlim(_maxCoverParallel, _maxCoverParallel);
+
         public GameProcessor(
             ProgressService progress,
             LoggingService log,
@@ -45,7 +52,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR CARPETA (ASYNC REAL)
+        //  PROCESAR CARPETA (ASYNC REAL + PARALELO POR JUEGO)
         // ============================================================
         public async Task ProcessFolderAsync(string folder, CancellationToken ct = default)
         {
@@ -62,60 +69,80 @@ namespace POPSManager.Logic
             }
 
             var groups = GroupByRealGame(files);
+            var groupList = groups.ToList();
 
-            int index = 0;
-            int total = groups.Count;
+            int total = groupList.Count;
+            int completed = 0;
 
-            foreach (var group in groups)
+            var options = new ParallelOptions
             {
-                ct.ThrowIfCancellationRequested();
+                MaxDegreeOfParallelism = 2, // 2 juegos en paralelo (opción B)
+                CancellationToken = ct
+            };
 
-                index++;
-                int progressValue = (int)((index / (double)total) * 100);
-                _progress.SetProgress(progressValue);
-                _progress.SetStatus($"Procesando {group.Key}");
-
-                try
+            try
+            {
+                await Parallel.ForEachAsync(groupList, options, async (group, token) =>
                 {
+                    token.ThrowIfCancellationRequested();
+
+                    string title = group.Key;
                     var discs = group.Value;
 
-                    if (discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        discs = discs.Where(ValidateVcd).ToList();
-                        if (discs.Count == 0)
-                        {
-                            _log.Warn($"[PS1] Todos los VCD de {group.Key} fueron inválidos.");
-                            continue;
-                        }
+                    _progress.SetStatus($"Procesando {title}");
 
-                        await ProcessPS1GroupAsync(group.Key, discs, ct).ConfigureAwait(false);
-                    }
-                    else
+                    try
                     {
-                        var iso = discs.First();
-                        if (!ValidateIso(iso))
+                        if (discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase)))
                         {
-                            _log.Warn($"[PS2] ISO inválido: {iso}");
-                            continue;
+                            var valid = discs.Where(ValidateVcd).ToList();
+                            if (valid.Count == 0)
+                            {
+                                _log.Warn($"[PS1] Todos los VCD de {title} fueron inválidos.");
+                            }
+                            else
+                            {
+                                await ProcessPS1GroupAsync(title, valid, token).ConfigureAwait(false);
+                            }
                         }
-
-                        await ProcessPS2Async(iso, ct).ConfigureAwait(false);
+                        else
+                        {
+                            var iso = discs.First();
+                            if (!ValidateIso(iso))
+                            {
+                                _log.Warn($"[PS2] ISO inválido: {iso}");
+                            }
+                            else
+                            {
+                                await ProcessPS2Async(iso, token).ConfigureAwait(false);
+                            }
+                        }
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    _log.Warn($"Procesamiento cancelado en {group.Key}.");
-                    _notify.Warning("Procesamiento cancelado.");
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    _log.Error($"Error procesando {group.Key}: {ex.Message}");
-                    _notify.Error($"Error procesando {group.Key}");
-                }
+                    catch (OperationCanceledException)
+                    {
+                        _log.Warn($"Procesamiento cancelado en {title}.");
+                        _notify.Warning("Procesamiento cancelado.");
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error($"Error procesando {title}: {ex.Message}");
+                        _notify.Error($"Error procesando {title}");
+                    }
+                    finally
+                    {
+                        int done = Interlocked.Increment(ref completed);
+                        int progressValue = (int)((done / (double)total) * 100);
+                        _progress.SetProgress(progressValue);
+                    }
+                }).ConfigureAwait(false);
+
+                _progress.SetStatus("Completado");
             }
-
-            _progress.SetStatus("Completado");
+            catch (OperationCanceledException)
+            {
+                _progress.SetStatus("Cancelado");
+            }
         }
 
         private Dictionary<string, List<string>> GroupByRealGame(string[] files)
@@ -211,12 +238,22 @@ namespace POPSManager.Logic
             if (useCovers && dbEntry?.CoverUrl != null)
             {
                 string artFolder = Path.Combine(_paths.PopsFolder, "ART");
-                string? art = await ArtDownloader
-                    .DownloadArtAsync(detectedId, dbEntry.CoverUrl, artFolder, _log.Info)
-                    .ConfigureAwait(false);
+                Directory.CreateDirectory(artFolder);
 
-                if (art != null)
-                    _log.Info($"[COVER] PS1 ART generado → {art}");
+                await _coverSemaphore.WaitAsync(ct).ConfigureAwait(false);
+                try
+                {
+                    string? art = await ArtDownloader
+                        .DownloadArtAsync(detectedId, dbEntry.CoverUrl, artFolder, _log.Info)
+                        .ConfigureAwait(false);
+
+                    if (art != null)
+                        _log.Info($"[COVER] PS1 ART generado → {art}");
+                }
+                finally
+                {
+                    _coverSemaphore.Release();
+                }
             }
 
             string gameRootFolder = Path.Combine(_paths.PopsFolder, $"{cleanTitle}");
@@ -301,7 +338,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAR PS2 (ASYNC PARA COVERS)
+        //  PROCESAR PS2 (ASYNC + COVERS LIMITADOS)
         // ============================================================
         private async Task ProcessPS2Async(string isoPath, CancellationToken ct)
         {
@@ -335,12 +372,22 @@ namespace POPSManager.Logic
                 if (useCovers && dbEntry?.CoverUrl != null)
                 {
                     string artFolder = Path.Combine(_paths.DvdFolder, "ART");
-                    string? art = await ArtDownloader
-                        .DownloadArtAsync(detectedId, dbEntry.CoverUrl, artFolder, _log.Info)
-                        .ConfigureAwait(false);
+                    Directory.CreateDirectory(artFolder);
 
-                    if (art != null)
-                        _log.Info($"[COVER] PS2 ART generado → {art}");
+                    await _coverSemaphore.WaitAsync(ct).ConfigureAwait(false);
+                    try
+                    {
+                        string? art = await ArtDownloader
+                            .DownloadArtAsync(detectedId, dbEntry.CoverUrl, artFolder, _log.Info)
+                            .ConfigureAwait(false);
+
+                        if (art != null)
+                            _log.Info($"[COVER] PS2 ART generado → {art}");
+                    }
+                    finally
+                    {
+                        _coverSemaphore.Release();
+                    }
                 }
             }
 
