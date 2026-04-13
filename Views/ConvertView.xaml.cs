@@ -1,11 +1,10 @@
-using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using POPSManager.Models;
+using System.Windows.Forms;
 using POPSManager.Services;
 
 namespace POPSManager.Views
@@ -25,17 +24,18 @@ namespace POPSManager.Views
         // ============================================================
         private void BrowseSource_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new CommonOpenFileDialog
+            using var dlg = new FolderBrowserDialog
             {
-                IsFolderPicker = true,
-                Title = "Seleccionar carpeta de origen"
+                Description = "Seleccionar carpeta de origen",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                SourcePath.Text = dlg.FileName;
-                LoadFiles();
-            }
+            if (dlg.ShowDialog() != DialogResult.OK)
+                return;
+
+            SourcePath.Text = dlg.SelectedPath;
+            LoadFiles();
         }
 
         // ============================================================
@@ -43,16 +43,17 @@ namespace POPSManager.Views
         // ============================================================
         private void BrowseOutput_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new CommonOpenFileDialog
+            using var dlg = new FolderBrowserDialog
             {
-                IsFolderPicker = true,
-                Title = "Seleccionar carpeta de destino"
+                Description = "Seleccionar carpeta de destino",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                OutputPath.Text = dlg.FileName;
-            }
+            if (dlg.ShowDialog() != DialogResult.OK)
+                return;
+
+            OutputPath.Text = dlg.SelectedPath;
         }
 
         // ============================================================
@@ -75,10 +76,8 @@ namespace POPSManager.Views
             foreach (var file in files)
                 FilesList.Items.Add(Path.GetFileName(file));
 
-            Services.Notifications.Show(
-                $"Se detectaron {FilesList.Items.Count} archivos.",
-                NotificationType.Info
-            );
+            Services.Notifications.Info(
+                $"Se detectaron {FilesList.Items.Count} archivos.");
         }
 
         // ============================================================
@@ -88,28 +87,19 @@ namespace POPSManager.Views
         {
             if (!Directory.Exists(SourcePath.Text))
             {
-                Services.Notifications.Show(
-                    "La carpeta de origen no existe.",
-                    NotificationType.Error
-                );
+                Services.Notifications.Error("La carpeta de origen no existe.");
                 return;
             }
 
             if (!Directory.Exists(OutputPath.Text))
             {
-                Services.Notifications.Show(
-                    "La carpeta de destino no existe.",
-                    NotificationType.Error
-                );
+                Services.Notifications.Error("La carpeta de destino no existe.");
                 return;
             }
 
             if (FilesList.Items.Count == 0)
             {
-                Services.Notifications.Show(
-                    "No hay archivos para convertir.",
-                    NotificationType.Warning
-                );
+                Services.Notifications.Warning("No hay archivos para convertir.");
                 return;
             }
 
@@ -122,16 +112,11 @@ namespace POPSManager.Views
                     Services.Converter.ConvertFolder(SourcePath.Text, OutputPath.Text);
                 });
 
-                Services.Progress.SetStatus("Listo");
-
                 Services.Notifications.Success("Conversión completada.");
             }
             catch (Exception ex)
             {
-                Services.Notifications.Show(
-                    $"Error durante la conversión: {ex.Message}",
-                    NotificationType.Error
-                );
+                Services.Notifications.Error($"Error durante la conversión: {ex.Message}");
             }
             finally
             {
