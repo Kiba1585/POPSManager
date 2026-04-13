@@ -13,6 +13,7 @@ namespace POPSManager.Services
         private readonly Action<string> _log;
         private readonly PathsService _paths;
         private readonly SettingsService _settings;
+        private readonly AutomationEngine _auto;
 
         private readonly Action<string, NotificationType> _notify;
         private readonly Action<string> _setStatus;
@@ -24,12 +25,14 @@ namespace POPSManager.Services
             Action<string> log,
             PathsService paths,
             SettingsService settings,
+            AutomationEngine auto,
             Action<string, NotificationType> notify,
             Action<string> setStatus)
         {
             _log = log;
             _paths = paths;
             _settings = settings;
+            _auto = auto;
             _notify = notify;
             _setStatus = setStatus;
         }
@@ -42,6 +45,14 @@ namespace POPSManager.Services
             if (!Directory.Exists(sourceFolder))
             {
                 _notify("Carpeta de origen inválida.", NotificationType.Error);
+                return;
+            }
+
+            // Automatización: ¿convertir o no?
+            if (!_auto.ShouldConvert())
+            {
+                _log("[Convert] Automatización de conversión desactivada o en modo manual.");
+                _notify("Conversión cancelada por configuración de automatización.", NotificationType.Warning);
                 return;
             }
 
@@ -101,7 +112,8 @@ namespace POPSManager.Services
 
             var discInfo = DetectDiscNumber(inputPath);
 
-            string baseName = CleanBaseName(Path.GetFileNameWithoutExtension(inputPath));
+            string rawName = Path.GetFileNameWithoutExtension(inputPath);
+            string baseName = NameCleanerBase.CleanTitleOnly(CleanBaseName(rawName));
 
             string vcdName = discInfo.IsDisc
                 ? $"{baseName} (CD{discInfo.DiscNumber}).vcd"
