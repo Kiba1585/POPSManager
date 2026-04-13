@@ -5,17 +5,42 @@ using System.Threading.Tasks;
 namespace POPSManager.Logic
 {
     /// <summary>
-    /// Controlador de spinner asíncrono, seguro, cancelable y sin fugas.
-    /// Compatible con WPF (UI thread-safe).
+    /// Spinner asíncrono avanzado con múltiples modos de animación,
+    /// seguro para WPF, cancelable, sin fugas y ultra optimizado.
     /// </summary>
     public sealed class SpinnerController : IDisposable
     {
+        public enum SpinnerMode
+        {
+            Braille,
+            Dots,
+            Bar
+        }
+
         private readonly Action<string> update;
         private CancellationTokenSource? cts;
-        private readonly string frames = "|/-\\";
-        private int index; // CA1805 corregido (sin inicialización redundante)
         private readonly object sync = new();
         private bool disposed;
+
+        private int index;
+
+        // Animaciones premium
+        private static readonly string[] BrailleFrames =
+        {
+            "⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"
+        };
+
+        private static readonly string[] DotFrames =
+        {
+            ".", "..", "...", "...."
+        };
+
+        private static readonly string[] BarFrames =
+        {
+            "|", "/", "-", "\\"
+        };
+
+        public SpinnerMode Mode { get; private set; } = SpinnerMode.Braille;
 
         public SpinnerController(Action<string> update)
         {
@@ -23,9 +48,18 @@ namespace POPSManager.Logic
         }
 
         /// <summary>
+        /// Cambia el modo de animación en tiempo real.
+        /// </summary>
+        public void SetMode(SpinnerMode mode)
+        {
+            ThrowIfDisposed();
+            Mode = mode;
+        }
+
+        /// <summary>
         /// Inicia el spinner. Si ya está corriendo, se reinicia limpiamente.
         /// </summary>
-        public void Start(int intervalMs = 100)
+        public void Start(int intervalMs = 80)
         {
             ThrowIfDisposed();
 
@@ -44,7 +78,7 @@ namespace POPSManager.Logic
 
                         while (!token.IsCancellationRequested)
                         {
-                            update(frames[index % frames.Length].ToString());
+                            update(GetFrame());
                             index++;
 
                             await Task.Delay(intervalMs, token).ConfigureAwait(false);
@@ -64,6 +98,20 @@ namespace POPSManager.Logic
                     }
                 }, token);
             }
+        }
+
+        /// <summary>
+        /// Obtiene el frame actual según el modo seleccionado.
+        /// </summary>
+        private string GetFrame()
+        {
+            return Mode switch
+            {
+                SpinnerMode.Braille => BrailleFrames[index % BrailleFrames.Length],
+                SpinnerMode.Dots => DotFrames[index % DotFrames.Length],
+                SpinnerMode.Bar => BarFrames[index % BarFrames.Length],
+                _ => "?"
+            };
         }
 
         /// <summary>
