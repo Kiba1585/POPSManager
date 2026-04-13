@@ -1,0 +1,8 @@
+<root>
+  <data name="Title_ProgressWindow" xml:space="preserve">
+    <value>Progreso</value>
+  </data>
+  <data name="Label_ProcessingGames" xml:space="preserve">
+    <value>Procesando juegos…</value>
+  </data>
+</root>
