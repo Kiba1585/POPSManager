@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 namespace POPSManager.UI
 {
-    public partial class GameCoverView : UserControl
+    public partial class GameCoverView : System.Windows.Controls.UserControl
     {
         public GameCoverView()
         {
