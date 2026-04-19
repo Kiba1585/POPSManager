@@ -1,21 +1,19 @@
 using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using POPSManager.Commands;
 using POPSManager.Models;
 using POPSManager.Services;
-using POPSManager.UI.Notifications;
-using POPSManager.Views;
-using POPSManager.UI.Windows;
 using POPSManager.Settings;
-using POPSManager.Commands;
+using POPSManager.UI.Notifications;
+using POPSManager.UI.Windows;
+using POPSManager.Views;
 
 namespace POPSManager.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : ViewModelBase
     {
         private readonly AppServices _services;
         private NotificationManager? _notifications;
@@ -196,16 +194,6 @@ namespace POPSManager.ViewModels
                     Message = $"Error abriendo configuración de cheats: {ex.Message}"
                 });
             }
-        }
-
-        #endregion
-
-        #region INotifyPropertyChanged
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         #endregion
