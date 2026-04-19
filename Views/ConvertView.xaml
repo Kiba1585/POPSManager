@@ -3,55 +3,46 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{StaticResource Brush.Background}">
 
-    <Grid Margin="20">
+    <UserControl.DataContext>
+        <viewModels:ConvertViewModel/>
+    </UserControl.DataContext>
 
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ========================================================= -->
-        <!--  TÍTULO -->
-        <!-- ========================================================= -->
         <TextBlock Text="Convertir BIN / CUE / ISO a VCD"
                    FontSize="28"
                    FontWeight="SemiBold"
                    Foreground="{StaticResource Brush.TextPrimary}"
                    Margin="0 0 0 20"/>
 
-        <!-- ========================================================= -->
-        <!--  PANEL PRINCIPAL -->
-        <!-- ========================================================= -->
         <Border Grid.Row="1"
                 Style="{StaticResource Card}"
                 Padding="20"
                 Effect="{StaticResource ShadowDefault}">
 
             <Grid>
-
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- ========================= -->
-                <!--  Selección de carpeta origen -->
-                <!-- ========================= -->
+                <!-- Carpeta origen -->
                 <StackPanel Grid.Row="0" Grid.Column="0">
-
                     <TextBlock Text="Carpeta de origen"
                                FontSize="16"
                                Foreground="{StaticResource Brush.TextSecondary}"
                                Margin="0 0 0 6"/>
-
-                    <TextBox x:Name="SourcePath"
+                    <TextBox Text="{Binding SourcePath, UpdateSourceTrigger=PropertyChanged}"
                              Height="32"
                              Background="{StaticResource Brush.PanelAlt}"
                              Foreground="{StaticResource Brush.TextPrimary}"
@@ -66,20 +57,15 @@
                         Height="32"
                         Margin="10 0 0 0"
                         Style="{StaticResource SecondaryButton}"
-                        Click="BrowseSource_Click"/>
+                        Command="{Binding BrowseSourceCommand}"/>
 
-                <!-- ========================= -->
-                <!--  Selección de carpeta destino -->
-                <!-- ========================= -->
-                <StackPanel Grid.Row="1" Grid.Column="0"
-                            Margin="0 15 0 0">
-
+                <!-- Carpeta destino -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0 15 0 0">
                     <TextBlock Text="Carpeta de destino"
                                FontSize="16"
                                Foreground="{StaticResource Brush.TextSecondary}"
                                Margin="0 0 0 6"/>
-
-                    <TextBox x:Name="OutputPath"
+                    <TextBox Text="{Binding OutputPath, UpdateSourceTrigger=PropertyChanged}"
                              Height="32"
                              Background="{StaticResource Brush.PanelAlt}"
                              Foreground="{StaticResource Brush.TextPrimary}"
@@ -94,42 +80,32 @@
                         Height="32"
                         Margin="10 15 0 0"
                         Style="{StaticResource SecondaryButton}"
-                        Click="BrowseOutput_Click"/>
+                        Command="{Binding BrowseOutputCommand}"/>
 
-                <!-- ========================= -->
-                <!--  Lista de archivos detectados -->
-                <!-- ========================= -->
+                <!-- Lista de archivos -->
                 <Border Grid.Row="2" Grid.ColumnSpan="2"
                         Style="{StaticResource Card}"
                         Margin="0 20 0 0"
                         Padding="10"
                         Background="{StaticResource Brush.PanelAlt}"
                         Effect="{StaticResource ShadowSoft}">
-
                     <StackPanel>
-
                         <TextBlock Text="Archivos detectados"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource Brush.TextPrimary}"
                                    Margin="0 0 0 10"/>
-
-                        <ListBox x:Name="FilesList"
+                        <ListBox ItemsSource="{Binding Files}"
                                  Height="260"
                                  Background="{StaticResource Brush.Panel}"
                                  Foreground="{StaticResource Brush.TextPrimary}"
                                  BorderThickness="0"
                                  Padding="6"/>
                     </StackPanel>
-
                 </Border>
-
             </Grid>
         </Border>
 
-        <!-- ========================================================= -->
-        <!--  BOTÓN DE CONVERSIÓN -->
-        <!-- ========================================================= -->
         <Button Grid.Row="2"
                 Content="Convertir archivos"
                 Height="42"
@@ -137,7 +113,6 @@
                 HorizontalAlignment="Right"
                 Margin="0 20 0 0"
                 Style="{StaticResource PrimaryButton}"
-                Click="Convert_Click"/>
-
+                Command="{Binding ConvertCommand}"/>
     </Grid>
 </UserControl>
