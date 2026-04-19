@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,27 +11,50 @@ using POPSManager.Services;
 
 namespace POPSManager.ViewModels
 {
+    public class LanguageItem
+    {
+        public AppLanguage Value { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+    }
+
     public class SettingsViewModel : ViewModelBase
     {
         private readonly AppServices _services;
         private readonly PathsService _paths;
+        private readonly SettingsService _settings;
 
-        private string _rootPath;
-        private string _popsPath;
-        private string _appsPath;
-        private string _elfPath;
+        private string _rootPath = string.Empty;
+        private string _popsPath = string.Empty;
+        private string _appsPath = string.Empty;
+        private string _elfPath = string.Empty;
         private bool _darkMode;
         private bool _notificationsEnabled;
         private AutomationMode _automationMode;
         private AutoBehavior _normalizeNamesBehavior;
         private AutoBehavior _groupMultiDiscBehavior;
         private AutoBehavior _downloadCoversBehavior;
+        private AppLanguage _selectedLanguage;
 
         public SettingsViewModel()
         {
             _services = App.Services!;
             _paths = _services.Paths;
+            _settings = _services.Settings;
 
+            // Inicializar lista de idiomas
+            Languages = new ObservableCollection<LanguageItem>
+            {
+                new LanguageItem { Value = AppLanguage.Auto, DisplayName = "Automático" },
+                new LanguageItem { Value = AppLanguage.Spanish, DisplayName = "Español" },
+                new LanguageItem { Value = AppLanguage.English, DisplayName = "English" },
+                new LanguageItem { Value = AppLanguage.French, DisplayName = "Français" },
+                new LanguageItem { Value = AppLanguage.German, DisplayName = "Deutsch" },
+                new LanguageItem { Value = AppLanguage.Italian, DisplayName = "Italiano" },
+                new LanguageItem { Value = AppLanguage.Portuguese, DisplayName = "Português" },
+                new LanguageItem { Value = AppLanguage.Japanese, DisplayName = "日本語" }
+            };
+
+            // Comandos
             ChangeRootFolderCommand = new RelayCommand(async () => await ChangeRootFolderAsync());
             ChangePopsPathCommand = new RelayCommand(async () => await ChangePopsPathAsync());
             ChangeAppsPathCommand = new RelayCommand(async () => await ChangeAppsPathAsync());
@@ -43,64 +67,103 @@ namespace POPSManager.ViewModels
 
         #region Propiedades
 
+        public ObservableCollection<LanguageItem> Languages { get; }
+
+        public AppLanguage SelectedLanguage
+        {
+            get => _selectedLanguage;
+            set
+            {
+                if (SetProperty(ref _selectedLanguage, value))
+                {
+                    _settings.Language = value;
+                    _ = SaveSettingsAsync(); // Guardar automáticamente al cambiar idioma
+                }
+            }
+        }
+
         public string RootPath
         {
             get => _rootPath;
-            set { _rootPath = value; OnPropertyChanged(); }
+            set => SetProperty(ref _rootPath, value);
         }
 
         public string PopsPath
         {
             get => _popsPath;
-            set { _popsPath = value; OnPropertyChanged(); }
+            set => SetProperty(ref _popsPath, value);
         }
 
         public string AppsPath
         {
             get => _appsPath;
-            set { _appsPath = value; OnPropertyChanged(); }
+            set => SetProperty(ref _appsPath, value);
         }
 
         public string ElfPath
         {
             get => _elfPath;
-            set { _elfPath = value; OnPropertyChanged(); }
+            set => SetProperty(ref _elfPath, value);
         }
 
         public bool DarkMode
         {
             get => _darkMode;
-            set { _darkMode = value; OnPropertyChanged(); SaveSettingsCommand.Execute(null); }
+            set
+            {
+                if (SetProperty(ref _darkMode, value))
+                    _ = SaveSettingsAsync();
+            }
         }
 
         public bool NotificationsEnabled
         {
             get => _notificationsEnabled;
-            set { _notificationsEnabled = value; OnPropertyChanged(); SaveSettingsCommand.Execute(null); }
+            set
+            {
+                if (SetProperty(ref _notificationsEnabled, value))
+                    _ = SaveSettingsAsync();
+            }
         }
 
         public AutomationMode AutomationMode
         {
             get => _automationMode;
-            set { _automationMode = value; OnPropertyChanged(); SaveSettingsCommand.Execute(null); }
+            set
+            {
+                if (SetProperty(ref _automationMode, value))
+                    _ = SaveSettingsAsync();
+            }
         }
 
         public AutoBehavior NormalizeNamesBehavior
         {
             get => _normalizeNamesBehavior;
-            set { _normalizeNamesBehavior = value; OnPropertyChanged(); SaveSettingsCommand.Execute(null); }
+            set
+            {
+                if (SetProperty(ref _normalizeNamesBehavior, value))
+                    _ = SaveSettingsAsync();
+            }
         }
 
         public AutoBehavior GroupMultiDiscBehavior
         {
             get => _groupMultiDiscBehavior;
-            set { _groupMultiDiscBehavior = value; OnPropertyChanged(); SaveSettingsCommand.Execute(null); }
+            set
+            {
+                if (SetProperty(ref _groupMultiDiscBehavior, value))
+                    _ = SaveSettingsAsync();
+            }
         }
 
         public AutoBehavior DownloadCoversBehavior
         {
             get => _downloadCoversBehavior;
-            set { _downloadCoversBehavior = value; OnPropertyChanged(); SaveSettingsCommand.Execute(null); }
+            set
+            {
+                if (SetProperty(ref _downloadCoversBehavior, value))
+                    _ = SaveSettingsAsync();
+            }
         }
 
         #endregion
@@ -122,12 +185,13 @@ namespace POPSManager.ViewModels
             PopsPath = _paths.PopsFolder;
             AppsPath = _paths.AppsFolder;
             ElfPath = _paths.PopstarterElfPath;
-            DarkMode = _services.Settings.DarkMode;
-            NotificationsEnabled = _services.Settings.NotificationsEnabled;
-            AutomationMode = _services.Settings.Automation.Mode;
-            NormalizeNamesBehavior = _services.Settings.Automation.Conversion;
-            GroupMultiDiscBehavior = _services.Settings.Automation.MultiDisc;
-            DownloadCoversBehavior = _services.Settings.Automation.Covers;
+            DarkMode = _settings.DarkMode;
+            NotificationsEnabled = _settings.NotificationsEnabled;
+            AutomationMode = _settings.Automation.Mode;
+            NormalizeNamesBehavior = _settings.Automation.Conversion;
+            GroupMultiDiscBehavior = _settings.Automation.MultiDisc;
+            DownloadCoversBehavior = _settings.Automation.Covers;
+            SelectedLanguage = _settings.Language;
         }
 
         private async Task ChangeRootFolderAsync()
@@ -138,11 +202,9 @@ namespace POPSManager.ViewModels
                 Multiselect = false
             };
 
-            if (dialog.ShowDialog() != true)
-                return;
+            if (dialog.ShowDialog() != true) return;
 
             string path = dialog.FolderName;
-
             if (!Directory.Exists(path))
             {
                 _services.Notifications.Error("La carpeta seleccionada no existe.");
@@ -157,92 +219,66 @@ namespace POPSManager.ViewModels
 
             try
             {
-                _services.Settings.RootFolder = path;
-                await _services.Settings.SaveAsync();
+                _settings.RootFolder = path;
+                await _settings.SaveAsync();
                 await _paths.ReloadAsync();
                 LoadSettings();
-                _services.Notifications.Success("Carpeta raíz actualizada correctamente.");
+                _services.Notifications.Success("Carpeta raíz actualizada.");
             }
             catch (Exception ex)
             {
                 _services.Notifications.Error("No se pudo actualizar la carpeta raíz.");
-                _services.LogService.Error($"[SettingsViewModel] Error ChangeRootFolder: {ex.Message}");
+                _services.LogService.Error($"[Settings] Error ChangeRootFolder: {ex.Message}");
             }
         }
 
         private async Task ChangePopsPathAsync()
         {
-            var dialog = new OpenFolderDialog
-            {
-                Title = "Seleccionar carpeta POPS",
-                Multiselect = false
-            };
-
-            if (dialog.ShowDialog() != true)
-                return;
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta POPS" };
+            if (dialog.ShowDialog() != true) return;
 
             string path = dialog.FolderName;
-
             if (!Directory.Exists(path))
             {
                 _services.Notifications.Error("La carpeta seleccionada no existe.");
                 return;
-            }
-
-            if (IsInvalidRoot(path))
-            {
-                _services.Notifications.Warning("Has seleccionado una carpeta incorrecta (PS2/PS1). Se usará su carpeta padre.");
-                path = Directory.GetParent(path)?.FullName ?? path;
             }
 
             try
             {
                 await _paths.SetCustomPopsFolderAsync(path);
                 LoadSettings();
-                _services.Notifications.Success("Ruta POPS actualizada correctamente.");
+                _services.Notifications.Success("Ruta POPS actualizada.");
             }
             catch (Exception ex)
             {
                 _services.Notifications.Error("No se pudo actualizar la ruta POPS.");
-                _services.LogService.Error($"[SettingsViewModel] Error ChangePopsPath: {ex.Message}");
+                _services.LogService.Error($"[Settings] Error ChangePopsPath: {ex.Message}");
             }
         }
 
         private async Task ChangeAppsPathAsync()
         {
-            var dialog = new OpenFolderDialog
-            {
-                Title = "Seleccionar carpeta APPS",
-                Multiselect = false
-            };
-
-            if (dialog.ShowDialog() != true)
-                return;
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta APPS" };
+            if (dialog.ShowDialog() != true) return;
 
             string path = dialog.FolderName;
-
             if (!Directory.Exists(path))
             {
                 _services.Notifications.Error("La carpeta seleccionada no existe.");
                 return;
             }
 
-            if (IsInvalidRoot(path))
-            {
-                _services.Notifications.Warning("Has seleccionado una carpeta incorrecta (PS2/PS1). Se usará su carpeta padre.");
-                path = Directory.GetParent(path)?.FullName ?? path;
-            }
-
             try
             {
                 await _paths.SetCustomAppsFolderAsync(path);
                 LoadSettings();
-                _services.Notifications.Success("Ruta APPS actualizada correctamente.");
+                _services.Notifications.Success("Ruta APPS actualizada.");
             }
             catch (Exception ex)
             {
                 _services.Notifications.Error("No se pudo actualizar la ruta APPS.");
-                _services.LogService.Error($"[SettingsViewModel] Error ChangeAppsPath: {ex.Message}");
+                _services.LogService.Error($"[Settings] Error ChangeAppsPath: {ex.Message}");
             }
         }
 
@@ -254,11 +290,9 @@ namespace POPSManager.ViewModels
                 Title = "Seleccionar POPSTARTER.ELF"
             };
 
-            if (dialog.ShowDialog() != true)
-                return;
+            if (dialog.ShowDialog() != true) return;
 
             string path = dialog.FileName;
-
             if (!File.Exists(path))
             {
                 _services.Notifications.Error("El archivo seleccionado no existe.");
@@ -269,12 +303,12 @@ namespace POPSManager.ViewModels
             {
                 await _paths.SetCustomElfPathAsync(path);
                 LoadSettings();
-                _services.Notifications.Success("POPSTARTER.ELF configurado correctamente.");
+                _services.Notifications.Success("POPSTARTER.ELF configurado.");
             }
             catch (Exception ex)
             {
                 _services.Notifications.Error("No se pudo configurar POPSTARTER.ELF.");
-                _services.LogService.Error($"[SettingsViewModel] Error SelectElf: {ex.Message}");
+                _services.LogService.Error($"[Settings] Error SelectElf: {ex.Message}");
             }
         }
 
@@ -288,7 +322,7 @@ namespace POPSManager.ViewModels
             catch (Exception ex)
             {
                 _services.Notifications.Error("No se pudo abrir la carpeta del programa.");
-                _services.LogService.Error($"[SettingsViewModel] Error OpenProgramFolder: {ex.Message}");
+                _services.LogService.Error($"[Settings] Error OpenProgramFolder: {ex.Message}");
             }
         }
 
@@ -296,18 +330,20 @@ namespace POPSManager.ViewModels
         {
             try
             {
-                _services.Settings.DarkMode = DarkMode;
-                _services.Settings.NotificationsEnabled = NotificationsEnabled;
-                _services.Settings.Automation.Mode = AutomationMode;
-                _services.Settings.Automation.Conversion = NormalizeNamesBehavior;
-                _services.Settings.Automation.MultiDisc = GroupMultiDiscBehavior;
-                _services.Settings.Automation.Covers = DownloadCoversBehavior;
+                _settings.DarkMode = DarkMode;
+                _settings.NotificationsEnabled = NotificationsEnabled;
+                _settings.Automation.Mode = AutomationMode;
+                _settings.Automation.Conversion = NormalizeNamesBehavior;
+                _settings.Automation.MultiDisc = GroupMultiDiscBehavior;
+                _settings.Automation.Covers = DownloadCoversBehavior;
+                _settings.Language = SelectedLanguage;
 
-                await _services.Settings.SaveAsync();
+                await _settings.SaveAsync();
+                _services.Localization.Refresh(); // Notificar cambio de idioma
             }
             catch (Exception ex)
             {
-                _services.LogService.Error($"[SettingsViewModel] Error guardando configuración: {ex.Message}");
+                _services.LogService.Error($"[Settings] Error guardando: {ex.Message}");
             }
         }
 
