@@ -2,28 +2,28 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using POPSManager.Models;
+using POPSManager.UI.Localization;
 
 namespace POPSManager.UI.Notifications
 {
     public class NotificationManager
     {
         private readonly NotificationHost _host;
+        private readonly LocalizationService _localization;
         private readonly List<NotificationToast> _activeToasts = new();
 
-        public NotificationManager(NotificationHost host)
+        public NotificationManager(NotificationHost host, LocalizationService localization)
         {
             _host = host;
+            _localization = localization;
         }
 
-        // ============================================================
-        //  MOSTRAR NOTIFICACIÓN
-        // ============================================================
         public void Show(UiNotification notification)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
                 var toast = new NotificationToast(
-                    title: GetTitle(notification.Type),
+                    title: GetLocalizedTitle(notification.Type),
                     message: notification.Message,
                     type: notification.Type
                 );
@@ -35,30 +35,27 @@ namespace POPSManager.UI.Notifications
             });
         }
 
-        // ============================================================
-        //  CUANDO UN TOAST SE CIERRA
-        // ============================================================
         private void OnToastClosed(NotificationToast toast)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
                 _activeToasts.Remove(toast);
+                _host.RemoveToast(toast);
             });
         }
 
-        // ============================================================
-        //  TÍTULOS AUTOMÁTICOS POR TIPO
-        // ============================================================
-        private string GetTitle(NotificationType type)
+        private string GetLocalizedTitle(NotificationType type)
         {
-            return type switch
+            string key = type switch
             {
-                NotificationType.Success => "Éxito",
-                NotificationType.Error   => "Error",
-                NotificationType.Warning => "Advertencia",
-                NotificationType.Info    => "Información",
-                _ => "Mensaje"
+                NotificationType.Success => "Notification_Success",
+                NotificationType.Error   => "Notification_Error",
+                NotificationType.Warning => "Notification_Warning",
+                NotificationType.Info    => "Notification_Info",
+                _ => "Notification_Message"
             };
+
+            return _localization.GetString(key);
         }
     }
 }
