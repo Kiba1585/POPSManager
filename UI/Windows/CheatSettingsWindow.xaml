@@ -1,7 +1,7 @@
 <Window x:Class="POPSManager.UI.Windows.CheatSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configuración de CHEAT.TXT"
+        Title="{Binding WindowTitle}"
         Width="520"
         Height="520"
         WindowStartupLocation="CenterOwner"
@@ -9,29 +9,24 @@
         ResizeMode="NoResize">
 
     <Grid Margin="20">
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ========================================================= -->
-        <!--  TÍTULO -->
-        <!-- ========================================================= -->
-        <TextBlock Text="Configuración de CHEAT.TXT"
+        <!-- Título -->
+        <TextBlock Text="{Binding TitleText}"
                    FontSize="20"
                    FontWeight="SemiBold"
                    Foreground="{StaticResource Brush.TextPrimary}"
                    Margin="0 0 0 20"/>
 
-        <!-- ========================================================= -->
-        <!--  CONTENIDO -->
-        <!-- ========================================================= -->
+        <!-- Contenido -->
         <StackPanel Grid.Row="1" Margin="0 10 0 10" VerticalAlignment="Top">
 
-            <!-- MODO PRINCIPAL -->
-            <TextBlock Text="Modo de generación"
+            <!-- Modo de generación -->
+            <TextBlock Text="{Binding ModeLabel}"
                        FontWeight="Bold"
                        Foreground="{StaticResource Brush.TextPrimary}"
                        Margin="0 0 0 8"/>
@@ -40,59 +35,56 @@
                       Width="300"
                       SelectedIndex="1"
                       Margin="0 0 0 20">
-                <ComboBoxItem Content="Desactivado"/>
-                <ComboBoxItem Content="Automático para juegos PAL"/>
-                <ComboBoxItem Content="Preguntar cada vez"/>
-                <ComboBoxItem Content="Selección manual antes de procesar"/>
+                <ComboBoxItem Content="{Binding ModeDisabled}"/>
+                <ComboBoxItem Content="{Binding ModeAutoPal}"/>
+                <ComboBoxItem Content="{Binding ModeAsk}"/>
+                <ComboBoxItem Content="{Binding ModeManual}"/>
             </ComboBox>
 
-            <!-- OPCIONES AVANZADAS -->
-            <TextBlock Text="Opciones avanzadas"
+            <!-- Opciones avanzadas -->
+            <TextBlock Text="{Binding AdvancedLabel}"
                        FontWeight="Bold"
                        Foreground="{StaticResource Brush.TextPrimary}"
                        Margin="0 0 0 8"/>
 
             <CheckBox x:Name="AutoFixesCheck"
-                      Content="Usar fixes automáticos por juego"
+                      Content="{Binding AutoFixesText}"
                       Margin="0 4"/>
 
             <CheckBox x:Name="EngineFixesCheck"
-                      Content="Usar fixes por engine (Crash, Spyro, FF...)"
+                      Content="{Binding EngineFixesText}"
                       Margin="0 4"/>
 
             <CheckBox x:Name="HeuristicFixesCheck"
-                      Content="Usar fixes heurísticos"
+                      Content="{Binding HeuristicFixesText}"
                       Margin="0 4"/>
 
             <CheckBox x:Name="DatabaseFixesCheck"
-                      Content="Usar fixes desde GameDatabase"
+                      Content="{Binding DatabaseFixesText}"
                       Margin="0 4"/>
 
             <CheckBox x:Name="CustomCheatsCheck"
-                      Content="Permitir cheats personalizados del usuario"
+                      Content="{Binding CustomCheatsText}"
                       Margin="0 4"/>
 
         </StackPanel>
 
-        <!-- ========================================================= -->
-        <!--  BOTONES -->
-        <!-- ========================================================= -->
+        <!-- Botones -->
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0 20 0 0">
 
-            <Button Content="Cancelar"
+            <Button Content="{Binding CancelButtonText}"
                     Width="100"
                     Margin="0 0 10 0"
                     Style="{StaticResource SecondaryButton}"
                     Click="Cancel_Click"/>
 
-            <Button Content="Guardar"
+            <Button Content="{Binding SaveButtonText}"
                     Width="120"
                     Style="{StaticResource PrimaryButton}"
                     Click="Save_Click"/>
         </StackPanel>
-
     </Grid>
 </Window>
