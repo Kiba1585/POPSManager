@@ -5,7 +5,7 @@ using System.Windows.Media.Animation;
 
 namespace POPSManager.Controls
 {
-    public partial class ProgressPanel : UserControl
+    public partial class ProgressPanel : System.Windows.Controls.UserControl
     {
         private readonly DoubleAnimation spinnerAnimation;
 
