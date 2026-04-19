@@ -32,22 +32,22 @@ namespace POPSManager.UI.Notifications
             switch (type)
             {
                 case NotificationType.Success:
-                    Root.Background = new SolidColorBrush(Color.FromRgb(40, 120, 40));
+                    Root.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(40, 120, 40));
                     Icon.Text = "✔";
                     break;
 
                 case NotificationType.Info:
-                    Root.Background = new SolidColorBrush(Color.FromRgb(40, 70, 140));
+                    Root.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(40, 70, 140));
                     Icon.Text = "ℹ";
                     break;
 
                 case NotificationType.Warning:
-                    Root.Background = new SolidColorBrush(Color.FromRgb(180, 140, 40));
+                    Root.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(180, 140, 40));
                     Icon.Text = "⚠";
                     break;
 
                 case NotificationType.Error:
-                    Root.Background = new SolidColorBrush(Color.FromRgb(160, 40, 40));
+                    Root.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(160, 40, 40));
                     Icon.Text = "✖";
                     break;
             }
