@@ -1,6 +1,7 @@
 <Window x:Class="POPSManager.UI.Windows.CheatEditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:POPSManager.ViewModels"
         Title="{Binding WindowTitle}"
         Width="700"
         Height="650"
@@ -8,9 +9,8 @@
         Background="{StaticResource Brush.Background}"
         ResizeMode="NoResize">
 
-    <Window.DataContext>
-        <viewModels:CheatEditorViewModel/>
-    </Window.DataContext>
+    <!-- ⚠️ IMPORTANTE: Eliminado DataContext automático -->
+    <!-- Este ViewModel NO puede crearse en XAML porque tiene parámetros -->
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
