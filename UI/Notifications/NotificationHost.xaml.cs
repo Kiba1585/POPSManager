@@ -4,7 +4,7 @@ using System.Windows.Media.Animation;
 
 namespace POPSManager.UI.Notifications
 {
-    public partial class NotificationHost : UserControl
+    public partial class NotificationHost : System.Windows.Controls.UserControl
     {
         public NotificationHost()
         {
@@ -13,7 +13,6 @@ namespace POPSManager.UI.Notifications
 
         public void ShowToast(NotificationToast toast)
         {
-            // Limitar a 5 toasts visibles
             while (ToastPanel.Children.Count >= 5)
             {
                 if (ToastPanel.Children[0] is NotificationToast oldest)
