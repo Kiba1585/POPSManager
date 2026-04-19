@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using POPSManager.Logic;
 using POPSManager.Logic.Automation;
 using POPSManager.Models;
-using POPSManager.Services;
+using POPSManager.UI.Localization;
 
 namespace POPSManager.Services
 {
@@ -17,6 +17,7 @@ namespace POPSManager.Services
         private readonly PathsService _paths;
         private readonly SettingsService _settings;
         private readonly AutomationEngine _auto;
+        private readonly LocalizationService _loc;
 
         private readonly Action<string, NotificationType> _notify;
         private readonly Action<string> _setStatus;
@@ -29,6 +30,7 @@ namespace POPSManager.Services
             PathsService paths,
             SettingsService settings,
             AutomationEngine auto,
+            LocalizationService loc,
             Action<string, NotificationType> notify,
             Action<string> setStatus)
         {
@@ -36,6 +38,7 @@ namespace POPSManager.Services
             _paths = paths;
             _settings = settings;
             _auto = auto;
+            _loc = loc;
             _notify = notify;
             _setStatus = setStatus;
         }
@@ -44,14 +47,14 @@ namespace POPSManager.Services
         {
             if (!Directory.Exists(sourceFolder))
             {
-                _notify("Carpeta de origen inválida.", NotificationType.Error);
+                _notify(_loc.GetString("Converter_InvalidSourceFolder"), NotificationType.Error);
                 return;
             }
 
             if (!_auto.ShouldConvert())
             {
                 _log("[Convert] Automatización de conversión desactivada.");
-                _notify("Conversión cancelada por automatización.", NotificationType.Warning);
+                _notify(_loc.GetString("Converter_ConversionCancelledByAutomation"), NotificationType.Warning);
                 return;
             }
 
@@ -67,7 +70,7 @@ namespace POPSManager.Services
 
             if (files.Length == 0)
             {
-                _notify("No se encontraron archivos BIN/CUE/ISO.", NotificationType.Warning);
+                _notify(_loc.GetString("Converter_NoFilesFound"), NotificationType.Warning);
                 return;
             }
 
@@ -90,7 +93,7 @@ namespace POPSManager.Services
                     token.ThrowIfCancellationRequested();
 
                     int current = Interlocked.Increment(ref index);
-                    _setStatus($"Convirtiendo {current}/{total}: {Path.GetFileName(file)}");
+                    _setStatus(string.Format(_loc.GetString("Converter_ConvertingStatus"), current, total, Path.GetFileName(file)));
 
                     try
                     {
@@ -102,16 +105,16 @@ namespace POPSManager.Services
                     catch (Exception ex)
                     {
                         _log($"ERROR al convertir {file}: {ex.Message}");
-                        _notify($"Error con {Path.GetFileName(file)}", NotificationType.Error);
+                        _notify(string.Format(_loc.GetString("Converter_ErrorConvertingFile"), Path.GetFileName(file)), NotificationType.Error);
                     }
                 }).ConfigureAwait(false);
 
-                _notify("Conversión completada.", NotificationType.Success);
-                _setStatus("Conversión finalizada.");
+                _notify(_loc.GetString("Converter_ConversionCompleted"), NotificationType.Success);
+                _setStatus(_loc.GetString("Converter_ConversionFinished"));
             }
             catch (OperationCanceledException)
             {
-                _notify("Conversión cancelada.", NotificationType.Warning);
+                _notify(_loc.GetString("Converter_ConversionCancelled"), NotificationType.Warning);
                 _log("[Convert] Conversión cancelada por el usuario.");
             }
         }
@@ -188,7 +191,7 @@ namespace POPSManager.Services
                 if (processed % 200 == 0)
                 {
                     int percent = (int)((processed / (double)totalSectors) * 100);
-                    _setStatus($"Convirtiendo {name}: {percent}%");
+                    _setStatus(string.Format(_loc.GetString("Converter_ConvertingPercentage"), name, percent));
                 }
             }
         }
