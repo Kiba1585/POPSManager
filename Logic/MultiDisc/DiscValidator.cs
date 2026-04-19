@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace POPSManager.Logic
 {
+    /// <summary>
+    /// Valida la integridad de un conjunto multidisco.
+    /// </summary>
     public static class DiscValidator
     {
         public static bool Validate(List<DiscInfo> discs, Action<string> log)
