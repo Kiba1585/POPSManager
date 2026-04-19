@@ -7,6 +7,7 @@ using System.Windows.Input;
 using POPSManager.Commands;
 using POPSManager.Services;
 using POPSManager.UI.Localization;
+using POPSManager.UI.Windows;
 
 namespace POPSManager.ViewModels
 {
@@ -77,7 +78,7 @@ namespace POPSManager.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "POPSManager", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error: {ex.Message}", "POPSManager", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -98,7 +99,14 @@ namespace POPSManager.ViewModels
 
         private void CloseWindow()
         {
-            Application.Current.Windows.OfType<GameSelectorWindow>().FirstOrDefault()?.Close();
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is GameSelectorWindow)
+                {
+                    window.Close();
+                    break;
+                }
+            }
         }
     }
 }
