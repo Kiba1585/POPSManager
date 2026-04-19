@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using POPSManager.Services.Interfaces;
+using POPSManager.UI.Localization;
 
 namespace POPSManager.Logic
 {
@@ -16,6 +17,7 @@ namespace POPSManager.Logic
 
         private readonly Action<string> update;
         private readonly INotificationService notifications;
+        private readonly LocalizationService _loc;
         private CancellationTokenSource? cts;
         private readonly object sync = new();
         private bool disposed;
@@ -38,10 +40,11 @@ namespace POPSManager.Logic
 
         public SpinnerMode Mode { get; private set; } = SpinnerMode.Braille;
 
-        public SpinnerController(Action<string> update, INotificationService notifications)
+        public SpinnerController(Action<string> update, INotificationService notifications, LocalizationService loc)
         {
             this.update = update ?? throw new ArgumentNullException(nameof(update));
             this.notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+            _loc = loc ?? throw new ArgumentNullException(nameof(loc));
         }
 
         public void SetMode(SpinnerMode mode)
@@ -50,7 +53,7 @@ namespace POPSManager.Logic
             Mode = mode;
         }
 
-        public void Start(int intervalMs = 80, string? message = "Procesando…")
+        public void Start(int intervalMs = 80, string? message = null)
         {
             ThrowIfDisposed();
 
@@ -58,7 +61,8 @@ namespace POPSManager.Logic
             {
                 StopInternal();
 
-                notifications.Info(message ?? "Procesando…");
+                string defaultMessage = message ?? _loc.GetString("Progress_Preparing");
+                notifications.Info(defaultMessage);
 
                 cts = new CancellationTokenSource();
                 var token = cts.Token;
@@ -79,16 +83,16 @@ namespace POPSManager.Logic
                     }
                     catch (TaskCanceledException)
                     {
-                        notifications.Warning("Operación cancelada");
+                        notifications.Warning(_loc.GetString("GameProcessor_Cancelled"));
                     }
                     catch (Exception ex)
                     {
-                        notifications.Error($"Error: {ex.Message}");
+                        notifications.Error($"{_loc.GetString("Label_Error")}: {ex.Message}");
                     }
                     finally
                     {
                         update("");
-                        notifications.Success("Completado");
+                        notifications.Success(_loc.GetString("Label_Completed"));
                     }
                 }, token);
             }
