@@ -1,6 +1,5 @@
 using System;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using POPSManager.Commands;
@@ -18,7 +17,7 @@ namespace POPSManager.ViewModels
         private readonly AppServices _services;
         private NotificationManager? _notifications;
 
-        private UserControl _currentView;
+        private System.Windows.Controls.UserControl _currentView;
         private string _statusMessage = "Listo";
         private bool _isProgressVisible;
         private int _progressValue;
@@ -26,19 +25,15 @@ namespace POPSManager.ViewModels
 
         public MainViewModel()
         {
-            // Verificar que los servicios estén disponibles
             _services = App.Services ?? throw new InvalidOperationException("App.Services no está inicializado.");
 
-            // Vista inicial
             _currentView = new Dashboard();
 
-            // Inicializar comandos
             NavigateCommand = new RelayCommand<string>(Navigate);
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             OpenAboutCommand = new RelayCommand(OpenAbout);
             OpenCheatsSettingsCommand = new RelayCommand(OpenCheatsSettings);
 
-            // Suscribirse a eventos de progreso y logs
             SubscribeToServiceEvents();
         }
 
@@ -71,9 +66,6 @@ namespace POPSManager.ViewModels
             _services.LogService.OnLog += msg => System.Diagnostics.Debug.WriteLine(msg);
         }
 
-        /// <summary>
-        /// Ejecuta una acción en el hilo de la UI de forma segura.
-        /// </summary>
         private void SafeUpdate(Action action)
         {
             try
@@ -106,9 +98,7 @@ namespace POPSManager.ViewModels
             };
         }
 
-        #region Propiedades enlazables
-
-        public UserControl CurrentView
+        public System.Windows.Controls.UserControl CurrentView
         {
             get => _currentView;
             set { _currentView = value; OnPropertyChanged(); }
@@ -138,18 +128,10 @@ namespace POPSManager.ViewModels
             set { _progressStatusText = value; OnPropertyChanged(); }
         }
 
-        #endregion
-
-        #region Comandos
-
         public ICommand NavigateCommand { get; }
         public ICommand OpenSettingsCommand { get; }
         public ICommand OpenAboutCommand { get; }
         public ICommand OpenCheatsSettingsCommand { get; }
-
-        #endregion
-
-        #region Métodos privados para comandos
 
         private void Navigate(string destination)
         {
@@ -195,7 +177,5 @@ namespace POPSManager.ViewModels
                 });
             }
         }
-
-        #endregion
     }
 }
