@@ -2,29 +2,21 @@ using POPSManager.Models;
 
 namespace POPSManager.Logic.Database
 {
+    /// <summary>
+    /// Cliente para obtener información de Redump.
+    /// Actualmente es un placeholder para futura implementación.
+    /// </summary>
     public static class RedumpClient
     {
+        /// <summary>
+        /// Busca información de un juego por su ID.
+        /// </summary>
+        /// <param name="gameId">ID del juego (ej: SLUS_12345).</param>
+        /// <returns>Información del juego o null si no se encuentra.</returns>
         public static GameInfo? Lookup(string gameId)
         {
-            // ============================================================
-            //  PLANTILLA BASE
-            //  Aquí puedes implementar:
-            //  - API real de Redump
-            //  - Scraping HTML
-            //  - Cache local
-            // ============================================================
-
-            // Ejemplo de cómo se vería una respuesta real:
-            /*
-            return new GameInfo
-            {
-                Name = "Crash Team Racing",
-                DiscNumber = 1,
-                CoverUrl = "https://..."
-            };
-            */
-
-            return null; // Fallback automático
+            // TODO: Implementar API o scraping de Redump
+            return null;
         }
     }
 }
