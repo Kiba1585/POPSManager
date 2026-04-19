@@ -7,6 +7,9 @@ using POPSManager.Models;
 
 namespace POPSManager.Logic.Database
 {
+    /// <summary>
+    /// Validador de archivos JSON de base de datos de juegos.
+    /// </summary>
     public static class JsonDatabaseValidator
     {
         private static readonly Regex UrlRegex =
@@ -57,41 +60,23 @@ namespace POPSManager.Logic.Database
                 string id = entry.Key;
                 GameInfo info = entry.Value;
 
-                // ------------------------------
-                // 1. Claves duplicadas
-                // ------------------------------
                 if (!seenKeys.Add(id))
                     errors.Add($"❌ ID duplicado: {id}");
 
-                // ------------------------------
-                // 2. Validar ID PS1/PS2
-                // ------------------------------
                 bool isPs1 = Ps1Regex.IsMatch(id);
                 bool isPs2 = Ps2Regex.IsMatch(id);
 
                 if (!isPs1 && !isPs2)
                     errors.Add($"❌ ID inválido: {id}");
 
-                // ------------------------------
-                // 3. Validar nombre
-                // ------------------------------
                 if (string.IsNullOrWhiteSpace(info.Name))
                     errors.Add($"❌ Nombre vacío en ID: {id}");
 
-                // ------------------------------
-                // 4. Validar discNumber
-                // ------------------------------
                 if (info.DiscNumber < 1 || info.DiscNumber > 4)
                     errors.Add($"❌ discNumber inválido ({info.DiscNumber}) en ID: {id}");
 
-                // ------------------------------
-                // 5. Validar coverUrl
-                // ------------------------------
-                if (!string.IsNullOrWhiteSpace(info.CoverUrl) &&
-                    !UrlRegex.IsMatch(info.CoverUrl))
-                {
+                if (!string.IsNullOrWhiteSpace(info.CoverUrl) && !UrlRegex.IsMatch(info.CoverUrl))
                     errors.Add($"❌ coverUrl inválida en ID: {id} → {info.CoverUrl}");
-                }
             }
 
             if (errors.Count == 0)
