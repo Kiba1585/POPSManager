@@ -32,10 +32,14 @@
                        Margin="0 0 0 8"/>
 
             <ComboBox x:Name="ModeCombo"
-                      Width="300"
-                      SelectedIndex="1"
-                      Margin="0 0 0 20">
-                <ComboBoxItem Content="{Binding ModeDisabled}"/>
+          Width="300"
+          Margin="0 0 0 20">
+    <!-- Items se definen en XAML pero podrían moverse al ViewModel -->
+    <ComboBoxItem Content="{Binding ModeDisabled}"/>
+    <ComboBoxItem Content="{Binding ModeAutoPal}"/>
+    <ComboBoxItem Content="{Binding ModeAsk}"/>
+    <ComboBoxItem Content="{Binding ModeManual}"/>
+</ComboBox> Content="{Binding ModeDisabled}"/>
                 <ComboBoxItem Content="{Binding ModeAutoPal}"/>
                 <ComboBoxItem Content="{Binding ModeAsk}"/>
                 <ComboBoxItem Content="{Binding ModeManual}"/>
