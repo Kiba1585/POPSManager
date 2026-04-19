@@ -178,15 +178,18 @@ namespace POPSManager.Logic
             return id;
         }
 
-        public static bool IsPalRegion(string gameId)
-        {
-            if (string.IsNullOrWhiteSpace(gameId))
-                return false;
+        // ... (todo el código anterior se mantiene igual hasta el método IsPalRegion)
 
-            gameId = gameId.ToUpperInvariant();
+public static bool IsPalRegion(string gameId)
+{
+    if (string.IsNullOrWhiteSpace(gameId))
+        return false;
 
-            return gameId.StartsWith("SLES", StringComparison.Ordinal) ||
-                   gameId.StartsWith("SCES", StringComparison.Ordinal);
+    gameId = gameId.ToUpperInvariant();
+
+    return gameId.StartsWith("SLES", StringComparison.Ordinal) ||
+           gameId.StartsWith("SCES", StringComparison.Ordinal);
+}
         }
     }
 }
