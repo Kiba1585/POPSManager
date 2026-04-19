@@ -12,7 +12,8 @@ namespace POPSManager
             DataContext = viewModel;
 
             // Notifications manager necesita acceso a la UI para mostrar toasts
-            var notifications = new NotificationManager(Notifier);
+            // y al servicio de localización para los títulos
+            var notifications = new NotificationManager(Notifier, App.Services!.Localization);
             viewModel.Initialize(notifications);
         }
     }
