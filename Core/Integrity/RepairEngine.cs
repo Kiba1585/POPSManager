@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace POPSManager.Core.Integrity
 {
+    /// <summary>
+    /// Sugerencia de reparación para un VCD/ISO.
+    /// </summary>
     public sealed class RepairSuggestion
     {
         public string Code { get; }
@@ -20,6 +24,9 @@ namespace POPSManager.Core.Integrity
             $"{Code} - {Description} (Auto: {(CanAutoApply ? "Sí" : "No")})";
     }
 
+    /// <summary>
+    /// Resultado del análisis de reparación.
+    /// </summary>
     public sealed class RepairResult
     {
         public IntegrityReport Report { get; }
@@ -32,16 +39,20 @@ namespace POPSManager.Core.Integrity
         }
     }
 
+    /// <summary>
+    /// Motor de reparación de archivos VCD/ISO.
+    /// Por ahora solo sugiere reparaciones; no modifica archivos automáticamente.
+    /// </summary>
     public sealed class RepairEngine
     {
-        // IMPORTANTE: este motor NO modifica nada in-place sin que tú lo decidas.
-        // Devuelve sugerencias y, si quieres, puedes implementar Apply() aparte.
-
+        /// <summary>
+        /// Analiza un VCD y genera sugerencias de reparación.
+        /// </summary>
         public RepairResult AnalyzeVcdForRepairs(string vcdPath)
         {
             var inspector = new VcdInspector(vcdPath);
             var report = inspector.InspectBasic();
-            var suggestions = new System.Collections.Generic.List<RepairSuggestion>();
+            var suggestions = new List<RepairSuggestion>();
 
             if (report.HasErrors || report.HasWarnings)
             {
@@ -53,7 +64,7 @@ namespace POPSManager.Core.Integrity
                             suggestions.Add(new RepairSuggestion(
                                 "FIX_ALIGNMENT",
                                 "Recrear el VCD con tamaño alineado a 2048 bytes.",
-                                canAutoApply: false // requiere recreación, no parche simple
+                                canAutoApply: false
                             ));
                             break;
 
@@ -71,12 +82,11 @@ namespace POPSManager.Core.Integrity
             return new RepairResult(report, suggestions.ToArray());
         }
 
-        // Hook para futuras reparaciones automáticas (SYSTEM.CNF, header POPStarter, etc.)
+        /// <summary>
+        /// Aplica una reparación (no implementado).
+        /// </summary>
         public void ApplyRepair(string vcdPath, RepairSuggestion suggestion)
         {
-            // Aquí NO hacemos nada todavía para no tocar datos.
-            // La idea es que tú decidas qué reparaciones quieres permitir
-            // y cómo implementarlas (copias temporales, backups, etc.).
             throw new NotImplementedException("ApplyRepair aún no está implementado.");
         }
     }
