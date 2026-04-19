@@ -10,8 +10,12 @@
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource Brush.Background}">
 
-    <Grid>
+    <!-- DataContext se asigna en App.xaml.cs, pero también se puede definir aquí para diseño -->
+    <Window.DataContext>
+        <local:MainViewModel />
+    </Window.DataContext>
 
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
             <RowDefinition Height="*"/>
@@ -23,17 +27,13 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ========================================================= -->
-        <!--  HEADER -->
-        <!-- ========================================================= -->
+        <!-- HEADER -->
         <Border Grid.Row="0" Grid.ColumnSpan="2"
                 Background="{StaticResource Brush.Panel}"
                 Padding="12"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="0,0,0,1">
-
             <DockPanel LastChildFill="False">
-
                 <TextBlock Text="POPSManager"
                            FontSize="18"
                            FontWeight="SemiBold"
@@ -42,33 +42,25 @@
 
                 <StackPanel Orientation="Horizontal"
                             DockPanel.Dock="Right">
-
                     <Button Content="⚙"
                             Width="32" Height="32"
                             Margin="0 0 10 0"
                             Style="{StaticResource SecondaryButton}"
-                            Click="Settings_Click"/>
-
+                            Command="{Binding OpenSettingsCommand}"/>
                     <Button Content="❔"
                             Width="32" Height="32"
                             Style="{StaticResource SecondaryButton}"
-                            Click="About_Click"/>
-
+                            Command="{Binding OpenAboutCommand}"/>
                 </StackPanel>
-
             </DockPanel>
         </Border>
 
-        <!-- ========================================================= -->
-        <!--  SIDEBAR -->
-        <!-- ========================================================= -->
+        <!-- SIDEBAR -->
         <Border Grid.Row="1" Grid.Column="0"
                 Background="{StaticResource Brush.Panel}"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="0,0,1,0">
-
             <StackPanel Margin="10">
-
                 <TextBlock Text="Menú"
                            Foreground="{StaticResource Brush.TextMuted}"
                            FontSize="14"
@@ -77,65 +69,55 @@
                 <Button Content="Dashboard"
                         Style="{StaticResource SidebarButtonStyle}"
                         Margin="0 0 0 10"
-                        Click="Dashboard_Click"/>
+                        Command="{Binding NavigateCommand}"
+                        CommandParameter="Dashboard"/>
 
                 <Button Content="Convertir juegos"
                         Style="{StaticResource SidebarButtonStyle}"
                         Margin="0 0 0 10"
-                        Click="Convert_Click"/>
+                        Command="{Binding NavigateCommand}"
+                        CommandParameter="Convert"/>
 
                 <Button Content="Procesar POPS"
                         Style="{StaticResource SidebarButtonStyle}"
                         Margin="0 0 0 10"
-                        Click="ProcessPops_Click"/>
+                        Command="{Binding NavigateCommand}"
+                        CommandParameter="ProcessPops"/>
 
-                <!-- ========================================================= -->
-                <!--  NUEVO BOTÓN: CONFIGURACIÓN DE CHEATS -->
-                <!-- ========================================================= -->
                 <Button Content="Cheats"
                         Style="{StaticResource SidebarButtonStyle}"
                         Margin="0 0 0 10"
-                        Click="CheatsSettings_Click"/>
+                        Command="{Binding OpenCheatsSettingsCommand}"/>
 
                 <Button Content="Configuración"
                         Style="{StaticResource SidebarButtonStyle}"
                         Margin="0 0 0 10"
-                        Click="Settings_Click"/>
+                        Command="{Binding OpenSettingsCommand}"/>
 
                 <Button Content="Acerca de"
                         Style="{StaticResource SidebarButtonStyle}"
-                        Click="About_Click"/>
-
+                        Command="{Binding OpenAboutCommand}"/>
             </StackPanel>
         </Border>
 
-        <!-- ========================================================= -->
-        <!--  CONTENIDO PRINCIPAL -->
-        <!-- ========================================================= -->
-        <Grid Grid.Row="1" Grid.Column="1"
-              Margin="20"
-              x:Name="MainContent"/>
+        <!-- CONTENIDO PRINCIPAL -->
+        <ContentControl Grid.Row="1" Grid.Column="1"
+                        Margin="20"
+                        Content="{Binding CurrentView}"/>
 
-        <!-- ========================================================= -->
-        <!--  STATUS BAR -->
-        <!-- ========================================================= -->
+        <!-- STATUS BAR -->
         <Border Grid.Row="2" Grid.ColumnSpan="2"
                 Background="{StaticResource Brush.Panel}"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="1,1,0,0"
                 Padding="10 0">
-
             <DockPanel>
-                <TextBlock x:Name="StatusText"
-                           Text="Listo"
+                <TextBlock Text="{Binding StatusMessage, Mode=OneWay}"
                            Foreground="{StaticResource Brush.TextSecondary}"/>
             </DockPanel>
-
         </Border>
 
-        <!-- ========================================================= -->
-        <!--  NOTIFICATION HOST -->
-        <!-- ========================================================= -->
+        <!-- NOTIFICATION HOST -->
         <ui:NotificationHost x:Name="Notifier"
                              Grid.Row="0"
                              Grid.ColumnSpan="2"
@@ -144,16 +126,15 @@
                              Margin="0 60 20 0"
                              Width="350"/>
 
-        <!-- ========================================================= -->
-        <!--  PROGRESS PANEL -->
-        <!-- ========================================================= -->
+        <!-- PROGRESS PANEL -->
         <controls:ProgressPanel x:Name="ProgressPanelControl"
                                 Grid.Row="1"
                                 Grid.Column="1"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top"
                                 Margin="0 10 10 0"
-                                Visibility="Collapsed"/>
-
+                                Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                                ProgressValue="{Binding ProgressValue}"
+                                StatusText="{Binding ProgressStatusText}"/>
     </Grid>
 </Window>
