@@ -1,8 +1,10 @@
-using System;
 using System.IO;
 
 namespace POPSManager.Logic
 {
+    /// <summary>
+    /// Información de un disco individual en un conjunto multidisco.
+    /// </summary>
     public sealed class DiscInfo
     {
         public string Path { get; set; } = string.Empty;
