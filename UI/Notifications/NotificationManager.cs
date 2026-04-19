@@ -20,7 +20,7 @@ namespace POPSManager.UI.Notifications
 
         public void Show(UiNotification notification)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 var toast = new NotificationToast(
                     title: GetLocalizedTitle(notification.Type),
@@ -37,7 +37,7 @@ namespace POPSManager.UI.Notifications
 
         private void OnToastClosed(NotificationToast toast)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 _activeToasts.Remove(toast);
                 _host.RemoveToast(toast);
