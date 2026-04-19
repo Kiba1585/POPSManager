@@ -6,47 +6,48 @@ using System.Text.Json;
 
 namespace POPSManager.Logic
 {
+    /// <summary>
+    /// Base de datos local de juegos PS1/PS2 con soporte para búsqueda por ID.
+    /// </summary>
     public static class GameDatabase
     {
         private static readonly Dictionary<string, GameEntry> Cache =
             new(StringComparer.OrdinalIgnoreCase);
 
-        private static Dictionary<string, GameEntry>? ps1Db;
-        private static Dictionary<string, GameEntry>? ps2Db;
+        private static Dictionary<string, GameEntry>? _ps1Db;
+        private static Dictionary<string, GameEntry>? _ps2Db;
 
-        // ============================================================
-        //  CARGA DE BASES DE DATOS EMBEBIDAS
-        // ============================================================
         static GameDatabase()
         {
-            ps1Db = LoadJson("POPSManager.Data.ps1db.json");
-            ps2Db = LoadJson("POPSManager.Data.ps2db.json");
+            _ps1Db = LoadEmbeddedJson("POPSManager.Data.ps1db.json");
+            _ps2Db = LoadEmbeddedJson("POPSManager.Data.ps2db.json");
         }
 
-        private static Dictionary<string, GameEntry>? LoadJson(string resourceName)
+        private static Dictionary<string, GameEntry>? LoadEmbeddedJson(string resourceName)
         {
             try
             {
                 var asm = Assembly.GetExecutingAssembly();
                 using Stream? stream = asm.GetManifestResourceStream(resourceName);
                 if (stream == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GameDatabase] Recurso no encontrado: {resourceName}");
                     return null;
+                }
 
                 using var reader = new StreamReader(stream);
                 string json = reader.ReadToEnd();
 
                 var data = JsonSerializer.Deserialize<Dictionary<string, GameEntry>>(json);
-                return data ?? null;
+                return data;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[GameDatabase] Error cargando {resourceName}: {ex.Message}");
                 return null;
             }
         }
 
-        // ============================================================
-        //  MÉTODO PRINCIPAL
-        // ============================================================
         public static bool TryGetEntry(string gameId, out GameEntry? entry)
         {
             entry = null;
@@ -54,91 +55,50 @@ namespace POPSManager.Logic
             if (string.IsNullOrWhiteSpace(gameId))
                 return false;
 
-            // Cache
             if (Cache.TryGetValue(gameId, out var cached))
             {
                 entry = cached;
                 return true;
             }
 
-            // PS1
-            if (ps1Db != null && ps1Db.TryGetValue(gameId, out var ps1Entry))
+            if (_ps1Db != null && _ps1Db.TryGetValue(gameId, out var ps1Entry))
             {
                 Cache[gameId] = ps1Entry;
                 entry = ps1Entry;
                 return true;
             }
 
-            // PS2
-            if (ps2Db != null && ps2Db.TryGetValue(gameId, out var ps2Entry))
+            if (_ps2Db != null && _ps2Db.TryGetValue(gameId, out var ps2Entry))
             {
                 Cache[gameId] = ps2Entry;
                 entry = ps2Entry;
                 return true;
             }
 
-            // Online lookup (opcional)
-            var online = TryOnlineLookup(gameId);
-            if (online != null)
-            {
-                Cache[gameId] = online;
-                entry = online;
-                return true;
-            }
-
+            // Online lookup desactivado por defecto
+            // entry = TryOnlineLookup(gameId);
             return false;
         }
 
-        // ============================================================
-        //  LOOKUP ONLINE (Redump / GameFAQs / PSXDatacenter)
-        // ============================================================
-        private static GameEntry? TryOnlineLookup(string gameId)
-        {
-            try
-            {
-                // Aquí no hacemos llamadas reales.
-                return null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        // ============================================================
-        //  OBTENER COVER
-        // ============================================================
         public static string? TryGetCover(string gameId)
         {
-            return TryGetEntry(gameId, out var entry)
-                ? entry?.CoverUrl
-                : null;
+            return TryGetEntry(gameId, out var entry) ? entry?.CoverUrl : null;
         }
 
-        // ============================================================
-        //  OBTENER FIXES PARA CHEAT.TXT
-        // ============================================================
         public static IEnumerable<string>? TryGetFixes(string gameId)
         {
-            return TryGetEntry(gameId, out var entry)
-                ? entry?.CheatFixes
-                : null;
+            return TryGetEntry(gameId, out var entry) ? entry?.CheatFixes : null;
         }
 
-        // ============================================================
-        //  OBTENER METADATA
-        // ============================================================
         public static GameEntry? TryGetMetadata(string gameId)
         {
-            return TryGetEntry(gameId, out var entry)
-                ? entry
-                : null;
+            return TryGetEntry(gameId, out var entry) ? entry : null;
         }
     }
 
-    // ============================================================
-    //  MODELO DE DATOS ULTRA PRO
-    // ============================================================
+    /// <summary>
+    /// Entrada de la base de datos de juegos.
+    /// </summary>
     public class GameEntry
     {
         public string GameId { get; set; } = "";
@@ -147,23 +107,18 @@ namespace POPSManager.Logic
         public string Publisher { get; set; } = "";
         public int Year { get; set; }
 
-        // MultiDisc
         public int DiscCount { get; set; }
         public string[]? DiscNames { get; set; }
 
-        // Covers
         public string? CoverUrl { get; set; }
 
-        // Tags
         public string[]? Tags { get; set; }
 
-        // Fixes
         public string[]? CheatFixes { get; set; }
         public string[]? GraphicsFixes { get; set; }
         public string[]? VideoFixes { get; set; }
         public string[]? SoundFixes { get; set; }
 
-        // Flags
         public bool HasFmvIssues { get; set; }
         public bool HasTimingIssues { get; set; }
         public bool RequiresPal60 { get; set; }
