@@ -5,6 +5,7 @@ using POPSManager.Logic.Automation;
 using POPSManager.Logic.Cheats;
 using POPSManager.Services;
 using POPSManager.Settings;
+using POPSManager.UI.Localization;
 
 namespace POPSManager
 {
@@ -22,6 +23,7 @@ namespace POPSManager
         public AutomationEngine Automation { get; }
         public ConverterService Converter { get; }
         public GameProcessor GameProcessor { get; }
+        public LocalizationService Localization { get; }
 
         public AppServices()
         {
@@ -48,25 +50,30 @@ namespace POPSManager
             Paths = new PathsService(LogService.Info, Settings, Automation);
 
             // ============================================================
-            // 5. ConverterService
+            // 5. LocalizationService
+            // ============================================================
+            Localization = new LocalizationService(Settings);
+
+            // ============================================================
+            // 6. ConverterService
             // ============================================================
             Converter = new ConverterService(
                 LogService.Info,
                 Paths,
                 Settings,
                 Automation,
-                Notifications.Show,     // Firma correcta: (string, NotificationType)
+                Notifications.Show,
                 Progress.SetStatus
             );
 
             // ============================================================
-            // 6. Cheat Services
+            // 7. Cheat Services
             // ============================================================
             var cheatSettings = new CheatSettingsService(Settings);
             var cheatManager = new CheatManagerService(cheatSettings, LogService.Info);
 
             // ============================================================
-            // 7. GameProcessor
+            // 8. GameProcessor
             // ============================================================
             GameProcessor = new GameProcessor(
                 Progress,
