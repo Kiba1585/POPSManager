@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ウィンドウとタイトル -->
+  <data name="Title_ProgressWindow" xml:space="preserve">
+    <value>進行状況</value>
+  </data>
+  <data name="Title_CheatSettings" xml:space="preserve">
+    <value>チート設定</value>
+  </data>
+
+  <!-- 状態とアクション -->
+  <data name="Label_ProcessingGames" xml:space="preserve">
+    <value>ゲームを処理中…</value>
+  </data>
+  <data name="Label_Completed" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="Label_Error" xml:space="preserve">
+    <value>エラー</value>
+  </data>
+  <data name="Progress_Starting" xml:space="preserve">
+    <value>開始中…</value>
+  </data>
+
+  <!-- 進行状況メッセージ -->
+  <data name="Progress_Preparing" xml:space="preserve">
+    <value>準備中…</value>
+  </data>
+  <data name="Progress_CopyingDisc" xml:space="preserve">
+    <value>ディスク {0} をコピー中…</value>
+  </data>
+  <data name="Progress_DownloadingCover" xml:space="preserve">
+    <value>カバーをダウンロード中…</value>
+  </data>
+  <data name="Progress_GeneratingELF" xml:space="preserve">
+    <value>ELF を生成中…</value>
+  </data>
+  <data name="Progress_GeneratingCheats" xml:space="preserve">
+    <value>チートを生成中…</value>
+  </data>
+  <data name="Progress_GeneratingDiscsTxt" xml:space="preserve">
+    <value>DISCS.TXT を生成中…</value>
+  </data>
+  <data name="Progress_CopyingISO" xml:space="preserve">
+    <value>ISO をコピー中…</value>
+  </data>
+
+  <!-- ダイアログ -->
+  <data name="Message_SettingsSaved" xml:space="preserve">
+    <value>設定が正常に保存されました。</value>
+  </data>
+</root>
