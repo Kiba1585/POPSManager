@@ -4,15 +4,21 @@
         xmlns:controls="clr-namespace:POPSManager.Controls"
         xmlns:views="clr-namespace:POPSManager.Views"
         xmlns:ui="clr-namespace:POPSManager.UI.Notifications"
+        xmlns:local="clr-namespace:POPSManager"
         Title="POPSManager"
         Width="1200"
         Height="720"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource Brush.Background}">
 
-    <!-- DataContext se asigna en App.xaml.cs, pero también se puede definir aquí para diseño -->
+    <Window.Resources>
+        <!-- Convertidor para mostrar/ocultar el panel de progreso -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Window.Resources>
+
+    <!-- DataContext para tiempo de diseño (opcional, en runtime se asigna desde App.xaml.cs) -->
     <Window.DataContext>
-        <local:MainViewModel />
+        <local:MainViewModel/>
     </Window.DataContext>
 
     <Grid>
@@ -27,7 +33,9 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- HEADER -->
+        <!-- ========================================================= -->
+        <!--  HEADER -->
+        <!-- ========================================================= -->
         <Border Grid.Row="0" Grid.ColumnSpan="2"
                 Background="{StaticResource Brush.Panel}"
                 Padding="12"
@@ -55,7 +63,9 @@
             </DockPanel>
         </Border>
 
-        <!-- SIDEBAR -->
+        <!-- ========================================================= -->
+        <!--  SIDEBAR -->
+        <!-- ========================================================= -->
         <Border Grid.Row="1" Grid.Column="0"
                 Background="{StaticResource Brush.Panel}"
                 BorderBrush="{StaticResource Brush.Border}"
@@ -100,12 +110,16 @@
             </StackPanel>
         </Border>
 
-        <!-- CONTENIDO PRINCIPAL -->
+        <!-- ========================================================= -->
+        <!--  CONTENIDO PRINCIPAL (vistas dinámicas) -->
+        <!-- ========================================================= -->
         <ContentControl Grid.Row="1" Grid.Column="1"
                         Margin="20"
                         Content="{Binding CurrentView}"/>
 
-        <!-- STATUS BAR -->
+        <!-- ========================================================= -->
+        <!--  STATUS BAR -->
+        <!-- ========================================================= -->
         <Border Grid.Row="2" Grid.ColumnSpan="2"
                 Background="{StaticResource Brush.Panel}"
                 BorderBrush="{StaticResource Brush.Border}"
@@ -117,7 +131,9 @@
             </DockPanel>
         </Border>
 
-        <!-- NOTIFICATION HOST -->
+        <!-- ========================================================= -->
+        <!--  NOTIFICATION HOST -->
+        <!-- ========================================================= -->
         <ui:NotificationHost x:Name="Notifier"
                              Grid.Row="0"
                              Grid.ColumnSpan="2"
@@ -126,15 +142,17 @@
                              Margin="0 60 20 0"
                              Width="350"/>
 
-        <!-- PROGRESS PANEL -->
-        <controls:ProgressPanel x:Name="ProgressPanelControl"
-                                Grid.Row="1"
+        <!-- ========================================================= -->
+        <!--  PROGRESS PANEL (ahora con bindings completos) -->
+        <!-- ========================================================= -->
+        <controls:ProgressPanel Grid.Row="1"
                                 Grid.Column="1"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top"
                                 Margin="0 10 10 0"
                                 Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                                 ProgressValue="{Binding ProgressValue}"
-                                StatusText="{Binding ProgressStatusText}"/>
+                                StatusText="{Binding ProgressStatusText}"
+                                IsSpinnerActive="{Binding IsProgressVisible}"/>
     </Grid>
 </Window>
