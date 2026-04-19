@@ -2,10 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using POPSManager.Logic; // Para CheatGenerator
 using POPSManager.Settings;
 
 namespace POPSManager.Logic.Cheats
 {
+    /// <summary>
+    /// Servicio para gestionar la carga, guardado y fusión de cheats.
+    /// </summary>
     public class CheatManagerService
     {
         private readonly CheatSettingsService _settings;
@@ -30,7 +35,7 @@ namespace POPSManager.Logic.Cheats
                 return File.ReadAllLines(cheatPath)
                            .Select(l => l.Trim())
                            .Where(l => !string.IsNullOrWhiteSpace(l))
-                           .Distinct()
+                           .Distinct(StringComparer.OrdinalIgnoreCase)
                            .ToList();
             }
             catch (Exception ex)
@@ -66,16 +71,13 @@ namespace POPSManager.Logic.Cheats
         {
             var merged = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1. Cheats existentes
             foreach (var c in existing)
                 merged.Add(c);
 
-            // 2. Cheats automáticos (CheatGenerator)
             if (_settings.Current.UseAutoGameFixes)
                 foreach (var c in autoFixes)
                     merged.Add(c);
 
-            // 3. Cheats seleccionados por el usuario
             foreach (var c in userSelected)
                 merged.Add(c);
 
@@ -87,23 +89,31 @@ namespace POPSManager.Logic.Cheats
         // ============================================================
         public List<string> GenerateAutoFixes(string gameId, string cd1Folder)
         {
-            var tempFile = Path.Combine(cd1Folder, "_auto_cheat_temp.txt");
-
-            // CheatGenerator escribe directamente en archivo → lo redirigimos
+            // CheatGenerator escribe directamente en CHEAT.TXT dentro de cd1Folder
             CheatGenerator.GenerateCheatTxt(gameId, cd1Folder, msg => _log?.Invoke(msg));
 
-            if (!File.Exists(Path.Combine(cd1Folder, "CHEAT.TXT")))
+            string cheatPath = Path.Combine(cd1Folder, "CHEAT.TXT");
+
+            if (!File.Exists(cheatPath))
                 return new List<string>();
 
-            var auto = File.ReadAllLines(Path.Combine(cd1Folder, "CHEAT.TXT"))
-                           .Select(l => l.Trim())
-                           .Where(l => !string.IsNullOrWhiteSpace(l))
-                           .ToList();
+            try
+            {
+                var auto = File.ReadAllLines(cheatPath)
+                               .Select(l => l.Trim())
+                               .Where(l => !string.IsNullOrWhiteSpace(l))
+                               .ToList();
 
-            // Borrar archivo generado automáticamente
-            File.Delete(Path.Combine(cd1Folder, "CHEAT.TXT"));
+                // Eliminar el archivo temporal generado automáticamente
+                File.Delete(cheatPath);
 
-            return auto;
+                return auto;
+            }
+            catch (Exception ex)
+            {
+                _log?.Invoke($"[Cheats] Error leyendo CHEAT.TXT generado: {ex.Message}");
+                return new List<string>();
+            }
         }
 
         // ============================================================
@@ -118,9 +128,8 @@ namespace POPSManager.Logic.Cheats
 
                 string path = Path.Combine(folder, "UserCheats.json");
 
-                var json = System.Text.Json.JsonSerializer.Serialize(
-                    customCheats,
-                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(customCheats, options);
 
                 File.WriteAllText(path, json);
 
@@ -144,9 +153,9 @@ namespace POPSManager.Logic.Cheats
                 if (!File.Exists(path))
                     return new List<CheatDefinition>();
 
-                var json = File.ReadAllText(path);
+                string json = File.ReadAllText(path);
 
-                return System.Text.Json.JsonSerializer.Deserialize<List<CheatDefinition>>(json)
+                return JsonSerializer.Deserialize<List<CheatDefinition>>(json)
                        ?? new List<CheatDefinition>();
             }
             catch (Exception ex)
