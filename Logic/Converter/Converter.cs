@@ -1,31 +1,39 @@
 using POPSManager.Models;
 using POPSManager.Services;
+using POPSManager.UI.Localization;
 using System;
 using System.IO;
 using System.Linq;
 
 namespace POPSManager.Logic
 {
+    /// <summary>
+    /// Conversor legacy de BIN/CUE/ISO a VCD.
+    /// Se recomienda usar ConverterService para nuevas funcionalidades.
+    /// </summary>
     public class Converter
     {
-        private readonly Action<int> updateProgress;
-        private readonly Action<string> updateSpinner;
-        private readonly Action<string> log;
-        private readonly Action<UiNotification> notify;
-        private readonly PathsService paths;
+        private readonly Action<int> _updateProgress;
+        private readonly Action<string> _updateSpinner;
+        private readonly Action<string> _log;
+        private readonly Action<UiNotification> _notify;
+        private readonly PathsService _paths;
+        private readonly LocalizationService _loc;
 
         public Converter(
             Action<int> updateProgress,
             Action<string> updateSpinner,
             Action<string> log,
             Action<UiNotification> notify,
-            PathsService paths)
+            PathsService paths,
+            LocalizationService loc)
         {
-            this.updateProgress = updateProgress;
-            this.updateSpinner = updateSpinner;
-            this.log = log;
-            this.notify = notify;
-            this.paths = paths;
+            _updateProgress = updateProgress;
+            _updateSpinner = updateSpinner;
+            _log = log;
+            _notify = notify;
+            _paths = paths;
+            _loc = loc;
         }
 
         public void ConvertSingle(string inputPath)
@@ -37,13 +45,13 @@ namespace POPSManager.Logic
             // ---------------------------------------------------------
             if (inputPath.EndsWith(".cue", StringComparison.OrdinalIgnoreCase))
             {
-                var cue = CueParser.Parse(inputPath, log);
+                var cue = CueParser.Parse(inputPath, _log);
                 if (cue == null)
                 {
-                    notify(new UiNotification
+                    _notify(new UiNotification
                     {
                         Type = NotificationType.Error,
-                        Message = $"CUE inválido: {fileName}"
+                        Message = string.Format(_loc.GetString("Converter_InvalidCue"), fileName)
                     });
                     return;
                 }
@@ -57,25 +65,25 @@ namespace POPSManager.Logic
             // ---------------------------------------------------------
             if (IsPs2Iso(inputPath))
             {
-                log($"ISO ignorado (PS2): {inputPath}");
+                _log(string.Format(_loc.GetString("Converter_Ps2IsoIgnored"), inputPath));
                 return;
             }
 
-            string outputPath = Path.Combine(paths.PopsFolder, fileName + ".VCD");
+            string outputPath = Path.Combine(_paths.PopsFolder, fileName + ".VCD");
 
-            log("-----------------------------------------");
-            log($"Convirtiendo: {fileName}");
+            _log("-----------------------------------------");
+            _log(string.Format(_loc.GetString("Converter_Converting"), fileName));
 
             using var input = File.OpenRead(inputPath);
             using var output = File.Create(outputPath);
 
-            var mode = SectorDetector.Detect(input, log);
+            var mode = SectorDetector.Detect(input, _log);
             if (mode == SectorMode.Unknown)
             {
-                notify(new UiNotification
+                _notify(new UiNotification
                 {
                     Type = NotificationType.Error,
-                    Message = $"Formato de sector desconocido: {fileName}"
+                    Message = string.Format(_loc.GetString("Converter_UnknownSectorFormat"), fileName)
                 });
                 return;
             }
@@ -83,17 +91,17 @@ namespace POPSManager.Logic
             // ---------------------------------------------------------
             //  HEADER + CONVERSIÓN
             // ---------------------------------------------------------
-            VcdHeader.Write(output, fileName, input.Length, log);
-            SectorConverter.Convert(input, output, mode, updateProgress, log);
+            VcdHeader.Write(output, fileName, input.Length, _log);
+            SectorConverter.Convert(input, output, mode, _updateProgress, _log);
 
-            notify(new UiNotification
+            _notify(new UiNotification
             {
                 Type = NotificationType.Success,
-                Message = $"{fileName}.VCD generado correctamente."
+                Message = string.Format(_loc.GetString("Converter_VcdGenerated"), fileName)
             });
         }
 
-        private bool IsPs2Iso(string path)
+        private static bool IsPs2Iso(string path)
         {
             string name = Path.GetFileName(path).ToUpperInvariant();
 
