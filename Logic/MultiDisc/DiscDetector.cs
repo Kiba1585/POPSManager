@@ -3,13 +3,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using POPSManager.Models;
 
 namespace POPSManager.Logic
 {
+    /// <summary>
+    /// Detecta el número de disco de un archivo VCD/ISO usando múltiples heurísticas.
+    /// </summary>
     public static class DiscDetector
     {
-        // Regex ultra-pro para detectar TODOS los formatos reales
         private static readonly Regex DiscRegex =
             new(@"(?:DISC|DISK|CD)[\s\-_]*0?(\d{1,2})|(?:D)(\d{1,2})",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
