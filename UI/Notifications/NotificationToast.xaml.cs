@@ -10,9 +10,9 @@ namespace POPSManager.UI.Notifications
 {
     public partial class NotificationToast : UserControl
     {
-        private readonly int durationMs = 3500;
+        private readonly int _durationMs = 3500;
+        private DispatcherTimer? _timer;
 
-        // Evento para que NotificationManager pueda removerlo
         public event Action<NotificationToast>? Closed;
 
         public NotificationToast(string title, string message, NotificationType type)
@@ -27,9 +27,6 @@ namespace POPSManager.UI.Notifications
             Loaded += (_, _) => PlayShowAnimation();
         }
 
-        // ============================================================
-        //  ESTILOS POR TIPO
-        // ============================================================
         private void ApplyStyle(NotificationType type)
         {
             switch (type)
@@ -56,9 +53,6 @@ namespace POPSManager.UI.Notifications
             }
         }
 
-        // ============================================================
-        //  ANIMACIÓN DE ENTRADA (FADE + SLIDE)
-        // ============================================================
         private void PlayShowAnimation()
         {
             var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250))
@@ -80,36 +74,28 @@ namespace POPSManager.UI.Notifications
             StartAutoClose();
         }
 
-        // ============================================================
-        //  AUTO-CLOSE (WPF DispatcherTimer)
-        // ============================================================
         private void StartAutoClose()
         {
-            var timer = new DispatcherTimer
+            _timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(durationMs)
+                Interval = TimeSpan.FromMilliseconds(_durationMs)
             };
 
-            timer.Tick += (_, _) =>
+            _timer.Tick += (_, _) =>
             {
-                timer.Stop();
+                _timer.Stop();
                 PlayHideAnimation();
             };
 
-            timer.Start();
+            _timer.Start();
         }
 
-        // ============================================================
-        //  CIERRE MANUAL
-        // ============================================================
         private void Close_Click(object sender, RoutedEventArgs e)
         {
+            _timer?.Stop();
             PlayHideAnimation();
         }
 
-        // ============================================================
-        //  ANIMACIÓN DE SALIDA (FADE OUT)
-        // ============================================================
         private void PlayHideAnimation()
         {
             var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(300))
@@ -123,6 +109,15 @@ namespace POPSManager.UI.Notifications
             };
 
             BeginAnimation(OpacityProperty, fade);
+        }
+
+        /// <summary>
+        /// Cierra el toast inmediatamente sin animación.
+        /// </summary>
+        public void CloseImmediately()
+        {
+            _timer?.Stop();
+            Closed?.Invoke(this);
         }
     }
 }
