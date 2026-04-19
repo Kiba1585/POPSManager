@@ -6,6 +6,9 @@ using System.Text.RegularExpressions;
 
 namespace POPSManager.Core.Integrity
 {
+    /// <summary>
+    /// Inspector para archivos VCD de PS1.
+    /// </summary>
     public sealed class VcdInspector
     {
         private const int SectorSize = 2048;
@@ -22,9 +25,9 @@ namespace POPSManager.Core.Integrity
             Path = vcdPath ?? throw new ArgumentNullException(nameof(vcdPath));
         }
 
-        // ============================================================
-        //  VALIDACIÓN BÁSICA (USADA POR GameProcessor)
-        // ============================================================
+        /// <summary>
+        /// Validación básica usada por GameProcessor.
+        /// </summary>
         public IntegrityReport InspectBasic()
         {
             var report = new IntegrityReport();
@@ -41,9 +44,8 @@ namespace POPSManager.Core.Integrity
                 report.AddWarning("VCD_TOO_SMALL", $"El VCD parece demasiado pequeño ({info.Length} bytes).");
 
             if (info.Length % SectorSize != 0)
-                report.AddWarning("VCD_ALIGNMENT", "El tamaño del VCD no es múltiplo de 2048 bytes (posible desalineación).");
+                report.AddWarning("VCD_ALIGNMENT", "El tamaño del VCD no es múltiplo de 2048 bytes.");
 
-            // Validación de header PSX
             if (!ValidateHeader())
                 report.AddError("VCD_HEADER", "El header PSX no es válido.");
 
@@ -51,9 +53,9 @@ namespace POPSManager.Core.Integrity
             return report;
         }
 
-        // ============================================================
-        //  INSPECCIÓN COMPLETA (OPCIONAL)
-        // ============================================================
+        /// <summary>
+        /// Inspección completa del VCD.
+        /// </summary>
         public VcdInfo Inspect()
         {
             using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read);
@@ -74,9 +76,6 @@ namespace POPSManager.Core.Integrity
             return info;
         }
 
-        // ============================================================
-        //  VALIDACIÓN DE HEADER PSX
-        // ============================================================
         private bool ValidateHeader()
         {
             using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read);
@@ -88,16 +87,9 @@ namespace POPSManager.Core.Integrity
             byte[] header = new byte[3];
             fs.Seek(0, SeekOrigin.Begin);
             int read = fs.Read(header, 0, 3);
-
-            if (read < 3)
-                return false;
-
-            return Encoding.ASCII.GetString(header) == "PSX";
+            return read == 3 && Encoding.ASCII.GetString(header) == "PSX";
         }
 
-        // ============================================================
-        //  DETECTAR REGIÓN
-        // ============================================================
         private static string DetectRegion(string? id)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -119,82 +111,69 @@ namespace POPSManager.Core.Integrity
             return "Unknown";
         }
 
-        // ============================================================
-        //  EXTRAER ID DESDE SYSTEM.CNF
-        // ============================================================
         private static string? ExtractId(byte[]? data)
         {
-            if (data == null)
+            if (data == null || data.Length == 0)
                 return null;
 
             string text = Encoding.ASCII.GetString(data);
             var m = IdRegex.Match(text);
-            if (!m.Success)
-                return null;
-
-            return $"{m.Groups[1].Value}_{m.Groups[2].Value}{m.Groups[3].Value}";
+            return m.Success ? $"{m.Groups[1].Value}_{m.Groups[2].Value}{m.Groups[3].Value}" : null;
         }
 
-        // ============================================================
-        //  LEER PVD
-        // ============================================================
         private static PvdInfo ReadPvd(FileStream fs)
         {
-            fs.Seek(HeaderSize + 16 * SectorSize, SeekOrigin.Begin);
+            fs.Seek(HeaderSize + 16L * SectorSize, SeekOrigin.Begin);
 
             byte[] pvd = new byte[SectorSize];
             int read = fs.Read(pvd, 0, SectorSize);
-
             if (read < SectorSize)
                 return new PvdInfo();
 
             return new PvdInfo
             {
-                Identifier = Encoding.ASCII.GetString(pvd, 1, 5),
-                VolumeName = Encoding.ASCII.GetString(pvd, 40, 32).Trim(),
-                SystemId = Encoding.ASCII.GetString(pvd, 8, 32).Trim()
+                Identifier = SafeGetString(pvd, 1, 5),
+                VolumeName = SafeGetString(pvd, 40, 32).Trim(),
+                SystemId = SafeGetString(pvd, 8, 32).Trim()
             };
         }
 
-        // ============================================================
-        //  LEER DIRECTORIO RAÍZ
-        // ============================================================
+        private static string SafeGetString(byte[] buffer, int offset, int count)
+        {
+            if (offset < 0 || offset + count > buffer.Length)
+                return "";
+            return Encoding.ASCII.GetString(buffer, offset, count);
+        }
+
         private static Dictionary<string, (int lba, int size)> ReadRootDirectory(FileStream fs)
         {
             var files = new Dictionary<string, (int, int)>(StringComparer.OrdinalIgnoreCase);
 
-            fs.Seek(HeaderSize + 16 * SectorSize, SeekOrigin.Begin);
+            fs.Seek(HeaderSize + 16L * SectorSize, SeekOrigin.Begin);
             byte[] pvd = new byte[SectorSize];
             int read = fs.Read(pvd, 0, SectorSize);
-
             if (read < SectorSize)
                 return files;
 
             int rootLba = BitConverter.ToInt32(pvd, 156 + 2);
-
             byte[] sector = ReadSector(fs, rootLba);
             int pos = 0;
 
             while (pos < sector.Length)
             {
                 int len = sector[pos];
-                if (len == 0)
-                    break;
-
-                if (pos + 33 >= sector.Length)
-                    break;
+                if (len == 0) break;
+                if (pos + 33 >= sector.Length) break;
 
                 int nameLen = sector[pos + 32];
-                if (pos + 33 + nameLen > sector.Length)
-                    break;
+                if (pos + 33 + nameLen > sector.Length) break;
 
-                string name = Encoding.ASCII.GetString(sector, pos + 33, nameLen)
-                    .TrimEnd(';', '1');
-
+                string name = Encoding.ASCII.GetString(sector, pos + 33, nameLen).TrimEnd(';', '1');
                 int lba = BitConverter.ToInt32(sector, pos + 2);
                 int size = BitConverter.ToInt32(sector, pos + 10);
 
-                files[name] = (lba, size);
+                if (!string.IsNullOrWhiteSpace(name) && lba > 0)
+                    files[name] = (lba, size);
 
                 pos += len;
             }
@@ -202,12 +181,7 @@ namespace POPSManager.Core.Integrity
             return files;
         }
 
-        // ============================================================
-        //  LEER ARCHIVO DEL VCD
-        // ============================================================
-        private static byte[]? ReadFile(FileStream fs,
-            Dictionary<string, (int lba, int size)> files,
-            string target)
+        private static byte[]? ReadFile(FileStream fs, Dictionary<string, (int lba, int size)> files, string target)
         {
             if (!files.TryGetValue(target, out var entry))
                 return null;
@@ -216,14 +190,17 @@ namespace POPSManager.Core.Integrity
             return ReadSector(fs, entry.lba, sectors);
         }
 
-        // ============================================================
-        //  LEER SECTOR
-        // ============================================================
         private static byte[] ReadSector(FileStream fs, int lba, int count = 1)
         {
             byte[] buffer = new byte[count * SectorSize];
-            fs.Seek(HeaderSize + lba * SectorSize, SeekOrigin.Begin);
-            fs.Read(buffer, 0, buffer.Length);
+            fs.Seek(HeaderSize + (long)lba * SectorSize, SeekOrigin.Begin);
+            int read = fs.Read(buffer, 0, buffer.Length);
+            if (read < buffer.Length)
+            {
+                byte[] trimmed = new byte[read];
+                Array.Copy(buffer, trimmed, read);
+                return trimmed;
+            }
             return buffer;
         }
     }
