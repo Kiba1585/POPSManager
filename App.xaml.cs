@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 using POPSManager.Services;
-using POPSManager.ViewModels; // Asegúrate de tener este using
+using POPSManager.ViewModels;
 
 namespace POPSManager
 {
@@ -45,13 +45,17 @@ namespace POPSManager
             };
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
             try
             {
                 Services = new AppServices();
+                
+                // Inicialización asíncrona (carga rutas, guarda settings por defecto, etc.)
+                await Services.InitializeAsync();
+
                 Services.LogService.Info("[APP] Servicios inicializados correctamente.");
 
                 // Crear ViewModel y ventana principal
@@ -71,15 +75,11 @@ namespace POPSManager
             }
         }
 
-        protected override async void OnExit(ExitEventArgs e)
+        protected override void OnExit(ExitEventArgs e)
         {
             try
             {
-                if (Services != null)
-                {
-                    Services.LogService.Info("[APP] Cerrando aplicación...");
-                    await Services.DisposeAsync();
-                }
+                Services?.LogService?.Info("[APP] Cerrando aplicación...");
             }
             catch { }
 
