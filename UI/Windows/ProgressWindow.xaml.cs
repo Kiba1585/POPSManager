@@ -15,8 +15,7 @@ namespace POPSManager.UI.Windows
             ViewModel = new ProgressViewModel(services.Localization);
             DataContext = ViewModel;
 
-            // Localizar título de la ventana
-            Title = services.Localization.GetString("Title_ProgressWindow");
+            // El título se obtiene del ViewModel (ya localizado)
         }
     }
 }
