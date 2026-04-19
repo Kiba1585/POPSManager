@@ -1,8 +1,6 @@
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Microsoft.Win32;
 using POPSManager.Commands;
@@ -15,9 +13,9 @@ namespace POPSManager.ViewModels
     {
         private readonly AppServices _services;
         private readonly PathsService _paths;
-        private string _rootPath;
-        private string _elfPath;
-        private string _systemInfo;
+        private string _rootPath = string.Empty;
+        private string _elfPath = string.Empty;
+        private string _systemInfo = string.Empty;
 
         public DashboardViewModel()
         {
@@ -41,19 +39,19 @@ namespace POPSManager.ViewModels
         public string RootPath
         {
             get => _rootPath;
-            set { _rootPath = value; OnPropertyChanged(); }
+            set => SetProperty(ref _rootPath, value);
         }
 
         public string ElfPath
         {
             get => _elfPath;
-            set { _elfPath = value; OnPropertyChanged(); }
+            set => SetProperty(ref _elfPath, value);
         }
 
         public string SystemInfo
         {
             get => _systemInfo;
-            set { _systemInfo = value; OnPropertyChanged(); }
+            set => SetProperty(ref _systemInfo, value);
         }
 
         public ICommand OpenConvertCommand { get; }
@@ -78,8 +76,11 @@ namespace POPSManager.ViewModels
 
         private void NavigateTo(System.Windows.Controls.UserControl view)
         {
-            if (App.Current.MainWindow is MainWindow main)
-                main.LoadView(view);
+            if (System.Windows.Application.Current.MainWindow is MainWindow main &&
+                main.DataContext is MainViewModel vm)
+            {
+                vm.CurrentView = view;
+            }
         }
 
         private void OpenRootFolder()
@@ -183,7 +184,5 @@ namespace POPSManager.ViewModels
             LoadData();
             _services.Notifications.Success("POPSTARTER.ELF actualizado correctamente.");
         }
-
-        // INotifyPropertyChanged ya está en ViewModelBase
     }
 }
