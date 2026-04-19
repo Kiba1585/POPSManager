@@ -1,6 +1,6 @@
-using System.IO;
+using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
+using System.Windows.Media;
 
 namespace POPSManager.UI
 {
@@ -11,34 +11,34 @@ namespace POPSManager.UI
             InitializeComponent();
         }
 
-        /// <summary>
-        /// Carga una portada .ART compatible con OPL.
-        /// baseFolder = paths.PopsFolder o paths.DvdFolder
-        /// </summary>
-        public void LoadCover(string gameId, string title, string baseFolder)
+        public static readonly DependencyProperty GameIdProperty =
+            DependencyProperty.Register(nameof(GameId), typeof(string), typeof(GameCoverView),
+                new PropertyMetadata(string.Empty));
+
+        public static readonly DependencyProperty GameTitleProperty =
+            DependencyProperty.Register(nameof(GameTitle), typeof(string), typeof(GameCoverView),
+                new PropertyMetadata(string.Empty));
+
+        public static readonly DependencyProperty CoverImageSourceProperty =
+            DependencyProperty.Register(nameof(CoverImageSource), typeof(ImageSource), typeof(GameCoverView),
+                new PropertyMetadata(null));
+
+        public string GameId
         {
-            GameTitle.Text = title;
-            GameId.Text = gameId;
+            get => (string)GetValue(GameIdProperty);
+            set => SetValue(GameIdProperty, value);
+        }
 
-            // Ruta OPL: /ART/{GAMEID}.ART
-            string artPath = Path.Combine(baseFolder, "ART", $"{gameId}.ART");
+        public string GameTitle
+        {
+            get => (string)GetValue(GameTitleProperty);
+            set => SetValue(GameTitleProperty, value);
+        }
 
-            if (File.Exists(artPath))
-            {
-                var img = new BitmapImage();
-                img.BeginInit();
-                img.UriSource = new Uri(artPath);
-                img.CacheOption = BitmapCacheOption.OnLoad;
-                img.EndInit();
-
-                CoverImage.Source = img;
-            }
-            else
-            {
-                // Placeholder si no existe ART
-                CoverImage.Source = new BitmapImage(
-                    new Uri("pack://application:,,,/POPSManager;component/Assets/placeholder.jpg"));
-            }
+        public ImageSource CoverImageSource
+        {
+            get => (ImageSource)GetValue(CoverImageSourceProperty);
+            set => SetValue(CoverImageSourceProperty, value);
         }
     }
 }
