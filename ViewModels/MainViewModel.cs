@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.UI.Notifications;
@@ -27,37 +28,71 @@ namespace POPSManager.ViewModels
 
         public MainViewModel()
         {
-            _services = App.Services!;
-            
+            // Verificar que los servicios estén disponibles
+            _services = App.Services ?? throw new InvalidOperationException("App.Services no está inicializado.");
+
             // Vista inicial
             _currentView = new Dashboard();
 
-            // Comandos
+            // Inicializar comandos
             NavigateCommand = new RelayCommand<string>(Navigate);
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             OpenAboutCommand = new RelayCommand(OpenAbout);
             OpenCheatsSettingsCommand = new RelayCommand(OpenCheatsSettings);
 
             // Suscribirse a eventos de progreso y logs
-            _services.Progress.OnStart += () => 
+            SubscribeToServiceEvents();
+        }
+
+        private void SubscribeToServiceEvents()
+        {
+            _services.Progress.OnStart += () => SafeUpdate(() =>
             {
                 IsProgressVisible = true;
                 ProgressStatusText = "Iniciando...";
-            };
-            _services.Progress.OnStop += () =>
+            });
+
+            _services.Progress.OnStop += () => SafeUpdate(() =>
             {
                 IsProgressVisible = false;
                 ProgressValue = 0;
                 ProgressStatusText = "Completado";
-            };
-            _services.Progress.OnProgress += val => ProgressValue = val;
-            _services.Progress.OnStatus += msg => 
+            });
+
+            _services.Progress.OnProgress += val => SafeUpdate(() =>
+            {
+                ProgressValue = val;
+            });
+
+            _services.Progress.OnStatus += msg => SafeUpdate(() =>
             {
                 ProgressStatusText = msg;
                 StatusMessage = msg;
-            };
-            
+            });
+
             _services.LogService.OnLog += msg => System.Diagnostics.Debug.WriteLine(msg);
+        }
+
+        /// <summary>
+        /// Ejecuta una acción en el hilo de la UI de forma segura.
+        /// </summary>
+        private void SafeUpdate(Action action)
+        {
+            try
+            {
+                if (Application.Current?.Dispatcher != null)
+                {
+                    Application.Current.Dispatcher.InvokeAsync(action, DispatcherPriority.Normal);
+                }
+                else
+                {
+                    action();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Error en SafeUpdate: {ex.Message}");
+            }
         }
 
         public void Initialize(NotificationManager notifications)
@@ -72,6 +107,8 @@ namespace POPSManager.ViewModels
                 });
             };
         }
+
+        #region Propiedades enlazables
 
         public UserControl CurrentView
         {
@@ -103,10 +140,18 @@ namespace POPSManager.ViewModels
             set { _progressStatusText = value; OnPropertyChanged(); }
         }
 
+        #endregion
+
+        #region Comandos
+
         public ICommand NavigateCommand { get; }
         public ICommand OpenSettingsCommand { get; }
         public ICommand OpenAboutCommand { get; }
         public ICommand OpenCheatsSettingsCommand { get; }
+
+        #endregion
+
+        #region Métodos privados para comandos
 
         private void Navigate(string destination)
         {
@@ -153,10 +198,16 @@ namespace POPSManager.ViewModels
             }
         }
 
+        #endregion
+
+        #region INotifyPropertyChanged
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
+        #endregion
     }
 }
