@@ -1,30 +1,44 @@
 namespace POPSManager.Settings
 {
+    /// <summary>
+    /// Modo de generación de cheats.
+    /// </summary>
     public enum CheatMode
     {
-        Disabled,       // No generar CHEAT.TXT nunca
-        AutoForPal,     // Usar CheatGenerator solo para juegos PAL
-        AskEachTime,    // Preguntar por cada juego al procesar
-        ManualSelection // No auto, solo editor/manual
+        /// <summary>No generar CHEAT.TXT nunca.</summary>
+        Disabled,
+
+        /// <summary>Usar CheatGenerator solo para juegos PAL.</summary>
+        AutoForPal,
+
+        /// <summary>Preguntar por cada juego al procesar.</summary>
+        AskEachTime,
+
+        /// <summary>No automático, solo edición manual.</summary>
+        ManualSelection
     }
 
+    /// <summary>
+    /// Configuración detallada de generación de cheats.
+    /// </summary>
     public class CheatSettings
     {
+        /// <summary>Modo principal de generación.</summary>
         public CheatMode Mode { get; set; } = CheatMode.AutoForPal;
 
-        // ¿Usar fixes automáticos por juego (CheatGenerator)?
+        /// <summary>Usar fixes automáticos por juego (CheatGenerator).</summary>
         public bool UseAutoGameFixes { get; set; } = true;
 
-        // ¿Usar fixes por engine (Crash, Spyro, FF...)?
+        /// <summary>Usar fixes por engine (Crash, Spyro, FF...).</summary>
         public bool UseEngineFixes { get; set; } = true;
 
-        // ¿Usar fixes heurísticos?
+        /// <summary>Usar fixes heurísticos.</summary>
         public bool UseHeuristicFixes { get; set; } = true;
 
-        // ¿Usar fixes desde GameDatabase?
+        /// <summary>Usar fixes desde GameDatabase.</summary>
         public bool UseDatabaseFixes { get; set; } = true;
 
-        // ¿Permitir cheats personalizados del usuario?
+        /// <summary>Permitir cheats personalizados del usuario.</summary>
         public bool EnableCustomCheats { get; set; } = true;
     }
 }
