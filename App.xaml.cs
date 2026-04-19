@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using POPSManager.Services;
+using POPSManager.ViewModels; // Asegúrate de tener este using
 
 namespace POPSManager
 {
@@ -10,7 +11,38 @@ namespace POPSManager
 
         public App()
         {
-            // (código de manejo de excepciones igual que antes)
+            DispatcherUnhandledException += (s, e) =>
+            {
+                try
+                {
+                    Services?.LogService?.Error($"[FATAL] {e.Exception}");
+                }
+                catch { }
+
+                MessageBox.Show(
+                    $"Error inesperado:\n{e.Exception.Message}",
+                    "POPSManager — Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                e.Handled = true;
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                var ex = e.ExceptionObject as Exception;
+                try
+                {
+                    Services?.LogService?.Error($"[FATAL-THREAD] {ex}");
+                }
+                catch { }
+
+                MessageBox.Show(
+                    $"Error crítico en hilo secundario:\n{ex?.Message}",
+                    "POPSManager — Error Crítico",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            };
         }
 
         protected override void OnStartup(StartupEventArgs e)
@@ -34,10 +66,24 @@ namespace POPSManager
                     "POPSManager — Error de Arranque",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+
                 Shutdown(1);
             }
         }
 
-        // (resto igual)
+        protected override async void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                if (Services != null)
+                {
+                    Services.LogService.Info("[APP] Cerrando aplicación...");
+                    await Services.DisposeAsync();
+                }
+            }
+            catch { }
+
+            base.OnExit(e);
+        }
     }
 }
