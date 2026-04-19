@@ -64,7 +64,7 @@ namespace POPSManager.Controls
         private static void OnStatusTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var panel = (ProgressPanel)d;
-            panel.StatusTextBlock.Text = (string)e.NewValue;
+            panel.StatusText.Text = (string)e.NewValue;
         }
 
         // =====================================================
@@ -97,6 +97,7 @@ namespace POPSManager.Controls
         // =====================================================
         public void StartSpinner()
         {
+            // Aplicar animación al RotateTransform del Ellipse
             SpinnerRotate.BeginAnimation(
                 System.Windows.Media.RotateTransform.AngleProperty,
                 spinnerAnimation
