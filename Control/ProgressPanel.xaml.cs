@@ -23,7 +23,7 @@ namespace POPSManager.Controls
         }
 
         // =====================================================
-        // PROPIEDAD DE DEPENDENCIA: ProgressValue (int)
+        // ProgressValue
         // =====================================================
         public static readonly DependencyProperty ProgressValueProperty =
             DependencyProperty.Register(
@@ -41,12 +41,11 @@ namespace POPSManager.Controls
         private static void OnProgressValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var panel = (ProgressPanel)d;
-            var newValue = (int)e.NewValue;
-            panel.ProgressBarControl.Value = newValue;
+            panel.ProgressBarControl.Value = (int)e.NewValue;
         }
 
         // =====================================================
-        // PROPIEDAD DE DEPENDENCIA: StatusText (string)
+        // StatusText
         // =====================================================
         public static readonly DependencyProperty StatusTextProperty =
             DependencyProperty.Register(
@@ -64,11 +63,11 @@ namespace POPSManager.Controls
         private static void OnStatusTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var panel = (ProgressPanel)d;
-            panel.StatusText.Text = (string)e.NewValue;
+            panel.StatusTextBlock.Text = (string)e.NewValue;
         }
 
         // =====================================================
-        // PROPIEDAD DE DEPENDENCIA: IsSpinnerActive (bool)
+        // IsSpinnerActive
         // =====================================================
         public static readonly DependencyProperty IsSpinnerActiveProperty =
             DependencyProperty.Register(
@@ -86,6 +85,7 @@ namespace POPSManager.Controls
         private static void OnIsSpinnerActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var panel = (ProgressPanel)d;
+
             if ((bool)e.NewValue)
                 panel.StartSpinner();
             else
@@ -93,11 +93,10 @@ namespace POPSManager.Controls
         }
 
         // =====================================================
-        // MÉTODOS DE CONTROL DEL SPINNER
+        // Spinner
         // =====================================================
         public void StartSpinner()
         {
-            // Aplicar animación al RotateTransform del Ellipse
             SpinnerRotate.BeginAnimation(
                 System.Windows.Media.RotateTransform.AngleProperty,
                 spinnerAnimation
@@ -113,7 +112,7 @@ namespace POPSManager.Controls
         }
 
         // =====================================================
-        // MÉTODOS LEGACY (mantenidos por compatibilidad)
+        // Métodos legacy
         // =====================================================
         public void UpdateProgress(int value)
         {
