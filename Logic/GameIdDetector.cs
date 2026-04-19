@@ -189,7 +189,6 @@ public static bool IsPalRegion(string gameId)
 
     return gameId.StartsWith("SLES", StringComparison.Ordinal) ||
            gameId.StartsWith("SCES", StringComparison.Ordinal);
-}
         }
     }
 }
