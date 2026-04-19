@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Fenêtres et titres -->
+  <data name="Title_ProgressWindow" xml:space="preserve">
+    <value>Progression</value>
+  </data>
+  <data name="Title_CheatSettings" xml:space="preserve">
+    <value>Paramètres des cheats</value>
+  </data>
+
+  <!-- États et actions -->
+  <data name="Label_ProcessingGames" xml:space="preserve">
+    <value>Traitement des jeux…</value>
+  </data>
+  <data name="Label_Completed" xml:space="preserve">
+    <value>Terminé</value>
+  </data>
+  <data name="Label_Error" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="Progress_Starting" xml:space="preserve">
+    <value>Démarrage…</value>
+  </data>
+
+  <!-- Messages de progression -->
+  <data name="Progress_Preparing" xml:space="preserve">
+    <value>Préparation…</value>
+  </data>
+  <data name="Progress_CopyingDisc" xml:space="preserve">
+    <value>Copie du disque {0}…</value>
+  </data>
+  <data name="Progress_DownloadingCover" xml:space="preserve">
+    <value>Téléchargement de la jaquette…</value>
+  </data>
+  <data name="Progress_GeneratingELF" xml:space="preserve">
+    <value>Génération de l'ELF…</value>
+  </data>
+  <data name="Progress_GeneratingCheats" xml:space="preserve">
+    <value>Génération des cheats…</value>
+  </data>
+  <data name="Progress_GeneratingDiscsTxt" xml:space="preserve">
+    <value>Génération de DISCS.TXT…</value>
+  </data>
+  <data name="Progress_CopyingISO" xml:space="preserve">
+    <value>Copie de l'ISO…</value>
+  </data>
+
+  <!-- Dialogues -->
+  <data name="Message_SettingsSaved" xml:space="preserve">
+    <value>Paramètres enregistrés avec succès.</value>
+  </data>
+</root>
