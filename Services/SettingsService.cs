@@ -9,11 +9,16 @@ using POPSManager.Logic.Automation;
 namespace POPSManager.Services
 {
     public enum AppLanguage
-    {
-        Auto = 0,
-        Spanish = 1,
-        English = 2
-    }
+{
+    Auto = 0,
+    Spanish = 1,
+    English = 2,
+    French = 3,
+    German = 4,
+    Italian = 5,
+    Portuguese = 6,
+    Japanese = 7
+}
 
     public sealed class SettingsService
     {
