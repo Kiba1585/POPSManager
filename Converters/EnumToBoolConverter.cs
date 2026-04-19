@@ -8,18 +8,12 @@ namespace POPSManager.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null || parameter == null)
-                return false;
-
-            return value.Equals(parameter);
+            return value?.Equals(parameter) == true;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool boolValue && boolValue && parameter != null)
-                return parameter;
-
-            return Binding.DoNothing;
+            return (bool)value ? parameter : System.Windows.Data.Binding.DoNothing;
         }
     }
 }
