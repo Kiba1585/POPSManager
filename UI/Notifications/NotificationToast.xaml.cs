@@ -8,7 +8,7 @@ using POPSManager.Models;
 
 namespace POPSManager.UI.Notifications
 {
-    public partial class NotificationToast : UserControl
+    public partial class NotificationToast : System.Windows.Controls.UserControl
     {
         private readonly int _durationMs = 3500;
         private DispatcherTimer? _timer;
@@ -111,9 +111,6 @@ namespace POPSManager.UI.Notifications
             BeginAnimation(OpacityProperty, fade);
         }
 
-        /// <summary>
-        /// Cierra el toast inmediatamente sin animación.
-        /// </summary>
         public void CloseImmediately()
         {
             _timer?.Stop();
