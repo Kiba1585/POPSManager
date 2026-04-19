@@ -1,6 +1,7 @@
 <Window x:Class="POPSManager.UI.Windows.GameSelectorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:POPSManager.ViewModels"
         Title="{Binding WindowTitle}"
         Width="520"
         Height="600"
@@ -8,9 +9,7 @@
         Background="{StaticResource Brush.Background}"
         ResizeMode="NoResize">
 
-    <Window.DataContext>
-        <viewModels:GameSelectorViewModel/>
-    </Window.DataContext>
+    <!-- ❌ Eliminado DataContext en XAML -->
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
