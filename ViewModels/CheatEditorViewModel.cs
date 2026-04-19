@@ -6,6 +6,7 @@ using System.Windows.Input;
 using POPSManager.Commands;
 using POPSManager.Logic.Cheats;
 using POPSManager.Services;
+using POPSManager.Settings;
 using POPSManager.UI.Localization;
 using POPSManager.UI.Windows;
 
