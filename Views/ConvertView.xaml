@@ -1,11 +1,10 @@
 <UserControl x:Class="POPSManager.Views.ConvertView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewModels="clr-namespace:POPSManager.ViewModels"
              Background="{StaticResource Brush.Background}">
 
-    <UserControl.DataContext>
-        <viewModels:ConvertViewModel/>
-    </UserControl.DataContext>
+    <!-- ❌ Eliminado DataContext en XAML -->
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
