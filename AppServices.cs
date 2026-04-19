@@ -37,7 +37,7 @@ namespace POPSManager
             // ============================================================
             // 2. Settings
             // ============================================================
-            Settings = new SettingsService(LogService.Info);
+            Settings = new SettingsService(LogService.Info, Notifications);
 
             // ============================================================
             // 3. AutomationEngine
@@ -50,26 +50,30 @@ namespace POPSManager
             Paths = new PathsService(LogService.Info, Settings, Automation);
 
             // ============================================================
-            // 5. LocalizationService
+            // 5. LocalizationService (debe crearse después de Settings)
             // ============================================================
             Localization = new LocalizationService(Settings);
 
             // ============================================================
-            // 6. ConverterService
+            // 6. ConverterService (ahora recibe LocalizationService)
             // ============================================================
             Converter = new ConverterService(
                 LogService.Info,
                 Paths,
                 Settings,
                 Automation,
+                Localization,
                 Notifications.Show,
                 Progress.SetStatus
             );
 
             // ============================================================
-            // 7. Cheat Services
+            // 7. Cheat Services (usando rutas desde PathsService)
             // ============================================================
-            var cheatSettings = new CheatSettingsService(Settings);
+            var cheatSettings = new CheatSettingsService(
+                Paths.RootFolder,               // ✅ Ruta raíz real
+                LogService.Info
+            );
             var cheatManager = new CheatManagerService(cheatSettings, LogService.Info);
 
             // ============================================================
