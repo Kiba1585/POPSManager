@@ -4,20 +4,12 @@ using POPSManager.Services;
 
 namespace POPSManager
 {
-    public partial class App : Application
+    public partial class App : System.Windows.Application
     {
-        // ============================================================
-        //  SERVICIOS — Estático para acceso global desde Views
-        //  Patrón: App.Services.LogService, App.Services.Paths, etc.
-        // ============================================================
         public static AppServices Services { get; private set; } = null!;
 
-        // ============================================================
-        //  CONSTRUCTOR — Manejo global de excepciones
-        // ============================================================
         public App()
         {
-            // Capturar excepciones no manejadas de UI
             DispatcherUnhandledException += (s, e) =>
             {
                 try
@@ -35,7 +27,6 @@ namespace POPSManager
                 e.Handled = true;
             };
 
-            // Capturar excepciones de hilos secundarios
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
                 var ex = e.ExceptionObject as Exception;
@@ -53,16 +44,12 @@ namespace POPSManager
             };
         }
 
-        // ============================================================
-        //  STARTUP — Inicialización protegida
-        // ============================================================
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
             try
             {
-                // 1. Inicializar DI Container
                 Services = new AppServices();
                 Services.LogService.Info("[APP] Servicios inicializados correctamente.");
             }
@@ -78,9 +65,6 @@ namespace POPSManager
             }
         }
 
-        // ============================================================
-        //  EXIT — Liberación segura de recursos
-        // ============================================================
         protected override async void OnExit(ExitEventArgs e)
         {
             try
