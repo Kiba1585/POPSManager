@@ -2,8 +2,14 @@ using System.Collections.Generic;
 
 namespace POPSManager.Logic.Cheats
 {
+    /// <summary>
+    /// Biblioteca de cheats oficiales de POPStarter.
+    /// </summary>
     public static class CheatLibrary
     {
+        /// <summary>
+        /// Obtiene la lista de cheats oficiales.
+        /// </summary>
         public static IReadOnlyList<CheatDefinition> GetOfficialCheats()
         {
             return new List<CheatDefinition>
