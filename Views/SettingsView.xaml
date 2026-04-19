@@ -12,7 +12,9 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="True">
         <StackPanel Margin="20">
 
-            <!-- General -->
+            <!-- ========================================================= -->
+            <!--  OPCIONES GENERALES -->
+            <!-- ========================================================= -->
             <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
                 <StackPanel>
                     <TextBlock Text="Opciones generales"
@@ -20,6 +22,7 @@
                                Foreground="{StaticResource Brush.TextPrimary}"
                                Margin="0 0 0 16"/>
 
+                    <!-- Modo oscuro -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
                         <CheckBox IsChecked="{Binding DarkMode}" Margin="0 0 10 0"/>
                         <TextBlock Text="Modo oscuro"
@@ -27,16 +30,32 @@
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
+                    <!-- Notificaciones visuales -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
                         <CheckBox IsChecked="{Binding NotificationsEnabled}" Margin="0 0 10 0"/>
                         <TextBlock Text="Notificaciones visuales"
                                    VerticalAlignment="Center"
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
+
+                    <!-- Selector de idioma -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                        <TextBlock Text="Idioma:"
+                                   Width="120"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                        <ComboBox ItemsSource="{Binding Languages}"
+                                  SelectedValue="{Binding SelectedLanguage}"
+                                  SelectedValuePath="Value"
+                                  DisplayMemberPath="DisplayName"
+                                  Width="160"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
-            <!-- Automatización -->
+            <!-- ========================================================= -->
+            <!--  AUTOMATIZACIÓN INTELIGENTE -->
+            <!-- ========================================================= -->
             <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
                 <StackPanel>
                     <TextBlock Text="Automatización inteligente"
