@@ -4,6 +4,9 @@ using System.Text;
 
 namespace POPSManager.Core.Integrity
 {
+    /// <summary>
+    /// Información básica de un archivo ELF de PS1.
+    /// </summary>
     public sealed class ElfInfo
     {
         public string Magic { get; }
@@ -18,6 +21,9 @@ namespace POPSManager.Core.Integrity
         }
     }
 
+    /// <summary>
+    /// Inspector para archivos ELF de PS1 (formato PS-X EXE).
+    /// </summary>
     public sealed class ElfInspector
     {
         public string Path { get; }
@@ -27,6 +33,9 @@ namespace POPSManager.Core.Integrity
             Path = elfPath ?? throw new ArgumentNullException(nameof(elfPath));
         }
 
+        /// <summary>
+        /// Inspecciona el ELF y devuelve la información básica junto con un reporte de integridad.
+        /// </summary>
         public (ElfInfo? Info, IntegrityReport Report) Inspect()
         {
             var report = new IntegrityReport();
@@ -40,15 +49,15 @@ namespace POPSManager.Core.Integrity
             try
             {
                 using var fs = new FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                var header = new byte[0x800]; // PS-X EXE header típico
-                var read = fs.Read(header, 0, header.Length);
+                var header = new byte[0x800];
+                int read = fs.Read(header, 0, header.Length);
                 if (read < 0x40)
                 {
                     report.AddError("ELF_HEADER_SHORT", "El header del ELF es demasiado pequeño.");
                     return (null, report);
                 }
 
-                var magic = Encoding.ASCII.GetString(header, 0, 8).TrimEnd('\0');
+                string magic = Encoding.ASCII.GetString(header, 0, 8).TrimEnd('\0');
                 if (!magic.StartsWith("PS-X EXE", StringComparison.OrdinalIgnoreCase))
                 {
                     report.AddWarning("ELF_MAGIC", $"Magic inesperado en ELF: '{magic}'.");
@@ -58,7 +67,6 @@ namespace POPSManager.Core.Integrity
                     report.AddInfo("ELF_MAGIC_OK", "Header PS-X EXE válido.");
                 }
 
-                // Offsets típicos en PS-X EXE (simplificado)
                 uint initialPc = BitConverter.ToUInt32(header, 0x10);
                 uint initialGp = BitConverter.ToUInt32(header, 0x14);
 
