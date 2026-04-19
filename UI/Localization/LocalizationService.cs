@@ -1,59 +1,78 @@
 using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
+using System.Resources;
 using POPSManager.Services;
 
 namespace POPSManager.UI.Localization
 {
-    public static class LocalizationService
+    /// <summary>
+    /// Servicio de localización que carga cadenas desde archivos .resx y notifica cambios de idioma.
+    /// </summary>
+    public class LocalizationService : INotifyPropertyChanged
     {
-        private static SettingsService Settings => App.Services!.Settings;
+        private readonly SettingsService _settings;
+        private ResourceManager _resourceManager;
 
-        // ============================================================
-        //  DICCIONARIO PARA TEXTOS DINÁMICOS (progreso, subtareas)
-        // ============================================================
-        private static readonly Dictionary<string, (string es, string en)> DynamicTexts =
-            new()
-            {
-                { "Preparing", ("Preparando…", "Preparing…") },
-                { "CopyingDisc", ("Copiando CD{0}…", "Copying Disc {0}…") },
-                { "DownloadingCover", ("Descargando cover…", "Downloading cover…") },
-                { "GeneratingELF", ("Generando ELF…", "Generating ELF…") },
-                { "GeneratingCheats", ("Generando cheats…", "Generating cheats…") },
-                { "GeneratingDiscsTxt", ("Generando DISCS.TXT…", "Generating DISCS.TXT…") },
-                { "CopyingISO", ("Copiando ISO…", "Copying ISO…") },
-                { "Completed", ("Completado", "Completed") },
-                { "Error", ("Error", "Error") }
-            };
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        // ============================================================
-        //  OBTENER IDIOMA ACTUAL
-        // ============================================================
-        private static string CurrentLang
+        public LocalizationService(SettingsService settings)
         {
-            get
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _resourceManager = new ResourceManager("POPSManager.UI.Localization.Strings", GetType().Assembly);
+        }
+
+        /// <summary>
+        /// Idioma actual (código ISO de dos letras).
+        /// </summary>
+        public string CurrentLanguage
+        {
+            get => _settings.Language switch
             {
-                return Settings.Language switch
-                {
-                    AppLanguage.Spanish => "es",
-                    AppLanguage.English => "en",
-                    AppLanguage.Auto => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
-                    _ => "en"
-                };
+                AppLanguage.Spanish => "es",
+                AppLanguage.English => "en",
+                AppLanguage.Auto => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+                _ => "en"
+            };
+        }
+
+        /// <summary>
+        /// Obtiene una cadena localizada por su clave.
+        /// </summary>
+        public string GetString(string key)
+        {
+            try
+            {
+                var culture = new CultureInfo(CurrentLanguage);
+                return _resourceManager.GetString(key, culture) ?? key;
+            }
+            catch
+            {
+                return key;
             }
         }
 
-        // ============================================================
-        //  TRADUCIR TEXTO DINÁMICO
-        // ============================================================
-        public static string T(string key, params object[] args)
+        /// <summary>
+        /// Obtiene una cadena localizada con formato.
+        /// </summary>
+        public string GetString(string key, params object[] args)
         {
-            if (!DynamicTexts.TryGetValue(key, out var pair))
-                return key;
+            string format = GetString(key);
+            return args.Length > 0 ? string.Format(format, args) : format;
+        }
 
-            string raw = CurrentLang == "es" ? pair.es : pair.en;
+        /// <summary>
+        /// Fuerza la recarga del ResourceManager y notifica cambio de idioma.
+        /// </summary>
+        public void Refresh()
+        {
+            _resourceManager = new ResourceManager("POPSManager.UI.Localization.Strings", GetType().Assembly);
+            OnPropertyChanged(nameof(CurrentLanguage));
+        }
 
-            return args.Length > 0 ? string.Format(raw, args) : raw;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
