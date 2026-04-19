@@ -8,7 +8,6 @@ using System.Windows.Input;
 using Microsoft.Win32;
 using POPSManager.Commands;
 using POPSManager.Services;
-using POPSManager.UI.Localization;
 using POPSManager.UI.Windows;
 
 namespace POPSManager.ViewModels
@@ -107,7 +106,8 @@ namespace POPSManager.ViewModels
             else
             {
                 _services.Progress.Reset();
-                _services.Progress.Start(LocalizationService.T("ProcessingGame"));
+                // Usar el servicio de localización no estático
+                _services.Progress.Start(_services.Localization.GetString("Label_ProcessingGames"));
             }
 
             try
