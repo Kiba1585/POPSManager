@@ -2,7 +2,7 @@ using System.Windows.Controls;
 
 namespace POPSManager.Views
 {
-    public partial class Dashboard : UserControl
+    public partial class Dashboard : System.Windows.Controls.UserControl
     {
         public Dashboard()
         {
