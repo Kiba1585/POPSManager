@@ -13,31 +13,20 @@ namespace POPSManager
         {
             DispatcherUnhandledException += (s, e) =>
             {
-                try
-                {
-                    Services?.LogService?.Error($"[FATAL] {e.Exception}");
-                }
-                catch { }
-
-                MessageBox.Show(
+                try { Services?.LogService?.Error($"[FATAL] {e.Exception}"); } catch { }
+                System.Windows.MessageBox.Show(
                     $"Error inesperado:\n{e.Exception.Message}",
                     "POPSManager — Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
-
                 e.Handled = true;
             };
 
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
                 var ex = e.ExceptionObject as Exception;
-                try
-                {
-                    Services?.LogService?.Error($"[FATAL-THREAD] {ex}");
-                }
-                catch { }
-
-                MessageBox.Show(
+                try { Services?.LogService?.Error($"[FATAL-THREAD] {ex}"); } catch { }
+                System.Windows.MessageBox.Show(
                     $"Error crítico en hilo secundario:\n{ex?.Message}",
                     "POPSManager — Error Crítico",
                     MessageBoxButton.OK,
@@ -52,37 +41,27 @@ namespace POPSManager
             try
             {
                 Services = new AppServices();
-                
-                // Inicialización asíncrona (carga rutas, guarda settings por defecto, etc.)
                 await Services.InitializeAsync();
-
                 Services.LogService.Info("[APP] Servicios inicializados correctamente.");
 
-                // Crear ViewModel y ventana principal
                 var mainViewModel = new MainViewModel();
                 var mainWindow = new MainWindow(mainViewModel);
                 mainWindow.Show();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     $"Error inicializando servicios:\n{ex.Message}\n\n{ex.InnerException?.Message}",
                     "POPSManager — Error de Arranque",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
-
                 Shutdown(1);
             }
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            try
-            {
-                Services?.LogService?.Info("[APP] Cerrando aplicación...");
-            }
-            catch { }
-
+            try { Services?.LogService?.Info("[APP] Cerrando aplicación..."); } catch { }
             base.OnExit(e);
         }
     }
