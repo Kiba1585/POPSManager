@@ -9,6 +9,9 @@ using POPSManager.Logic.Automation;
 
 namespace POPSManager.Logic
 {
+    /// <summary>
+    /// Gestor de juegos multidisco: detección, validación y generación de DISCS.TXT.
+    /// </summary>
     public static class MultiDiscManager
     {
         private static readonly Regex SimpleDiscRegex =
