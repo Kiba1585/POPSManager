@@ -25,58 +25,76 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore ${{ env.PROJECT_PATH }}
 
       - name: Build
         run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
 
       - name: Publish Portable
-        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output ./publish/portable --runtime win-x64 --self-contained false
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish/portable --runtime win-x64 --self-contained false
 
       - name: Publish Self-Contained
-        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output ./publish/self-contained --runtime win-x64 --self-contained true -p:PublishSingleFile=true
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish/self-contained --runtime win-x64 --self-contained true -p:PublishSingleFile=true
 
       # ============================
-      # PREPARAR CARPETA
+      # ARTIFACTS
       # ============================
       - name: Create artifacts folder
         run: mkdir artifacts
 
       # ============================
-      # INNO SETUP (FIX)
+      # INNO SETUP (FIX REAL)
       # ============================
       - name: Install Inno Setup
         run: choco install innosetup -y
 
+      - name: Verify Inno Setup
+        run: |
+          if (!(Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) {
+            Write-Error "ISCC.exe not found"
+            exit 1
+          }
+
       - name: Build Installer
         run: |
-          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "Installer/POPSManager.iss" /O"./artifacts" /F"POPSManager-Installer"
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "Installer/POPSManager.iss" /O"artifacts" /F"POPSManager-Installer"
 
       # ============================
-      # MSIX
+      # MSIX (FIX DINÁMICO)
       # ============================
+      - name: Locate MakeAppx
+        id: makeappx
+        run: |
+          $path = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter MakeAppx.exe | 
+                  Sort-Object FullName -Descending | 
+                  Select-Object -First 1
+
+          if ($path -eq $null) {
+            Write-Error "MakeAppx.exe not found"
+            exit 1
+          }
+
+          echo "MAKEAPPX=$($path.FullName)" >> $env:GITHUB_ENV
+
       - name: Create MSIX
         run: |
-          $makeappx = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe"
-          & $makeappx pack /d ./publish/self-contained /p ./artifacts/POPSManager.msix
+          & "$env:MAKEAPPX" pack /d publish/self-contained /p artifacts/POPSManager.msix
 
       # ============================
       # ZIPS
       # ============================
       - name: Create Portable ZIP
-        run: Compress-Archive -Path ./publish/portable/* -DestinationPath ./artifacts/POPSManager-Portable.zip
+        run: Compress-Archive -Path publish/portable/* -DestinationPath artifacts/POPSManager-Portable.zip
 
       - name: Create SelfContained ZIP
-        run: Compress-Archive -Path ./publish/self-contained/* -DestinationPath ./artifacts/POPSManager-SelfContained.zip
+        run: Compress-Archive -Path publish/self-contained/* -DestinationPath artifacts/POPSManager-SelfContained.zip
 
       # ============================
       # UPLOAD
@@ -85,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
-          path: ./artifacts
+          path: artifacts
 
   release:
     needs: build
@@ -97,13 +115,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
-          path: ./artifacts
+          path: artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: "POPSManager v${{ github.run_number }}"
-          files: ./artifacts/*
+          files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
