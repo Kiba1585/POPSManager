@@ -1,8 +1,5 @@
 name: Build and Release POPSManager
 
-# ============================================
-# CONCURRENCY: Cancela builds redundantes
-# ============================================
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -19,7 +16,6 @@ permissions:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  # ✅ CORREGIDO — el .csproj está en la raíz, no en subcarpeta
   PROJECT_PATH: 'POPSManager.csproj'
 
 jobs:
@@ -28,7 +24,7 @@ jobs:
 
     steps:
       # ============================
-      # CHECKOUT (historial completo)
+      # CHECKOUT
       # ============================
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -44,8 +40,12 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       # ============================
-      # CACHÉ NUGET
+      # RESTORE TOOLS & CACHE
       # ============================
+      - name: Restore local tools
+        run: dotnet tool restore
+        continue-on-error: true
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -54,14 +54,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      # ============================
-      # RESTORE
-      # ============================
       - name: Restore dependencies
         run: dotnet restore ${{ env.PROJECT_PATH }}
 
       # ============================
-      # VERIFY FORMAT
+      # FORMAT CHECK (OPCIONAL)
       # ============================
       - name: Verify code formatting
         run: dotnet format ${{ env.PROJECT_PATH }} --verify-no-changes
@@ -80,7 +77,7 @@ jobs:
       # ============================
       # PUBLISH PORTABLE
       # ============================
-      - name: Publish Portable
+      - name: Publish Portable (Framework-Dependent)
         run: >
           dotnet publish ${{ env.PROJECT_PATH }}
           --configuration Release
@@ -94,7 +91,7 @@ jobs:
       # ============================
       # PUBLISH SELF-CONTAINED
       # ============================
-      - name: Publish Self-Contained
+      - name: Publish Self-Contained (Single EXE)
         run: >
           dotnet publish ${{ env.PROJECT_PATH }}
           --configuration Release
@@ -106,50 +103,117 @@ jobs:
           -p:ContinuousIntegrationBuild=true
 
       # ============================
-      # COMPRESS ARTIFACTS
+      # COPIAR Y AJUSTAR MANIFIESTO MSIX
       # ============================
-      - name: Compress Portable
-        run: Compress-Archive -Path ./publish/portable/* -DestinationPath ./POPSManager-Portable.zip
-
-      - name: Compress Self-Contained
-        run: Compress-Archive -Path ./publish/self-contained/* -DestinationPath ./POPSManager-SelfContained.zip
+      - name: Prepare MSIX manifest
+        run: |
+          $dest = "./publish/self-contained/AppxManifest.xml"
+          Copy-Item "Installer/AppxManifest.xml" $dest
+          # Reemplazar la ruta del ejecutable en el manifiesto para que apunte al .exe raíz
+          (Get-Content $dest) -replace 'VFS\\ProgramFilesX64\\POPSManager\\POPSManager.exe', 'POPSManager.exe' | Set-Content $dest
 
       # ============================
-      # SHA256 CHECKSUMS
+      # INSTALADOR INNO SETUP
+      # ============================
+      - name: Setup Inno Setup
+        uses: actions/setup-innosetup@v1
+        with:
+          version: '6.2.0'
+
+      - name: Build Inno Setup installer
+        run: |
+          iscc "Installer/POPSManager.iss" /O"./artifacts" /F"POPSManager-Installer"
+
+      # ============================
+      # PAQUETE MSIX (SIN FIRMAR INICIALMENTE)
+      # ============================
+      - name: Create MSIX package
+        run: |
+          $makeappx = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe"
+          & $makeappx pack /v /h SHA256 /d ./publish/self-contained /p ./artifacts/POPSManager_unsigned.msix
+
+      # ============================
+      # FIRMAR MSIX (SI HAY CERTIFICADO)
+      # ============================
+      - name: Import certificate and sign MSIX
+        if: env.PFX_CERTIFICATE != ''
+        env:
+          PFX_CERTIFICATE: ${{ secrets.PFX_CERTIFICATE }}
+          PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP "certificate.pfx"
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:PFX_CERTIFICATE))
+          
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\SignTool.exe" sign /fd SHA256 /f $pfxPath /p $env:PFX_PASSWORD /v ./artifacts/POPSManager_unsigned.msix
+          
+          Rename-Item -Path ./artifacts/POPSManager_unsigned.msix -NewName POPSManager.msix
+        continue-on-error: true
+
+      - name: Rename unsigned MSIX if signing skipped
+        if: env.PFX_CERTIFICATE == ''
+        run: Rename-Item -Path ./artifacts/POPSManager_unsigned.msix -NewName POPSManager.msix
+
+      # ============================
+      # COMPRIMIR ARTEFACTOS
+      # ============================
+      - name: Create Portable ZIP
+        run: Compress-Archive -Path ./publish/portable/* -DestinationPath ./artifacts/POPSManager-Portable.zip
+
+      - name: Create Self-Contained ZIP
+        run: Compress-Archive -Path ./publish/self-contained/* -DestinationPath ./artifacts/POPSManager-SelfContained.zip
+
+      # ============================
+      # CHECKSUMS
       # ============================
       - name: Generate SHA256 checksums
         run: |
-          $portable = Get-FileHash ./POPSManager-Portable.zip -Algorithm SHA256
-          $selfcontained = Get-FileHash ./POPSManager-SelfContained.zip -Algorithm SHA256
+          $portable = Get-FileHash ./artifacts/POPSManager-Portable.zip -Algorithm SHA256
+          $self = Get-FileHash ./artifacts/POPSManager-SelfContained.zip -Algorithm SHA256
+          $installer = Get-FileHash ./artifacts/POPSManager-Installer.exe -Algorithm SHA256
+          $msix = Get-FileHash ./artifacts/POPSManager.msix -Algorithm SHA256
           @(
-            "## SHA256 Checksums",
+            "# SHA256 Checksums",
             "",
             "| File | SHA256 |",
-            "| --- | --- |",
-            "| POPSManager-Portable.zip | $($portable.Hash) |",
-            "| POPSManager-SelfContained.zip | $($selfcontained.Hash) |"
-          ) | Out-File -FilePath ./CHECKSUMS.md -Encoding utf8
+            "|------|--------|",
+            "| POPSManager-Portable.zip | ``$($portable.Hash)`` |",
+            "| POPSManager-SelfContained.zip | ``$($self.Hash)`` |",
+            "| POPSManager-Installer.exe | ``$($installer.Hash)`` |",
+            "| POPSManager.msix | ``$($msix.Hash)`` |"
+          ) | Out-File -FilePath ./artifacts/CHECKSUMS.md -Encoding utf8
 
       # ============================
       # UPLOAD ARTIFACTS
       # ============================
-      - name: Upload Portable artifact
+      - name: Upload Portable ZIP
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager-Portable
-          path: ./POPSManager-Portable.zip
+          path: ./artifacts/POPSManager-Portable.zip
 
-      - name: Upload Self-Contained artifact
+      - name: Upload Self-Contained ZIP
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager-SelfContained
-          path: ./POPSManager-SelfContained.zip
+          path: ./artifacts/POPSManager-SelfContained.zip
+
+      - name: Upload Inno Setup Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: POPSManager-Installer
+          path: ./artifacts/POPSManager-Installer.exe
+
+      - name: Upload MSIX Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: POPSManager-MSIX
+          path: ./artifacts/POPSManager.msix
 
       - name: Upload Checksums
         uses: actions/upload-artifact@v4
         with:
           name: CHECKSUMS
-          path: ./CHECKSUMS.md
+          path: ./artifacts/CHECKSUMS.md
 
   # ============================
   # RELEASE JOB
@@ -160,30 +224,25 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-      - name: Download Portable
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: POPSManager-Portable
+          path: ./artifacts
 
-      - name: Download Self-Contained
-        uses: actions/download-artifact@v4
-        with:
-          name: POPSManager-SelfContained
+      - name: Display structure
+        run: ls -R ./artifacts
 
-      - name: Download Checksums
-        uses: actions/download-artifact@v4
-        with:
-          name: CHECKSUMS
-
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          name: POPSManager v${{ github.run_number }}
+          name: "POPSManager v${{ github.run_number }}"
           generate_release_notes: true
           files: |
-            POPSManager-Portable.zip
-            POPSManager-SelfContained.zip
-            CHECKSUMS.md
+            ./artifacts/POPSManager-Portable/POPSManager-Portable.zip
+            ./artifacts/POPSManager-SelfContained/POPSManager-SelfContained.zip
+            ./artifacts/POPSManager-Installer/POPSManager-Installer.exe
+            ./artifacts/POPSManager-MSIX/POPSManager.msix
+            ./artifacts/CHECKSUMS/CHECKSUMS.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
