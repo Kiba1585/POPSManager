@@ -11,6 +11,9 @@ namespace POPSManager.Core.Integrity
         Error
     }
 
+    /// <summary>
+    /// Un problema detectado durante la validación de integridad.
+    /// </summary>
     public sealed class IntegrityIssue
     {
         public IntegritySeverity Severity { get; }
@@ -27,6 +30,9 @@ namespace POPSManager.Core.Integrity
         public override string ToString() => $"[{Severity}] {Code}: {Message}";
     }
 
+    /// <summary>
+    /// Reporte de integridad que contiene una lista de problemas.
+    /// </summary>
     public sealed class IntegrityReport
     {
         private readonly List<IntegrityIssue> _issues = new();
