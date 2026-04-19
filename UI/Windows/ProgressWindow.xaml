@@ -2,8 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:progress="clr-namespace:POPSManager.UI.Progress"
-        xmlns:loc="clr-namespace:POPSManager.UI.Localization"
-        Title="{x:Static loc:Strings.Title_ProgressWindow}"
+        Title="{Binding WindowTitle}"
         Width="600"
         Height="700"
         WindowStartupLocation="CenterOwner"
@@ -22,7 +21,6 @@
                             CornerRadius="6">
 
                         <StackPanel>
-
                             <TextBlock Text="{Binding Title}"
                                        FontSize="18"
                                        FontWeight="SemiBold"
@@ -35,7 +33,6 @@
                             <TextBlock Text="{Binding Status}"
                                        FontSize="14"
                                        Foreground="{StaticResource Brush.TextSecondary}"/>
-
                         </StackPanel>
 
                     </Border>
