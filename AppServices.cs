@@ -55,7 +55,7 @@ namespace POPSManager
             Localization = new LocalizationService(Settings);
 
             // ============================================================
-            // 6. ConverterService (ahora recibe LocalizationService)
+            // 6. ConverterService
             // ============================================================
             Converter = new ConverterService(
                 LogService.Info,
@@ -68,16 +68,16 @@ namespace POPSManager
             );
 
             // ============================================================
-            // 7. Cheat Services (usando rutas desde PathsService)
+            // 7. Cheat Services
             // ============================================================
             var cheatSettings = new CheatSettingsService(
-                Paths.RootFolder,               // ✅ Ruta raíz real
+                Paths.RootFolder,
                 LogService.Info
             );
             var cheatManager = new CheatManagerService(cheatSettings, LogService.Info);
 
             // ============================================================
-            // 8. GameProcessor
+            // 8. GameProcessor (ahora recibe LocalizationService)
             // ============================================================
             GameProcessor = new GameProcessor(
                 Progress,
@@ -87,7 +87,8 @@ namespace POPSManager
                 cheatSettings,
                 cheatManager,
                 Settings,
-                Automation
+                Automation,
+                Localization
             );
         }
 
