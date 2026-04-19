@@ -1,11 +1,11 @@
 using POPSManager.Models;
 using POPSManager.Services;
 using POPSManager.Settings;
-using POPSManager.Logic;
 using POPSManager.Logic.Cheats;
 using POPSManager.Logic.Covers;
 using POPSManager.Logic.Automation;
 using POPSManager.UI.Progress;
+using POPSManager.UI.Localization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,6 +25,7 @@ namespace POPSManager.Logic
         private readonly CheatManagerService _cheatManager;
         private readonly SettingsService _settings;
         private readonly AutomationEngine _auto;
+        private readonly LocalizationService _loc;
 
         private static readonly int _maxCoverParallel =
             Math.Clamp(Environment.ProcessorCount * 2, 5, 10);
@@ -40,7 +41,8 @@ namespace POPSManager.Logic
             CheatSettingsService cheatSettings,
             CheatManagerService cheatManager,
             SettingsService settings,
-            AutomationEngine auto)
+            AutomationEngine auto,
+            LocalizationService loc)
         {
             _progress = progress;
             _log = log;
@@ -50,6 +52,7 @@ namespace POPSManager.Logic
             _cheatManager = cheatManager;
             _settings = settings;
             _auto = auto;
+            _loc = loc;
         }
 
         // ============================================================
@@ -67,7 +70,7 @@ namespace POPSManager.Logic
         {
             if (!Directory.Exists(folder))
             {
-                _notify.Error("La carpeta seleccionada no existe.");
+                _notify.Error(_loc.GetString("GameProcessor_InvalidFolder"));
                 return;
             }
 
@@ -80,7 +83,7 @@ namespace POPSManager.Logic
 
             if (files.Length == 0)
             {
-                _notify.Warning("No se encontraron archivos VCD o ISO.");
+                _notify.Warning(_loc.GetString("GameProcessor_NoFilesFound"));
                 return;
             }
 
@@ -105,11 +108,10 @@ namespace POPSManager.Logic
                     string baseTitle = group.Key;
                     var discs = group.Value;
 
-                    string gameIdForUi = baseTitle; // se ajusta luego si detectamos ID
+                    string gameIdForUi = baseTitle;
 
                     try
                     {
-                        // Detectar tipo PS1/PS2
                         bool isPs1 = discs.Any(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase));
 
                         if (isPs1)
@@ -122,13 +124,13 @@ namespace POPSManager.Logic
                                 gameIdForUi = detectedId;
 
                             perGameProgress?.AddGame(baseTitle, gameIdForUi);
-                            perGameProgress?.UpdateStatus(gameIdForUi, "Preparando juego…");
+                            perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_Preparing"));
 
                             var valid = discs.Where(ValidateVcd).ToList();
                             if (valid.Count == 0)
                             {
-                                _log.Warn($"[PS1] Todos los VCD de {baseTitle} fueron inválidos.");
-                                perGameProgress?.MarkError(gameIdForUi, "VCD inválidos.");
+                                _log.Warn($"[PS1] {_loc.GetString("GameProcessor_AllVcdInvalid")} {baseTitle}");
+                                perGameProgress?.MarkError(gameIdForUi, _loc.GetString("GameProcessor_VcdInvalid"));
                             }
                             else
                             {
@@ -155,12 +157,12 @@ namespace POPSManager.Logic
                                 gameIdForUi = detectedId;
 
                             perGameProgress?.AddGame(originalName, gameIdForUi);
-                            perGameProgress?.UpdateStatus(gameIdForUi, "Preparando juego…");
+                            perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_Preparing"));
 
                             if (!ValidateIso(iso))
                             {
-                                _log.Warn($"[PS2] ISO inválido: {iso}");
-                                perGameProgress?.MarkError(gameIdForUi, "ISO inválido.");
+                                _log.Warn($"[PS2] {_loc.GetString("GameProcessor_InvalidIso")}: {iso}");
+                                perGameProgress?.MarkError(gameIdForUi, _loc.GetString("GameProcessor_IsoInvalid"));
                             }
                             else
                             {
@@ -177,16 +179,16 @@ namespace POPSManager.Logic
                     }
                     catch (OperationCanceledException)
                     {
-                        _log.Warn($"Procesamiento cancelado en {baseTitle}.");
-                        _notify.Warning("Procesamiento cancelado.");
-                        perGameProgress?.MarkError(gameIdForUi, "Cancelado.");
+                        _log.Warn($"{_loc.GetString("GameProcessor_ProcessingCancelled")} {baseTitle}");
+                        _notify.Warning(_loc.GetString("GameProcessor_ProcessingCancelled"));
+                        perGameProgress?.MarkError(gameIdForUi, _loc.GetString("GameProcessor_Cancelled"));
                         throw;
                     }
                     catch (Exception ex)
                     {
-                        _log.Error($"Error procesando {baseTitle}: {ex.Message}");
-                        _notify.Error($"Error procesando {baseTitle}");
-                        perGameProgress?.MarkError(gameIdForUi, "Error en el procesamiento.");
+                        _log.Error($"{_loc.GetString("GameProcessor_ErrorProcessing")} {baseTitle}: {ex.Message}");
+                        _notify.Error($"{_loc.GetString("GameProcessor_ErrorProcessing")} {baseTitle}");
+                        perGameProgress?.MarkError(gameIdForUi, _loc.GetString("GameProcessor_ErrorInProcessing"));
                     }
                     finally
                     {
@@ -196,11 +198,11 @@ namespace POPSManager.Logic
                     }
                 }).ConfigureAwait(false);
 
-                _progress.SetStatus("Completado");
+                _progress.SetStatus(_loc.GetString("Label_Completed"));
             }
             catch (OperationCanceledException)
             {
-                _progress.SetStatus("Cancelado");
+                _progress.SetStatus(_loc.GetString("GameProcessor_Cancelled"));
             }
         }
 
@@ -229,8 +231,8 @@ namespace POPSManager.Logic
         {
             if (!IntegrityValidator.Validate(vcdPath))
             {
-                _log.Warn($"[PS1] VCD inválido: {vcdPath}");
-                _notify.Warning($"VCD inválido: {Path.GetFileName(vcdPath)}");
+                _log.Warn($"[PS1] {_loc.GetString("GameProcessor_InvalidVcd")}: {vcdPath}");
+                _notify.Warning($"{_loc.GetString("GameProcessor_InvalidVcd")}: {Path.GetFileName(vcdPath)}");
                 return false;
             }
             return true;
@@ -243,14 +245,14 @@ namespace POPSManager.Logic
                 var info = new FileInfo(isoPath);
                 if (!info.Exists || info.Length < 100_000_000)
                 {
-                    _notify.Warning($"ISO sospechoso o demasiado pequeño: {Path.GetFileName(isoPath)}");
+                    _notify.Warning($"{_loc.GetString("GameProcessor_SuspiciousIso")}: {Path.GetFileName(isoPath)}");
                     return false;
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                _log.Error($"[PS2] Error validando ISO: {ex.Message}");
+                _log.Error($"[PS2] {_loc.GetString("GameProcessor_ErrorValidatingIso")}: {ex.Message}");
                 return false;
             }
         }
@@ -265,7 +267,7 @@ namespace POPSManager.Logic
             ProgressViewModel? perGameProgress,
             CancellationToken ct)
         {
-            _log.Info($"[PS1] Procesando grupo: {baseName}");
+            _log.Info($"[PS1] {_loc.GetString("GameProcessor_ProcessingGroup")}: {baseName}");
 
             discs = discs.OrderBy(d =>
             {
@@ -280,8 +282,8 @@ namespace POPSManager.Logic
 
             if (string.IsNullOrWhiteSpace(detectedId))
             {
-                _notify.Warning($"No se pudo detectar ID para {baseName}");
-                perGameProgress?.MarkError(gameIdForUi, "No se pudo detectar ID.");
+                _notify.Warning($"{_loc.GetString("GameProcessor_CouldNotDetectId")} {baseName}");
+                perGameProgress?.MarkError(gameIdForUi, _loc.GetString("GameProcessor_CouldNotDetectId"));
                 return;
             }
 
@@ -299,7 +301,7 @@ namespace POPSManager.Logic
                 if (!string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
-                    _log.Info($"[DB] Nombre oficial encontrado: {cleanTitle}");
+                    _log.Info($"[DB] {_loc.GetString("GameProcessor_OfficialNameFound")}: {cleanTitle}");
                 }
             }
 
@@ -308,7 +310,7 @@ namespace POPSManager.Logic
                 string artFolder = Path.Combine(_paths.PopsFolder, "ART");
                 Directory.CreateDirectory(artFolder);
 
-                perGameProgress?.UpdateStatus(gameIdForUi, "Descargando cover…");
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_DownloadingCover"));
 
                 await _coverSemaphore.WaitAsync(ct).ConfigureAwait(false);
                 try
@@ -318,7 +320,7 @@ namespace POPSManager.Logic
                         .ConfigureAwait(false);
 
                     if (art != null)
-                        _log.Info($"[COVER] PS1 ART generado → {art}");
+                        _log.Info($"[COVER] PS1 ART {_loc.GetString("GameProcessor_Generated")} → {art}");
                 }
                 finally
                 {
@@ -338,7 +340,7 @@ namespace POPSManager.Logic
 
                 try
                 {
-                    perGameProgress?.UpdateStatus(gameIdForUi, $"Copiando CD{discNumber}…");
+                    perGameProgress?.UpdateStatus(gameIdForUi, string.Format(_loc.GetString("Progress_CopyingDisc"), discNumber));
 
                     string discFolder = Path.Combine(gameRootFolder, $"CD{discNumber}");
                     Directory.CreateDirectory(discFolder);
@@ -349,11 +351,11 @@ namespace POPSManager.Logic
                     File.Copy(disc, destVcd, true);
                     discPaths.Add(destVcd);
 
-                    _log.Info($"[PS1] Copiado disco {discNumber} → {destVcd}");
+                    _log.Info($"[PS1] {_loc.GetString("GameProcessor_CopiedDisc")} {discNumber} → {destVcd}");
                 }
                 catch (Exception ex)
                 {
-                    _log.Error($"[PS1] Error copiando disco {discNumber}: {ex.Message}");
+                    _log.Error($"[PS1] {_loc.GetString("GameProcessor_ErrorCopyingDisc")} {discNumber}: {ex.Message}");
                 }
 
                 discNumber++;
@@ -361,21 +363,21 @@ namespace POPSManager.Logic
 
             if (handleMultiDisc)
             {
-                perGameProgress?.UpdateStatus(gameIdForUi, "Generando DISCS.TXT…");
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingDiscsTxt"));
                 MultiDiscManager.GenerateDiscsTxt(_paths.PopsFolder, detectedId, discPaths, _log.Info, _auto);
             }
 
             if (genCheats && GameIdDetector.IsPalRegion(detectedId))
             {
-                perGameProgress?.UpdateStatus(gameIdForUi, "Generando cheats…");
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingCheats"));
                 string cd1Folder = Path.Combine(gameRootFolder, "CD1");
                 CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, _log.Info);
             }
 
-            perGameProgress?.UpdateStatus(gameIdForUi, "Generando ELF…");
+            perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingELF"));
             GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder);
 
-            _notify.Success($"{cleanTitle} procesado correctamente.");
+            _notify.Success($"{cleanTitle} {_loc.GetString("GameProcessor_ProcessedSuccessfully")}");
         }
 
         private void GenerateElfForDisc1(string gameId, string title, string gameRootFolder)
@@ -385,7 +387,7 @@ namespace POPSManager.Logic
 
             if (vcdPath == null)
             {
-                _log.Warn($"[PS1] No se encontró VCD en {cd1Folder}");
+                _log.Warn($"[PS1] {_loc.GetString("GameProcessor_NoVcdFoundIn")} {cd1Folder}");
                 return;
             }
 
@@ -401,11 +403,11 @@ namespace POPSManager.Logic
 
             if (!ok)
             {
-                _notify.Error($"Error generando ELF para {gameId}");
+                _notify.Error($"{_loc.GetString("GameProcessor_ErrorGeneratingElf")} {gameId}");
                 return;
             }
 
-            _log.Info($"[PS1] ELF generado para {gameId}");
+            _log.Info($"[PS1] ELF {_loc.GetString("GameProcessor_GeneratedFor")} {gameId}");
         }
 
         // ============================================================
@@ -418,14 +420,14 @@ namespace POPSManager.Logic
             CancellationToken ct)
         {
             string originalName = Path.GetFileNameWithoutExtension(isoPath);
-            _log.Info($"[PS2] Procesando: {originalName}");
+            _log.Info($"[PS2] {_loc.GetString("GameProcessor_Processing")}: {originalName}");
 
             string? detectedId = GameIdDetector.DetectGameId(isoPath)
                                 ?? GameIdDetector.DetectFromName(originalName);
 
             if (string.IsNullOrWhiteSpace(detectedId))
             {
-                _notify.Warning($"No se pudo detectar ID para {originalName}. Se copiará sin renombrar.");
+                _notify.Warning($"{_loc.GetString("GameProcessor_CouldNotDetectIdCopying")} {originalName}");
                 detectedId = originalName.Replace(" ", "_");
             }
 
@@ -441,7 +443,7 @@ namespace POPSManager.Logic
                 if (!string.IsNullOrWhiteSpace(dbEntry.Name))
                 {
                     cleanTitle = dbEntry.Name;
-                    _log.Info($"[DB] Nombre oficial PS2 encontrado: {cleanTitle}");
+                    _log.Info($"[DB] {_loc.GetString("GameProcessor_OfficialNameFoundPs2")}: {cleanTitle}");
                 }
 
                 if (useCovers && dbEntry?.CoverUrl != null)
@@ -449,7 +451,7 @@ namespace POPSManager.Logic
                     string artFolder = Path.Combine(_paths.DvdFolder, "ART");
                     Directory.CreateDirectory(artFolder);
 
-                    perGameProgress?.UpdateStatus(gameIdForUi, "Descargando cover…");
+                    perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_DownloadingCover"));
 
                     await _coverSemaphore.WaitAsync(ct).ConfigureAwait(false);
                     try
@@ -459,7 +461,7 @@ namespace POPSManager.Logic
                             .ConfigureAwait(false);
 
                         if (art != null)
-                            _log.Info($"[COVER] PS2 ART generado → {art}");
+                            _log.Info($"[COVER] PS2 ART {_loc.GetString("GameProcessor_Generated")} → {art}");
                     }
                     finally
                     {
@@ -470,15 +472,15 @@ namespace POPSManager.Logic
 
             Directory.CreateDirectory(_paths.DvdFolder);
 
-            perGameProgress?.UpdateStatus(gameIdForUi, "Copiando ISO…");
+            perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_CopyingISO"));
 
             string dest = Path.Combine(_paths.DvdFolder, $"{cleanTitle}.ISO");
 
             ct.ThrowIfCancellationRequested();
             File.Copy(isoPath, dest, true);
 
-            _log.Info($"[PS2] Copiado ISO → {dest}");
-            _notify.Success($"{cleanTitle} copiado a DVD correctamente.");
+            _log.Info($"[PS2] {_loc.GetString("GameProcessor_CopiedIso")} → {dest}");
+            _notify.Success($"{cleanTitle} {_loc.GetString("GameProcessor_CopiedToDvdSuccessfully")}");
         }
     }
 }
