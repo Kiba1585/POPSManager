@@ -31,8 +31,8 @@ namespace POPSManager.Services
         public PathsService(Action<string>? log, SettingsService settings, AutomationEngine auto)
         {
             _log = log;
-            _settings = settings;
-            _auto = auto;
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _auto = auto ?? throw new ArgumentNullException(nameof(auto));
 
             RootFolder = NormalizeRoot(settings.RootFolder);
 
