@@ -10,8 +10,13 @@ namespace POPSManager.UI.Windows
         public ProgressWindow()
         {
             InitializeComponent();
-            ViewModel = new ProgressViewModel();
+
+            var services = App.Services!;
+            ViewModel = new ProgressViewModel(services.Localization);
             DataContext = ViewModel;
+
+            // Localizar título de la ventana
+            Title = services.Localization.GetString("Title_ProgressWindow");
         }
     }
 }
