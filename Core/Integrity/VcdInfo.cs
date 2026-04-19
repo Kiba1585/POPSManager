@@ -2,6 +2,9 @@ using System.Collections.Generic;
 
 namespace POPSManager.Core.Integrity
 {
+    /// <summary>
+    /// Información extraída de un archivo VCD.
+    /// </summary>
     public class VcdInfo
     {
         public string Path { get; set; } = "";
@@ -13,10 +16,10 @@ namespace POPSManager.Core.Integrity
 
         public PvdInfo? Pvd { get; set; }
 
-        // LBA + size por archivo
+        /// <summary>Archivos dentro del VCD (nombre → (lba, size)).</summary>
         public Dictionary<string, (int lba, int size)> Files { get; set; } = new();
 
-        // SYSTEM.CNF leído del VCD
+        /// <summary>Contenido de SYSTEM.CNF.</summary>
         public byte[]? SystemCnf { get; set; }
     }
 }
