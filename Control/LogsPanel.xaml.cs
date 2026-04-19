@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace POPSManager.Controls
 {
-    public partial class LogsPanel : UserControl
+    public partial class LogsPanel : System.Windows.Controls.UserControl
     {
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(LogsPanel),
