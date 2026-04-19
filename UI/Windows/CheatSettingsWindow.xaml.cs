@@ -1,21 +1,22 @@
-using POPSManager.Settings;
 using System.Windows;
+using POPSManager.Settings;
+using POPSManager.ViewModels;
 
 namespace POPSManager.UI.Windows
 {
     public partial class CheatSettingsWindow : Window
     {
         private readonly CheatSettingsService _service;
-        private readonly AppServices _services;
+        private readonly CheatSettingsViewModel _viewModel;
 
         public CheatSettingsWindow(CheatSettingsService service)
         {
             InitializeComponent();
             _service = service;
-            _services = App.Services!;
 
-            // Localizar título de la ventana
-            Title = _services.Localization.GetString("Title_CheatSettings");
+            var loc = App.Services!.Localization;
+            _viewModel = new CheatSettingsViewModel(loc);
+            DataContext = _viewModel;
 
             LoadSettings();
         }
@@ -46,7 +47,7 @@ namespace POPSManager.UI.Windows
             _service.Save();
 
             MessageBox.Show(
-                _services.Localization.GetString("Message_SettingsSaved"),
+                _viewModel.SettingsSavedMessage,
                 "POPSManager",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
