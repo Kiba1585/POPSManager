@@ -31,6 +31,11 @@ namespace POPSManager.UI.Localization
             {
                 AppLanguage.Spanish => "es",
                 AppLanguage.English => "en",
+                AppLanguage.French => "fr",
+                AppLanguage.German => "de",
+                AppLanguage.Italian => "it",
+                AppLanguage.Portuguese => "pt",
+                AppLanguage.Japanese => "ja",
                 AppLanguage.Auto => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
                 _ => "en"
             };
