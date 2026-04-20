@@ -70,9 +70,9 @@ namespace POPSManager.ViewModels
         {
             try
             {
-                if (Application.Current?.Dispatcher != null)
+                if (System.Windows.Application.Current?.Dispatcher != null)
                 {
-                    Application.Current.Dispatcher.InvokeAsync(action, DispatcherPriority.Normal);
+                    System.Windows.Application.Current.Dispatcher.InvokeAsync(action, DispatcherPriority.Normal);
                 }
                 else
                 {
@@ -164,7 +164,7 @@ namespace POPSManager.ViewModels
 
                 var win = new CheatSettingsWindow(cheatSettings)
                 {
-                    Owner = Application.Current.MainWindow
+                    Owner = System.Windows.Application.Current.MainWindow
                 };
                 win.ShowDialog();
             }
