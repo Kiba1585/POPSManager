@@ -199,10 +199,41 @@ namespace POPSManager.Logic
                 }).ConfigureAwait(false);
 
                 _progress.SetStatus(_loc.GetString("Label_Completed"));
+
+                // ============================================================
+                // COPIAR LNG Y THM AL FINALIZAR TODO (UNA SOLA VEZ)
+                // ============================================================
+                await CopyCustomAssetsAsync().ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
                 _progress.SetStatus(_loc.GetString("GameProcessor_Cancelled"));
+            }
+        }
+
+        // ============================================================
+        //  COPIAR LNG Y THM (CONDICIONAL SEGÚN AUTOMATIZACIÓN)
+        // ============================================================
+        private async Task CopyCustomAssetsAsync()
+        {
+            // LNG
+            if (_auto.ShouldCopyLng())
+            {
+                await Task.Run(() => CopyCustomFolderContents(_paths.LngFolder, "LNG", _log.Info));
+            }
+            else
+            {
+                _log.Info("[AUTO] Copia de archivos LNG desactivada por automatización.");
+            }
+
+            // THM
+            if (_auto.ShouldCopyThm())
+            {
+                await Task.Run(() => CopyCustomFolderContents(_paths.ThmFolder, "THM", _log.Info));
+            }
+            else
+            {
+                _log.Info("[AUTO] Copia de temas THM desactivada por automatización.");
             }
         }
 
@@ -461,26 +492,4 @@ namespace POPSManager.Logic
                             .ConfigureAwait(false);
 
                         if (art != null)
-                            _log.Info($"[COVER] PS2 ART {_loc.GetString("GameProcessor_Generated")} → {art}");
-                    }
-                    finally
-                    {
-                        _coverSemaphore.Release();
-                    }
-                }
-            }
-
-            Directory.CreateDirectory(_paths.DvdFolder);
-
-            perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_CopyingISO"));
-
-            string dest = Path.Combine(_paths.DvdFolder, $"{cleanTitle}.ISO");
-
-            ct.ThrowIfCancellationRequested();
-            File.Copy(isoPath, dest, true);
-
-            _log.Info($"[PS2] {_loc.GetString("GameProcessor_CopiedIso")} → {dest}");
-            _notify.Success($"{cleanTitle} {_loc.GetString("GameProcessor_CopiedToDvdSuccessfully")}");
-        }
-    }
-}
+                            _log.Info($"[COVER] PS2 ART {_loc.GetString("GameProcessor_Gen
