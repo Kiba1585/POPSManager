@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Aplicación WPF -->
+    <!-- Aplicación WPF pura (sin WinForms) -->
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
+    <!-- ⚠️ ELIMINADO: <UseWindowsForms>true</UseWindowsForms> -->
 
     <!-- Arquitectura obligatoria para MSIX -->
     <PlatformTarget>x64</PlatformTarget>
@@ -47,6 +47,7 @@
   <ItemGroup>
     <PackageReference Include="DiscUtils" Version="0.16.13" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <!-- Solo una referencia a SourceLink -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
