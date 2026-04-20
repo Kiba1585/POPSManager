@@ -42,16 +42,14 @@ namespace POPSManager.ViewModels
             _cd1Folder = System.IO.Path.Combine(gameFolder, "CD1");
             _cheatPath = System.IO.Path.Combine(_cd1Folder, "CHEAT.TXT");
 
-            TitleText = string.Format(
+            TitleText = string.Format(System.Globalization.CultureInfo.InvariantCulture,
                 _loc.GetString("CheatEditor_Title"),
                 System.IO.Path.GetFileName(gameFolder));
 
             SaveCommand = new RelayCommand(Save, CanSave);
             CancelCommand = new RelayCommand(Cancel);
             AddCustomCheatCommand = new RelayCommand(AddCustomCheat);
-            DeleteCustomCheatCommand = new RelayCommand(
-                DeleteCustomCheat,
-                () => SelectedCheat?.IsUserDefined == true);
+            DeleteCustomCheatCommand = new RelayCommand(DeleteCustomCheat, () => SelectedCheat?.IsUserDefined == true);
 
             LoadCheats();
         }
@@ -98,9 +96,7 @@ namespace POPSManager.ViewModels
         {
             var official = CheatLibrary.GetOfficialCheats();
             var user = _manager.LoadUserCheats(_paths.RootFolder);
-
             Cheats.Clear();
-
             foreach (var cheat in official.Concat(user))
                 Cheats.Add(cheat);
         }
@@ -110,18 +106,15 @@ namespace POPSManager.ViewModels
         private void Save()
         {
             var currentFile = _manager.LoadCheatFile(_cheatPath);
-
             var selectedCodes = Cheats
-                .Where(c =>
-                    currentFile.Contains(c.Code) ||
-                    (c == SelectedCheat && IsCheatEnabled))
+                .Where(c => currentFile.Contains(c.Code) || (c == SelectedCheat && IsCheatEnabled))
                 .Select(c => c.Code)
                 .Distinct()
                 .ToList();
 
             _manager.SaveCheatFile(_cheatPath, selectedCodes);
 
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 _loc.GetString("CheatEditor_SaveSuccess"),
                 "POPSManager",
                 MessageBoxButton.OK,
@@ -138,8 +131,7 @@ namespace POPSManager.ViewModels
                 _loc.GetString("CheatEditor_EnterCode"),
                 _loc.GetString("CheatEditor_NewCustom"));
 
-            if (string.IsNullOrWhiteSpace(code))
-                return;
+            if (string.IsNullOrWhiteSpace(code)) return;
 
             var cheat = new CheatDefinition
             {
@@ -152,32 +144,29 @@ namespace POPSManager.ViewModels
 
             var userCheats = _manager.LoadUserCheats(_paths.RootFolder).ToList();
             userCheats.Add(cheat);
-
             _manager.SaveUserCheats(_paths.RootFolder, userCheats);
-
             LoadCheats();
         }
 
         private void DeleteCustomCheat()
         {
-            if (SelectedCheat?.IsUserDefined != true)
-                return;
-
+            if (SelectedCheat?.IsUserDefined != true) return;
             var userCheats = _manager.LoadUserCheats(_paths.RootFolder).ToList();
-
             userCheats.RemoveAll(c => c.Code == SelectedCheat.Code);
-
             _manager.SaveUserCheats(_paths.RootFolder, userCheats);
-
             LoadCheats();
         }
 
         private void CloseWindow()
         {
-            Application.Current.Windows
-                .OfType<CheatEditorWindow>()
-                .FirstOrDefault()
-                ?.Close();
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is CheatEditorWindow)
+                {
+                    window.Close();
+                    break;
+                }
+            }
         }
     }
 }
