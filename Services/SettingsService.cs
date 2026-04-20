@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using POPSManager.Services.Interfaces;
 using POPSManager.Settings;
 using POPSManager.Logic.Automation;
@@ -9,16 +10,16 @@ using POPSManager.Logic.Automation;
 namespace POPSManager.Services
 {
     public enum AppLanguage
-{
-    Auto = 0,
-    Spanish = 1,
-    English = 2,
-    French = 3,
-    German = 4,
-    Italian = 5,
-    Portuguese = 6,
-    Japanese = 7
-}
+    {
+        Auto = 0,
+        Spanish = 1,
+        English = 2,
+        French = 3,
+        German = 4,
+        Italian = 5,
+        Portuguese = 6,
+        Japanese = 7
+    }
 
     public sealed class SettingsService
     {
@@ -209,6 +210,41 @@ namespace POPSManager.Services
             }
         }
 
+        // ============================================================
+        // MÉTODOS ASINCRÓNICOS Y DE CONVENIENCIA (AGREGADOS)
+        // ============================================================
+
+        /// <summary>
+        /// Guarda la configuración de forma asíncrona.
+        /// </summary>
+        public async Task SaveAsync()
+        {
+            await Task.Run(() => Save());
+        }
+
+        /// <summary>
+        /// Establece la carpeta raíz y guarda la configuración.
+        /// </summary>
+        /// <param name="path">Nueva ruta raíz.</param>
+        public void SetRootFolder(string path)
+        {
+            RootFolder = path;
+            Save();
+        }
+
+        /// <summary>
+        /// Establece la ruta personalizada de POPSTARTER.ELF y guarda la configuración.
+        /// </summary>
+        /// <param name="path">Ruta al archivo ELF.</param>
+        public void SetCustomElfPath(string path)
+        {
+            CustomElfPath = path;
+            Save();
+        }
+
+        // ============================================================
+        // CLASE INTERNA PARA SERIALIZACIÓN
+        // ============================================================
         private sealed class SettingsData
         {
             public bool DarkMode { get; set; }
