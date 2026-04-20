@@ -129,5 +129,18 @@ namespace POPSManager.Logic.Automation
 
         public Task<bool> ShouldShowNotificationsAsync() =>
             DecideAsync("Notificaciones", _settings.Automation.Notifications);
+
+        // NUEVOS MÉTODOS PARA LNG Y THM
+        public bool ShouldCopyLng() =>
+            DecideAsync("Copia de archivos LNG", _settings.Automation.Lng).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldCopyLngAsync() =>
+            DecideAsync("Copia de archivos LNG", _settings.Automation.Lng);
+
+        public bool ShouldCopyThm() =>
+            DecideAsync("Copia de temas THM", _settings.Automation.Thm).GetAwaiter().GetResult();
+
+        public Task<bool> ShouldCopyThmAsync() =>
+            DecideAsync("Copia de temas THM", _settings.Automation.Thm);
     }
 }
