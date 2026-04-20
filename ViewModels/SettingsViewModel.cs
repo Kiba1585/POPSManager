@@ -26,6 +26,8 @@ namespace POPSManager.ViewModels
         private string _rootPath = string.Empty;
         private string _popsPath = string.Empty;
         private string _appsPath = string.Empty;
+        private string _lngPath = string.Empty;   // NUEVO
+        private string _thmPath = string.Empty;   // NUEVO
         private string _elfPath = string.Empty;
         private bool _darkMode;
         private bool _notificationsEnabled;
@@ -56,6 +58,8 @@ namespace POPSManager.ViewModels
             ChangeRootFolderCommand = new RelayCommand(async () => await ChangeRootFolderAsync());
             ChangePopsPathCommand = new RelayCommand(async () => await ChangePopsPathAsync());
             ChangeAppsPathCommand = new RelayCommand(async () => await ChangeAppsPathAsync());
+            ChangeLngPathCommand = new RelayCommand(async () => await ChangeLngPathAsync());     // NUEVO
+            ChangeThmPathCommand = new RelayCommand(async () => await ChangeThmPathAsync());     // NUEVO
             SelectElfCommand = new RelayCommand(async () => await SelectElfAsync());
             OpenProgramFolderCommand = new RelayCommand(OpenProgramFolder);
             SaveSettingsCommand = new RelayCommand(async () => await SaveSettingsAsync());
@@ -81,6 +85,8 @@ namespace POPSManager.ViewModels
         public string RootPath { get => _rootPath; set => SetProperty(ref _rootPath, value); }
         public string PopsPath { get => _popsPath; set => SetProperty(ref _popsPath, value); }
         public string AppsPath { get => _appsPath; set => SetProperty(ref _appsPath, value); }
+        public string LngPath { get => _lngPath; set => SetProperty(ref _lngPath, value); }     // NUEVO
+        public string ThmPath { get => _thmPath; set => SetProperty(ref _thmPath, value); }     // NUEVO
         public string ElfPath { get => _elfPath; set => SetProperty(ref _elfPath, value); }
 
         public bool DarkMode
@@ -122,6 +128,8 @@ namespace POPSManager.ViewModels
         public ICommand ChangeRootFolderCommand { get; }
         public ICommand ChangePopsPathCommand { get; }
         public ICommand ChangeAppsPathCommand { get; }
+        public ICommand ChangeLngPathCommand { get; }      // NUEVO
+        public ICommand ChangeThmPathCommand { get; }      // NUEVO
         public ICommand SelectElfCommand { get; }
         public ICommand OpenProgramFolderCommand { get; }
         public ICommand SaveSettingsCommand { get; }
@@ -131,6 +139,8 @@ namespace POPSManager.ViewModels
             RootPath = _paths.RootFolder;
             PopsPath = _paths.PopsFolder;
             AppsPath = _paths.AppsFolder;
+            LngPath = _paths.LngFolder;      // NUEVO
+            ThmPath = _paths.ThmFolder;      // NUEVO
             ElfPath = _paths.PopstarterElfPath;
             DarkMode = _settings.DarkMode;
             NotificationsEnabled = _settings.NotificationsEnabled;
@@ -221,6 +231,56 @@ namespace POPSManager.ViewModels
             {
                 _services.Notifications.Error("No se pudo actualizar la ruta APPS.");
                 _services.LogService.Error($"[Settings] Error ChangeAppsPath: {ex.Message}");
+            }
+        }
+
+        private async Task ChangeLngPathAsync()     // NUEVO
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta de idiomas (LNG)" };
+            if (dialog.ShowDialog() != true) return;
+
+            string path = dialog.FolderName;
+            if (!Directory.Exists(path))
+            {
+                _services.Notifications.Error("La carpeta seleccionada no existe.");
+                return;
+            }
+
+            try
+            {
+                await _paths.SetCustomLngFolderAsync(path);
+                LoadSettings();
+                _services.Notifications.Success("Ruta LNG actualizada.");
+            }
+            catch (Exception ex)
+            {
+                _services.Notifications.Error("No se pudo actualizar la ruta LNG.");
+                _services.LogService.Error($"[Settings] Error ChangeLngPath: {ex.Message}");
+            }
+        }
+
+        private async Task ChangeThmPathAsync()     // NUEVO
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta de temas (THM)" };
+            if (dialog.ShowDialog() != true) return;
+
+            string path = dialog.FolderName;
+            if (!Directory.Exists(path))
+            {
+                _services.Notifications.Error("La carpeta seleccionada no existe.");
+                return;
+            }
+
+            try
+            {
+                await _paths.SetCustomThmFolderAsync(path);
+                LoadSettings();
+                _services.Notifications.Success("Ruta THM actualizada.");
+            }
+            catch (Exception ex)
+            {
+                _services.Notifications.Error("No se pudo actualizar la ruta THM.");
+                _services.LogService.Error($"[Settings] Error ChangeThmPath: {ex.Message}");
             }
         }
 
