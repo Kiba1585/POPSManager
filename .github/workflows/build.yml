@@ -86,20 +86,17 @@ jobs:
       # ============================
       # INNO SETUP INSTALLER
       # ============================
-      - name: Setup Inno Setup
-        uses: actions/setup-innosetup@v1
-        with:
-          version: '6.2.0'
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
 
       - name: Prepare files for Inno Setup
         run: |
-          # Inno Setup espera los archivos en ../installer_build según el script .iss
           New-Item -ItemType Directory -Force -Path ./installer_build | Out-Null
           Copy-Item -Path ./publish/portable/* -Destination ./installer_build/ -Recurse -Force
 
       - name: Build Inno Setup installer
         run: |
-          iscc "Installer/POPSManager.iss" /O"./artifacts" /F"POPSManager-Installer"
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "Installer/POPSManager.iss" /O"./artifacts" /F"POPSManager-Installer"
 
       # ============================
       # PAQUETE MSIX (COMPLETO Y VÁLIDO)
@@ -110,13 +107,9 @@ jobs:
           $appFolder = "$msixRoot/VFS/ProgramFilesX64/POPSManager"
           New-Item -ItemType Directory -Force -Path $appFolder | Out-Null
           
-          # Copiar publicación self-contained
           Copy-Item -Path "./publish/self-contained/*" -Destination $appFolder -Recurse -Force
-          
-          # Copiar manifiesto
           Copy-Item -Path "Installer/AppxManifest.xml" -Destination $msixRoot -Force
           
-          # Copiar assets (iconos, logos)
           if (Test-Path "Installer/Assets") {
             Copy-Item -Path "Installer/Assets" -Destination "$msixRoot/Assets" -Recurse -Force
           }
@@ -132,9 +125,33 @@ jobs:
           Write-Host "Using MakeAppx: $makeappx"
           echo "MAKEAPPX=$makeappx" >> $env:GITHUB_ENV
 
-      - name: Create MSIX package
+      - name: Create unsigned MSIX
         run: |
-          & "$env:MAKEAPPX" pack /v /h SHA256 /d ./msix /p ./artifacts/POPSManager.msix
+          & "$env:MAKEAPPX" pack /v /h SHA256 /d ./msix /p ./artifacts/POPSManager_Unsigned.msix
+
+      # ============================
+      # FIRMAR MSIX (CON CERTIFICADO PFX)
+      # ============================
+      - name: Sign MSIX package
+        run: |
+          $certPath = "./certificate.pfx"
+          $pfxBase64 = "${{ secrets.PFX_FILE }}"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($pfxBase64))
+          
+          # Localizar SignTool.exe
+          $signtool = (Get-Command "SignTool.exe" -ErrorAction SilentlyContinue).Source
+          if (-not $signtool) {
+            $kitBin = Resolve-Path "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\" | Select-Object -Last 1
+            $signtool = Join-Path $kitBin "SignTool.exe"
+          }
+          Write-Host "Using SignTool: $signtool"
+          
+          & $signtool sign /fd SHA256 /f $certPath /p "${{ secrets.PFX_PASSWORD }}" ./artifacts/POPSManager_Unsigned.msix
+          
+          # Renombrar a POPSManager.msix
+          Move-Item -Path ./artifacts/POPSManager_Unsigned.msix -Destination ./artifacts/POPSManager.msix -Force
+          
+          Remove-Item $certPath
 
       # ============================
       # ZIPS
