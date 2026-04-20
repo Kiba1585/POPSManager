@@ -31,5 +31,12 @@ namespace POPSManager.Settings
 
         /// <summary>Comportamiento para notificaciones.</summary>
         public AutoBehavior Notifications { get; set; } = AutoBehavior.Automatico;
+
+        // NUEVAS PROPIEDADES
+        /// <summary>Comportamiento para copiar archivos de idioma (LNG).</summary>
+        public AutoBehavior Lng { get; set; } = AutoBehavior.Automatico;
+
+        /// <summary>Comportamiento para copiar temas (THM).</summary>
+        public AutoBehavior Thm { get; set; } = AutoBehavior.Automatico;
     }
 }
