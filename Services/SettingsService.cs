@@ -51,6 +51,10 @@ namespace POPSManager.Services
         public string? CustomPopsFolder { get; set; }
         public string? CustomAppsFolder { get; set; }
 
+        // NUEVAS PROPIEDADES
+        public string? CustomLngFolder { get; set; }
+        public string? CustomThmFolder { get; set; }
+
         // ============================
         //  IDIOMA
         // ============================
@@ -114,6 +118,8 @@ namespace POPSManager.Services
 
                 CustomPopsFolder = data.CustomPopsFolder;
                 CustomAppsFolder = data.CustomAppsFolder;
+                CustomLngFolder = data.CustomLngFolder;   // NUEVO
+                CustomThmFolder = data.CustomThmFolder;   // NUEVO
 
                 Automation = data.Automation ?? new AutomationSettings();
 
@@ -147,6 +153,8 @@ namespace POPSManager.Services
                     CustomPs2ElfPath = CustomPs2ElfPath,
                     CustomPopsFolder = CustomPopsFolder,
                     CustomAppsFolder = CustomAppsFolder,
+                    CustomLngFolder = CustomLngFolder,   // NUEVO
+                    CustomThmFolder = CustomThmFolder,   // NUEVO
 
                     Automation = Automation,
                     Language = Language
@@ -177,6 +185,12 @@ namespace POPSManager.Services
 
             if (!string.IsNullOrWhiteSpace(CustomAppsFolder))
                 CustomAppsFolder = Normalize(CustomAppsFolder);
+
+            if (!string.IsNullOrWhiteSpace(CustomLngFolder))
+                CustomLngFolder = Normalize(CustomLngFolder);   // NUEVO
+
+            if (!string.IsNullOrWhiteSpace(CustomThmFolder))
+                CustomThmFolder = Normalize(CustomThmFolder);   // NUEVO
         }
 
         private string Normalize(string? path)
@@ -211,7 +225,7 @@ namespace POPSManager.Services
         }
 
         // ============================================================
-        // MÉTODOS ASINCRÓNICOS Y DE CONVENIENCIA (AGREGADOS)
+        // MÉTODOS ASINCRÓNICOS Y DE CONVENIENCIA
         // ============================================================
 
         /// <summary>
@@ -258,6 +272,10 @@ namespace POPSManager.Services
             public string? CustomPs2ElfPath { get; set; }
             public string? CustomPopsFolder { get; set; }
             public string? CustomAppsFolder { get; set; }
+
+            // NUEVOS CAMPOS
+            public string? CustomLngFolder { get; set; }
+            public string? CustomThmFolder { get; set; }
 
             public AutomationSettings? Automation { get; set; } = new();
 
