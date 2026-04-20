@@ -36,23 +36,9 @@ namespace POPSManager.ViewModels
         public string PendingCount => "0";
         public string ErrorCount => "0";
 
-        public string RootPath
-        {
-            get => _rootPath;
-            set => SetProperty(ref _rootPath, value);
-        }
-
-        public string ElfPath
-        {
-            get => _elfPath;
-            set => SetProperty(ref _elfPath, value);
-        }
-
-        public string SystemInfo
-        {
-            get => _systemInfo;
-            set => SetProperty(ref _systemInfo, value);
-        }
+        public string RootPath { get => _rootPath; set => SetProperty(ref _rootPath, value); }
+        public string ElfPath { get => _elfPath; set => SetProperty(ref _elfPath, value); }
+        public string SystemInfo { get => _systemInfo; set => SetProperty(ref _systemInfo, value); }
 
         public ICommand OpenConvertCommand { get; }
         public ICommand OpenProcessPopsCommand { get; }
@@ -74,7 +60,7 @@ namespace POPSManager.ViewModels
                          $"POPS2.ELF: {_paths.PopstarterPs2ElfPath}";
         }
 
-        private void NavigateTo(System.Windows.Controls.UserControl view)
+        private static void NavigateTo(System.Windows.Controls.UserControl view)
         {
             if (System.Windows.Application.Current.MainWindow is MainWindow main &&
                 main.DataContext is MainViewModel vm)
@@ -93,11 +79,7 @@ namespace POPSManager.ViewModels
 
             try
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = RootPath,
-                    UseShellExecute = true
-                });
+                Process.Start(new ProcessStartInfo { FileName = RootPath, UseShellExecute = true });
             }
             catch
             {
@@ -116,7 +98,6 @@ namespace POPSManager.ViewModels
             }
 
             string? folder = Path.GetDirectoryName(elf);
-
             if (folder == null || !Directory.Exists(folder))
             {
                 _services.Notifications.Error("No se pudo determinar la carpeta del ELF.");
@@ -125,11 +106,7 @@ namespace POPSManager.ViewModels
 
             try
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = folder,
-                    UseShellExecute = true
-                });
+                Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
             }
             catch
             {
@@ -139,17 +116,10 @@ namespace POPSManager.ViewModels
 
         private void ChangeRootPath()
         {
-            var dialog = new OpenFolderDialog
-            {
-                Title = "Selecciona la carpeta raíz",
-                Multiselect = false
-            };
-
-            if (dialog.ShowDialog() != true)
-                return;
+            var dialog = new OpenFolderDialog { Title = "Selecciona la carpeta raíz" };
+            if (dialog.ShowDialog() != true) return;
 
             string newPath = dialog.FolderName;
-
             if (!Directory.Exists(newPath))
             {
                 _services.Notifications.Error("La carpeta seleccionada no existe.");
@@ -163,17 +133,15 @@ namespace POPSManager.ViewModels
 
         private void SelectElf()
         {
-            var dialog = new OpenFileDialog
+            var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = "Seleccionar POPSTARTER.ELF",
                 Filter = "ELF files (*.ELF)|*.ELF|Todos los archivos (*.*)|*.*"
             };
 
-            if (dialog.ShowDialog() != true)
-                return;
+            if (dialog.ShowDialog() != true) return;
 
             string path = dialog.FileName;
-
             if (!File.Exists(path))
             {
                 _services.Notifications.Error("El archivo seleccionado no existe.");
