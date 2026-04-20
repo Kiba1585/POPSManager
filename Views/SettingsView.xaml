@@ -111,6 +111,57 @@
                 </StackPanel>
             </Border>
 
+            <!-- ========================================================= -->
+            <!--  RUTAS PERSONALIZADAS (LNG y THM) -->
+            <!-- ========================================================= -->
+            <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
+                <StackPanel>
+                    <TextBlock Text="Rutas personalizadas"
+                               FontSize="18" FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 16"/>
+
+                    <!-- Carpeta LNG (Idiomas) -->
+                    <TextBlock Text="Carpeta de idiomas (LNG):"
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
+                    <TextBox Text="{Binding LngPath, UpdateSourceTrigger=PropertyChanged}"
+                             Height="32"
+                             Background="{StaticResource Brush.PanelAlt}"
+                             Foreground="{StaticResource Brush.TextPrimary}"
+                             BorderBrush="{StaticResource Brush.Border}"
+                             BorderThickness="1"
+                             Padding="6"
+                             Margin="0 0 0 6"/>
+                    <Button Content="Seleccionar carpeta LNG"
+                            Width="180"
+                            Height="32"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ChangeLngPathCommand}"
+                            Margin="0 0 0 16"/>
+
+                    <!-- Carpeta THM (Temas) -->
+                    <TextBlock Text="Carpeta de temas (THM):"
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
+                    <TextBox Text="{Binding ThmPath, UpdateSourceTrigger=PropertyChanged}"
+                             Height="32"
+                             Background="{StaticResource Brush.PanelAlt}"
+                             Foreground="{StaticResource Brush.TextPrimary}"
+                             BorderBrush="{StaticResource Brush.Border}"
+                             BorderThickness="1"
+                             Padding="6"
+                             Margin="0 0 0 6"/>
+                    <Button Content="Seleccionar carpeta THM"
+                            Width="180"
+                            Height="32"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ChangeThmPathCommand}"/>
+                </StackPanel>
+            </Border>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>
