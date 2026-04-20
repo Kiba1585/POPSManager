@@ -41,7 +41,6 @@ namespace POPSManager.ViewModels
             _paths = _services.Paths;
             _settings = _services.Settings;
 
-            // Inicializar lista de idiomas
             Languages = new ObservableCollection<LanguageItem>
             {
                 new LanguageItem { Value = AppLanguage.Auto, DisplayName = "Automático" },
@@ -54,7 +53,6 @@ namespace POPSManager.ViewModels
                 new LanguageItem { Value = AppLanguage.Japanese, DisplayName = "日本語" }
             };
 
-            // Comandos
             ChangeRootFolderCommand = new RelayCommand(async () => await ChangeRootFolderAsync());
             ChangePopsPathCommand = new RelayCommand(async () => await ChangePopsPathAsync());
             ChangeAppsPathCommand = new RelayCommand(async () => await ChangeAppsPathAsync());
@@ -64,8 +62,6 @@ namespace POPSManager.ViewModels
 
             LoadSettings();
         }
-
-        #region Propiedades
 
         public ObservableCollection<LanguageItem> Languages { get; }
 
@@ -82,93 +78,46 @@ namespace POPSManager.ViewModels
             }
         }
 
-        public string RootPath
-        {
-            get => _rootPath;
-            set => SetProperty(ref _rootPath, value);
-        }
-
-        public string PopsPath
-        {
-            get => _popsPath;
-            set => SetProperty(ref _popsPath, value);
-        }
-
-        public string AppsPath
-        {
-            get => _appsPath;
-            set => SetProperty(ref _appsPath, value);
-        }
-
-        public string ElfPath
-        {
-            get => _elfPath;
-            set => SetProperty(ref _elfPath, value);
-        }
+        public string RootPath { get => _rootPath; set => SetProperty(ref _rootPath, value); }
+        public string PopsPath { get => _popsPath; set => SetProperty(ref _popsPath, value); }
+        public string AppsPath { get => _appsPath; set => SetProperty(ref _appsPath, value); }
+        public string ElfPath { get => _elfPath; set => SetProperty(ref _elfPath, value); }
 
         public bool DarkMode
         {
             get => _darkMode;
-            set
-            {
-                if (SetProperty(ref _darkMode, value))
-                    _ = SaveSettingsAsync();
-            }
+            set { if (SetProperty(ref _darkMode, value)) _ = SaveSettingsAsync(); }
         }
 
         public bool NotificationsEnabled
         {
             get => _notificationsEnabled;
-            set
-            {
-                if (SetProperty(ref _notificationsEnabled, value))
-                    _ = SaveSettingsAsync();
-            }
+            set { if (SetProperty(ref _notificationsEnabled, value)) _ = SaveSettingsAsync(); }
         }
 
         public AutomationMode AutomationMode
         {
             get => _automationMode;
-            set
-            {
-                if (SetProperty(ref _automationMode, value))
-                    _ = SaveSettingsAsync();
-            }
+            set { if (SetProperty(ref _automationMode, value)) _ = SaveSettingsAsync(); }
         }
 
         public AutoBehavior NormalizeNamesBehavior
         {
             get => _normalizeNamesBehavior;
-            set
-            {
-                if (SetProperty(ref _normalizeNamesBehavior, value))
-                    _ = SaveSettingsAsync();
-            }
+            set { if (SetProperty(ref _normalizeNamesBehavior, value)) _ = SaveSettingsAsync(); }
         }
 
         public AutoBehavior GroupMultiDiscBehavior
         {
             get => _groupMultiDiscBehavior;
-            set
-            {
-                if (SetProperty(ref _groupMultiDiscBehavior, value))
-                    _ = SaveSettingsAsync();
-            }
+            set { if (SetProperty(ref _groupMultiDiscBehavior, value)) _ = SaveSettingsAsync(); }
         }
 
         public AutoBehavior DownloadCoversBehavior
         {
             get => _downloadCoversBehavior;
-            set
-            {
-                if (SetProperty(ref _downloadCoversBehavior, value))
-                    _ = SaveSettingsAsync();
-            }
+            set { if (SetProperty(ref _downloadCoversBehavior, value)) _ = SaveSettingsAsync(); }
         }
-
-        #endregion
-
-        #region Comandos
 
         public ICommand ChangeRootFolderCommand { get; }
         public ICommand ChangePopsPathCommand { get; }
@@ -176,8 +125,6 @@ namespace POPSManager.ViewModels
         public ICommand SelectElfCommand { get; }
         public ICommand OpenProgramFolderCommand { get; }
         public ICommand SaveSettingsCommand { get; }
-
-        #endregion
 
         private void LoadSettings()
         {
@@ -196,12 +143,7 @@ namespace POPSManager.ViewModels
 
         private async Task ChangeRootFolderAsync()
         {
-            var dialog = new OpenFolderDialog
-            {
-                Title = "Seleccionar carpeta raíz del dispositivo OPL",
-                Multiselect = false
-            };
-
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta raíz del dispositivo OPL" };
             if (dialog.ShowDialog() != true) return;
 
             string path = dialog.FolderName;
@@ -284,7 +226,7 @@ namespace POPSManager.ViewModels
 
         private async Task SelectElfAsync()
         {
-            var dialog = new OpenFileDialog
+            var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Filter = "POPStarter ELF|POPSTARTER.ELF|Todos los archivos|*.*",
                 Title = "Seleccionar POPSTARTER.ELF"
