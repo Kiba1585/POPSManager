@@ -77,7 +77,7 @@ namespace POPSManager.ViewModels
                 if (SetProperty(ref _selectedLanguage, value))
                 {
                     _settings.Language = value;
-                    _ = SaveSettingsAsync(); // Guardar automáticamente al cambiar idioma
+                    _ = SaveSettingsAsync();
                 }
             }
         }
@@ -339,7 +339,7 @@ namespace POPSManager.ViewModels
                 _settings.Language = SelectedLanguage;
 
                 await _settings.SaveAsync();
-                _services.Localization.Refresh(); // Notificar cambio de idioma
+                _services.Localization?.Refresh();
             }
             catch (Exception ex)
             {
