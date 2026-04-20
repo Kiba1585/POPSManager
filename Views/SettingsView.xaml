@@ -82,6 +82,7 @@
                                Foreground="{StaticResource Brush.TextSecondary}"
                                Margin="0 0 0 8"/>
 
+                    <!-- Normalizar nombres -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Normalizar nombres de juegos"
                                    Width="220" VerticalAlignment="Center"
@@ -91,6 +92,7 @@
                                   Width="160"/>
                     </StackPanel>
 
+                    <!-- Agrupar multidisco -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Agrupar juegos multidisco"
                                    Width="220" VerticalAlignment="Center"
@@ -100,11 +102,32 @@
                                   Width="160"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
+                    <!-- Descargar carátulas -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Descargar carátulas"
                                    Width="220" VerticalAlignment="Center"
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                         <ComboBox SelectedItem="{Binding DownloadCoversBehavior}"
+                                  ItemsSource="{Binding Source={StaticResource AutoBehaviorValues}}"
+                                  Width="160"/>
+                    </StackPanel>
+
+                    <!-- NUEVO: Copiar archivos LNG -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
+                        <TextBlock Text="Copiar archivos de idioma (LNG)"
+                                   Width="220" VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                        <ComboBox SelectedItem="{Binding LngBehavior}"
+                                  ItemsSource="{Binding Source={StaticResource AutoBehaviorValues}}"
+                                  Width="160"/>
+                    </StackPanel>
+
+                    <!-- NUEVO: Copiar temas (THM) -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Copiar temas (THM)"
+                                   Width="220" VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                        <ComboBox SelectedItem="{Binding ThmBehavior}"
                                   ItemsSource="{Binding Source={StaticResource AutoBehaviorValues}}"
                                   Width="160"/>
                     </StackPanel>
