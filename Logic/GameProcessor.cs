@@ -223,7 +223,7 @@ namespace POPSManager.Logic
             }
             else
             {
-                _log.Info("[AUTO] Copia de archivos LNG desactivada por automatización.");
+                _log.Info("[AUTO] Copia de archivos LNG desactivada por automatizacion.");
             }
 
             // THM
@@ -233,7 +233,7 @@ namespace POPSManager.Logic
             }
             else
             {
-                _log.Info("[AUTO] Copia de temas THM desactivada por automatización.");
+                _log.Info("[AUTO] Copia de temas THM desactivada por automatizacion.");
             }
         }
 
@@ -351,7 +351,7 @@ namespace POPSManager.Logic
                         .ConfigureAwait(false);
 
                     if (art != null)
-                        _log.Info($"[COVER] PS1 ART {_loc.GetString("GameProcessor_Generated")} → {art}");
+                        _log.Info($"[COVER] PS1 ART {_loc.GetString("GameProcessor_Generated")} -> {art}");
                 }
                 finally
                 {
@@ -382,7 +382,7 @@ namespace POPSManager.Logic
                     File.Copy(disc, destVcd, true);
                     discPaths.Add(destVcd);
 
-                    _log.Info($"[PS1] {_loc.GetString("GameProcessor_CopiedDisc")} {discNumber} → {destVcd}");
+                    _log.Info($"[PS1] {_loc.GetString("GameProcessor_CopiedDisc")} {discNumber} -> {destVcd}");
                 }
                 catch (Exception ex)
                 {
@@ -492,4 +492,4 @@ namespace POPSManager.Logic
                             .ConfigureAwait(false);
 
                         if (art != null)
-                            _log.Info($"[COVER] PS2 ART {_loc.GetString("GameProcessor_Gen
+                            _log.Info($"[COVER] PS2 ART {_loc.GetString("GameProcessor_G
