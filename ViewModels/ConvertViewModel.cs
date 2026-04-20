@@ -83,16 +83,19 @@ namespace POPSManager.ViewModels
             if (!Directory.Exists(SourcePath))
                 return;
 
-            var filePaths = Directory.GetFiles(SourcePath, "*.*")
+            var files = Directory.GetFiles(SourcePath, "*.*")
                 .Where(f => f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) ||
                             f.EndsWith(".cue", StringComparison.OrdinalIgnoreCase) ||
                             f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(f => f)
                 .Select(Path.GetFileName)
+                .Where(name => !string.IsNullOrEmpty(name)) // Filtra posibles null
                 .ToList();
 
-            foreach (var file in filePaths!)
+            foreach (var file in files)
+            {
                 Files.Add(file);
+            }
 
             _services.Notifications.Info($"Se detectaron {Files.Count} archivos.");
         }
