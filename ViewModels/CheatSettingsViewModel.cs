@@ -2,6 +2,9 @@ using POPSManager.UI.Localization;
 
 namespace POPSManager.ViewModels
 {
+    /// <summary>
+    /// ViewModel para la ventana de configuración de cheats.
+    /// </summary>
     public class CheatSettingsViewModel : ViewModelBase
     {
         private readonly LocalizationService _loc;
