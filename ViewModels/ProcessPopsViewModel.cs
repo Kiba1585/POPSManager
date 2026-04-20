@@ -99,14 +99,13 @@ namespace POPSManager.ViewModels
             {
                 win = new ProgressWindow
                 {
-                    Owner = Application.Current.MainWindow
+                    Owner = System.Windows.Application.Current.MainWindow
                 };
                 win.Show();
             }
             else
             {
                 _services.Progress.Reset();
-                // Usar el servicio de localización no estático
                 _services.Progress.Start(_services.Localization.GetString("Label_ProcessingGames"));
             }
 
