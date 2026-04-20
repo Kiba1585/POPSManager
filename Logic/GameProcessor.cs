@@ -412,4 +412,11 @@ namespace POPSManager.Logic
             foreach (var file in Directory.GetFiles(source))
             {
                 string destFile = Path.Combine(dest, Path.GetFileName(file));
-          
+                       File.Copy(file, destFile, true);
+                log(string.Format("[Copy] {0} -> {1}", file, destFile));
+            }
+            foreach (var dir in Directory.GetDirectories(source))
+                CopyDirectoryRecursive(dir, Path.Combine(dest, Path.GetFileName(dir)), log);
+        }
+    }
+}          
