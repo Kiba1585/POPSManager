@@ -46,7 +46,7 @@ namespace POPSManager.UI.Windows
 
             _service.Save();
 
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 _viewModel.SettingsSavedMessage,
                 "POPSManager",
                 MessageBoxButton.OK,
