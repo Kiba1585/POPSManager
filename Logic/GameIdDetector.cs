@@ -1,6 +1,3 @@
-// Tu GameIdDetector está muy bien implementado.
-// Solo agrego mejoras de seguridad y consistencia.
-
 using System;
 using System.IO;
 using System.Text;
@@ -178,17 +175,44 @@ namespace POPSManager.Logic
             return id;
         }
 
-        // ... (todo el código anterior se mantiene igual hasta el método IsPalRegion)
+        public static bool IsPalRegion(string gameId)
+        {
+            if (string.IsNullOrWhiteSpace(gameId))
+                return false;
 
-public static bool IsPalRegion(string gameId)
-{
-    if (string.IsNullOrWhiteSpace(gameId))
-        return false;
+            gameId = gameId.ToUpperInvariant();
 
-    gameId = gameId.ToUpperInvariant();
+            return gameId.StartsWith("SLES", StringComparison.Ordinal) ||
+                   gameId.StartsWith("SCES", StringComparison.Ordinal);
+        }
 
-    return gameId.StartsWith("SLES", StringComparison.Ordinal) ||
-           gameId.StartsWith("SCES", StringComparison.Ordinal);
+        /// <summary>
+        /// Determina si un juego requiere el fix PAL60 basado en su GameID.
+        /// </summary>
+        public static bool RequiresPal60(string gameId)
+        {
+            if (string.IsNullOrWhiteSpace(gameId))
+                return false;
+
+            string[] pal60Ids =
+            {
+                "SLES_01514", // Silent Hill
+                "SLES_01370", // Metal Gear Solid
+                "SLES_02080", // Final Fantasy VIII
+                "SLES_02965", // Final Fantasy IX
+                "SCES_01237", // Tekken 3
+                "SCES_02105", // Crash Team Racing
+                "SCES_02104", // Spyro 2
+                "SCES_02835"  // Spyro 3
+            };
+
+            foreach (var id in pal60Ids)
+            {
+                if (gameId.StartsWith(id, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
     }
 }
