@@ -14,6 +14,10 @@ namespace POPSManager.Services
         public string PopsFolder => ResolvePath(_customPopsFolder, "POPS");
         public string AppsFolder => ResolvePath(_customAppsFolder, "APPS");
 
+        // NUEVAS PROPIEDADES
+        public string LngFolder => ResolvePath(_customLngFolder, "LNG");
+        public string ThmFolder => ResolvePath(_customThmFolder, "THM");
+
         public string CfgFolder => Path.Combine(PopsFolder, "CFG");
         public string ArtFolder => Path.Combine(PopsFolder, "ART");
         public string DvdFolder => Path.Combine(RootFolder, "DVD");
@@ -23,6 +27,8 @@ namespace POPSManager.Services
 
         private string? _customPopsFolder;
         private string? _customAppsFolder;
+        private string? _customLngFolder;   // NUEVO
+        private string? _customThmFolder;   // NUEVO
 
         private readonly Action<string>? _log;
         private readonly SettingsService _settings;
@@ -38,6 +44,8 @@ namespace POPSManager.Services
 
             _customPopsFolder = settings.CustomPopsFolder;
             _customAppsFolder = settings.CustomAppsFolder;
+            _customLngFolder = settings.CustomLngFolder;   // NUEVO
+            _customThmFolder = settings.CustomThmFolder;   // NUEVO
 
             EnsureFolderStructure();
 
@@ -101,6 +109,8 @@ namespace POPSManager.Services
             CreateFolder(CfgFolder);
             CreateFolder(ArtFolder);
             CreateFolder(DvdFolder);
+            CreateFolder(LngFolder);   // NUEVO
+            CreateFolder(ThmFolder);   // NUEVO
         }
 
         private void CreateFolder(string path)
@@ -158,6 +168,10 @@ namespace POPSManager.Services
             return "";
         }
 
+        // ============================================================
+        // MÉTODOS ASÍNCRONOS PARA CARPETAS PERSONALIZADAS
+        // ============================================================
+
         public async Task SetCustomPopsFolderAsync(string path)
         {
             _customPopsFolder = NormalizePath(path);
@@ -172,6 +186,22 @@ namespace POPSManager.Services
             CreateFolder(_customAppsFolder);
             await SaveAsync();
             _log?.Invoke($"[Paths] Ruta APPS personalizada: {_customAppsFolder}");
+        }
+
+        public async Task SetCustomLngFolderAsync(string path)
+        {
+            _customLngFolder = NormalizePath(path);
+            CreateFolder(_customLngFolder);
+            await SaveAsync();
+            _log?.Invoke($"[Paths] Ruta LNG personalizada: {_customLngFolder}");
+        }
+
+        public async Task SetCustomThmFolderAsync(string path)
+        {
+            _customThmFolder = NormalizePath(path);
+            CreateFolder(_customThmFolder);
+            await SaveAsync();
+            _log?.Invoke($"[Paths] Ruta THM personalizada: {_customThmFolder}");
         }
 
         public async Task SetCustomElfPathAsync(string path)
@@ -206,6 +236,8 @@ namespace POPSManager.Services
         {
             _customPopsFolder = _settings.CustomPopsFolder;
             _customAppsFolder = _settings.CustomAppsFolder;
+            _customLngFolder = _settings.CustomLngFolder;   // NUEVO
+            _customThmFolder = _settings.CustomThmFolder;   // NUEVO
 
             RootFolder = NormalizeRoot(_settings.RootFolder);
 
@@ -226,6 +258,8 @@ namespace POPSManager.Services
             _settings.CustomPs2ElfPath = PopstarterPs2ElfPath;
             _settings.CustomPopsFolder = _customPopsFolder;
             _settings.CustomAppsFolder = _customAppsFolder;
+            _settings.CustomLngFolder = _customLngFolder;   // NUEVO
+            _settings.CustomThmFolder = _customThmFolder;   // NUEVO
 
             await _settings.SaveAsync();
         }
@@ -239,12 +273,20 @@ namespace POPSManager.Services
             return $"mass:/POPS/{folder}/{file}";
         }
 
-        // Wrappers síncronos para la interfaz
+        // ============================================================
+        // WRAPPERS SÍNCRONOS PARA LA INTERFAZ
+        // ============================================================
         public void SetCustomPopsFolder(string path) =>
             SetCustomPopsFolderAsync(path).GetAwaiter().GetResult();
 
         public void SetCustomAppsFolder(string path) =>
             SetCustomAppsFolderAsync(path).GetAwaiter().GetResult();
+
+        public void SetCustomLngFolder(string path) =>
+            SetCustomLngFolderAsync(path).GetAwaiter().GetResult();
+
+        public void SetCustomThmFolder(string path) =>
+            SetCustomThmFolderAsync(path).GetAwaiter().GetResult();
 
         public void SetCustomElfPath(string path) =>
             SetCustomElfPathAsync(path).GetAwaiter().GetResult();
