@@ -51,4 +51,13 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
+  <!-- ========================================================= -->
+  <!-- COPIAR ARCHIVOS DE ESTILOS AL DIRECTORIO DE SALIDA -->
+  <!-- ========================================================= -->
+  <ItemGroup>
+    <Content Include="Styles\*.xaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
