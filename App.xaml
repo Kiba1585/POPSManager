@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:POPSManager.Converters"
              xmlns:automation="clr-namespace:POPSManager.Logic.Automation"
-             xmlns:sys="clr-namespace:System;assembly=mscorlib"
-             StartupUri="MainWindow.xaml">
+             xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!-- ELIMINADO StartupUri para permitir inicialización manual en App.xaml.cs -->
     <Application.Resources>
         <ResourceDictionary>
 
@@ -34,8 +34,6 @@
 
                 <!-- ══════════════════════════════════════
                      TEMA PRINCIPAL (colores, botones, cards, tipografía)
-                     Theme.xaml contiene TODO lo que antes estaba en
-                     Colors.xaml, Styles.xaml, Cards.xaml, Buttons.xaml
                      ══════════════════════════════════════ -->
                 <ResourceDictionary Source="Styles/Theme.xaml"/>
 
@@ -44,7 +42,6 @@
                      ══════════════════════════════════════ -->
                 <ResourceDictionary Source="Styles/Shadows.xaml"/>
                 <ResourceDictionary Source="Styles/SidebarStyles.xaml"/>
-                <!-- ProgressPanel.xaml ya no se usa; ahora es un UserControl en Controls/ -->
                 <ResourceDictionary Source="Styles/LogsPanel.xaml"/>
                 <ResourceDictionary Source="Styles/Toasts.xaml"/>
 
