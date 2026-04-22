@@ -44,6 +44,7 @@ namespace POPSManager
                 await Services.InitializeAsync();
                 Services.LogService.Info("[APP] Servicios inicializados correctamente.");
 
+                // Crear ViewModel y ventana principal
                 var mainViewModel = new MainViewModel();
                 var mainWindow = new MainWindow(mainViewModel);
                 mainWindow.Show();
