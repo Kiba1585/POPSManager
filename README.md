@@ -1,133 +1,54 @@
----
+# POPSManager – Plataforma Profesional para Gestión de Juegos PS1/PS2
 
-POPSManager – Plataforma Profesional para Gestión de Juegos PS1/PS2
-
-POPSManager es una herramienta modular, escalable y profesional diseñada para automatizar y optimizar el manejo de juegos de PlayStation 1 y PlayStation 2.  
-Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación de integridad, soporte multidisco, integración con bases de datos locales/online y un flujo completo de procesamiento.
+**POPSManager** es una herramienta modular, escalable y profesional diseñada para automatizar y optimizar el manejo de juegos de PlayStation 1 y PlayStation 2.  
+Incluye detección avanzada de IDs, limpieza inteligente de nombres, validación de integridad, soporte multidisco, integración con bases de datos locales/online, un flujo completo de procesamiento y una interfaz moderna multi‑idioma.
 
 ---
 
-🚀 Características Principales
+## 🚀 Características Principales
 
-- Detección automática de GameID  
-  - PS1: extracción desde ejecutables y patrones internos  
-  - PS2: análisis avanzado mediante IOPRP.IMG
+### 🎯 Detección y Procesamiento
+- **Detección automática de GameID**  
+  - PS1: extracción desde ejecutables y patrones internos.  
+  - PS2: análisis avanzado mediante IOPRP.IMG.  
+- **Limpieza profesional de nombres (Title Case)**  
+  - Convenciones: `GameID.Name (CDX).VCD`.  
+  - Corrección automática de mayúsculas, símbolos y formatos.  
+- **Soporte Multidisco**  
+  - Detección, agrupación y renombrado inteligente.  
+  - Compatibilidad total con POPStarter y OPL.  
+- **Validación de integridad**  
+  - Verificación de estructura, archivos requeridos y consistencia.  
+  - Módulo `IntegrityValidator` modular y extensible.  
+- **Base de datos híbrida (local + online)**  
+  - Archivos `ps1db.json` y `ps2db.json` embebidos.  
+  - Expansión dinámica y validación automática.  
 
-- Limpieza profesional de nombres (Title Case)  
-  - Convenciones: GameID.Name (CDX).VCD  
-  - Corrección automática de mayúsculas, símbolos y formatos
+### 🎨 Interfaz Moderna y Multi‑Idioma
+- **Interfaz WPF moderna, responsiva y escalable**  
+  - Se adapta a cualquier resolución (mínimo 800×600).  
+  - Inicio maximizado para aprovechar toda la pantalla.  
+- **Notificaciones visuales animadas**  
+  - Toasts de éxito, error, advertencia e información.  
+- **7 idiomas soportados** (cambiable en caliente desde la UI)  
+  Español, English, Français, Deutsch, Italiano, Português, 日本語.  
+- **Panel de progreso en tiempo real** para cada juego procesado.  
 
-- Soporte Multidisco  
-  - Detección, agrupación y renombrado inteligente  
-  - Compatibilidad con POPStarter y OPL
+### 🧠 Automatización Inteligente
+- **Motor de automatización configurable**  
+  - Modos: Automático, Asistido (pregunta) o Manual.  
+  - Reglas independientes para conversión, multidisco, carátulas, cheats, etc.  
+- **Copia automática de recursos personalizados** (LNG y THM)  
+  - Configura las carpetas de origen de archivos de idioma (`.lng`) y temas (`.thm`).  
+  - Se copian a la raíz de OPL según el comportamiento elegido.  
 
-- Validación de integridad  
-  - Verificación de estructura, archivos requeridos y consistencia  
-  - Módulo IntegrityValidator modular y extensible
-
-- Base de datos híbrida (local + online)  
-  - ps1db.json y ps2db.json  
-  - Expansión dinámica y validación automática
-
-- Interfaz moderna y modular (WPF)  
-  - Notificaciones animadas  
-  - UI escalable y mantenible  
-  - Integración de carátulas PS1/PS2
-
-- Arquitectura profesional  
-  - Módulos independientes  
-  - Servicios desacoplados  
-  - Código limpio, seguro y mantenible
-
----
-
-📁 Estructura del Proyecto
-
-`
-/POPSManager
- ├── Core/
- │    ├── GameIdDetector/
- │    ├── NameCleaner/
- │    ├── MultiDiscManager/
- │    ├── IntegrityValidator/
- │    └── GameDatabase/
- ├── UI/
- │    ├── Views/
- │    ├── Controls/
- │    └── Notifications/
- ├── Services/
- │    ├── PathsService.cs
- │    ├── GameProcessor.cs
- │    └── CoverService.cs
- ├── Resources/
- │    ├── Icons/
- │    └── Themes/
- └── README.md
-`
+### 📦 Build & Release Automatizado
+- **Pipeline CI/CD en GitHub Actions**  
+  - Compilación en Release con .NET 8.0.  
+  - Generación de artefactos: Portable (ZIP), Self‑Contained (ZIP), Instalador Inno Setup (`.exe`) y Paquete MSIX firmado.  
+  - Checksums SHA256 para verificar integridad.  
+  - Creación automática de Releases en GitHub.  
 
 ---
 
-🧠 Flujo de Procesamiento
-
-1. El usuario selecciona uno o varios juegos  
-2. El sistema detecta automáticamente el GameID  
-3. Se limpia y normaliza el nombre  
-4. Se valida la integridad del contenido  
-5. Se consulta la base de datos local/online  
-6. Se genera la estructura final (incluyendo multidisco)  
-7. Se descargan carátulas opcionales  
-8. Se muestra notificación visual del resultado
-
----
-
-## 🖼️ Capturas de Pantalla
-
-### 1. Pantalla Principal
-![Pantalla Principal](images/pantalla-principal.jpeg)
-
-### 2. Detección Automática de GameID
-![Detección Automática de GameID](images/deteccion-gameid.jpeg)
-
-### 3. Gestión Multidisco
-![Gestión Multidisco](images/gestion-multidisco.jpeg)
-
-### 4. Procesamiento Completo
-![Procesamiento Completo](images/procesamiento-completo.jpeg)
-
----
-
-🎨 Créditos Visuales
-
-Las imágenes incluidas en este README fueron generadas conceptualmente para documentación del proyecto.  
-No representan capturas reales del software, sino mockups técnicos diseñados para ilustrar el flujo de trabajo.
-
-- Diseño conceptual: Raidel  
-- Generación visual: Microsoft Copilot (IA)  
-- Estilo: UI WPF moderna + elementos técnicos PlayStation  
-- Proyecto: POPSManager – Gestión Profesional de Juegos PS1/PS2
-
----
-
-📚 Notas de Documentación
-
-Este README y sus recursos visuales forman parte de la documentación oficial del proyecto POPSManager.  
-Pueden utilizarse en presentaciones, portafolios o demostraciones técnicas manteniendo la atribución correspondiente.
-
----
-
-📦 Build & Release Automation
-
-- Pipeline GitHub Actions  
-- Firma con certificados  
-- Versionado automático  
-- Generación de instalador profesional  
-- Publicación automática de assets
-
----
-
-📝 Licencia
-
-Proyecto de uso personal y educativo.  
-No incluye ni distribuye contenido con copyright.
-
----
+## 📁 Estructura del Proyecto
