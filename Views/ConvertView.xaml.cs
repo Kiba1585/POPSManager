@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using POPSManager.ViewModels;
 
 namespace POPSManager.Views
 {
@@ -7,6 +8,7 @@ namespace POPSManager.Views
         public ConvertView()
         {
             InitializeComponent();
+            DataContext = new ConvertViewModel();
         }
     }
 }
