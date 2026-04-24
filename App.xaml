@@ -42,7 +42,6 @@
                      ══════════════════════════════════════ -->
                 <ResourceDictionary Source="Styles/Shadows.xaml"/>
                 <ResourceDictionary Source="Styles/SidebarStyles.xaml"/>
-                <ResourceDictionary Source="Styles/LogsPanel.xaml"/>
                 <ResourceDictionary Source="Styles/Toasts.xaml"/>
 
             </ResourceDictionary.MergedDictionaries>
