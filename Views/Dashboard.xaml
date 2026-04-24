@@ -5,8 +5,6 @@
              xmlns:viewModels="clr-namespace:POPSManager.ViewModels"
              Background="{StaticResource Brush.Background}">
 
-    <!-- ⚠️ Eliminado DataContext en XAML -->
-
     <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="True">
         <StackPanel Margin="20">
 
@@ -57,6 +55,9 @@
                 </Border>
             </UniformGrid>
 
+            <!-- ========================================================= -->
+            <!--  ACCIONES RÁPIDAS (AHORA CON WRAPPANEL) -->
+            <!-- ========================================================= -->
             <StackPanel Margin="0 0 0 20">
                 <TextBlock Text="Acciones rápidas"
                            FontSize="20"
@@ -64,32 +65,36 @@
                            Foreground="{StaticResource Brush.TextPrimary}"
                            Margin="0 0 0 10"/>
 
-                <StackPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal">
                     <Button Content="Convertir juegos (PS1)"
                             Width="200" Height="42"
                             Style="{StaticResource PrimaryButton}"
-                            Margin="0 0 20 0"
+                            Margin="0 0 10 10"
                             Command="{Binding OpenConvertCommand}"/>
 
                     <Button Content="Procesar juegos (PS1 / PS2)"
                             Width="220" Height="42"
                             Style="{StaticResource PrimaryButton}"
-                            Margin="0 0 20 0"
+                            Margin="0 0 10 10"
                             Command="{Binding OpenProcessPopsCommand}"/>
 
                     <Button Content="Abrir carpeta raíz"
                             Width="180" Height="42"
                             Style="{StaticResource SecondaryButton}"
-                            Margin="0 0 20 0"
+                            Margin="0 0 10 10"
                             Command="{Binding OpenRootFolderCommand}"/>
 
-                    <Button Content="Abrir POPSTARTER.ELF"
-                            Width="180" Height="42"
+                    <Button Content="Abrir ELF"
+                            Width="120" Height="42"
                             Style="{StaticResource SecondaryButton}"
+                            Margin="0 0 10 10"
                             Command="{Binding OpenElfFolderCommand}"/>
-                </StackPanel>
+                </WrapPanel>
             </StackPanel>
 
+            <!-- ========================================================= -->
+            <!--  CONFIGURACIÓN DE RUTAS -->
+            <!-- ========================================================= -->
             <Border Style="{StaticResource Card}" Padding="16" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
                 <StackPanel>
                     <TextBlock Text="Configuración de rutas"
@@ -138,6 +143,9 @@
                 </StackPanel>
             </Border>
 
+            <!-- ========================================================= -->
+            <!--  INFORMACIÓN DEL SISTEMA -->
+            <!-- ========================================================= -->
             <Border Style="{StaticResource Card}" Padding="16" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
                 <StackPanel>
                     <TextBlock Text="Información del sistema"
@@ -151,6 +159,9 @@
                 </StackPanel>
             </Border>
 
+            <!-- ========================================================= -->
+            <!--  REGISTRO DE ACTIVIDAD -->
+            <!-- ========================================================= -->
             <Border Style="{StaticResource Card}" Padding="16" Effect="{StaticResource ShadowSoft}">
                 <StackPanel>
                     <TextBlock Text="Registro de actividad"
