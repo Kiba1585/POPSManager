@@ -22,7 +22,6 @@
                                Foreground="{StaticResource Brush.TextPrimary}"
                                Margin="0 0 0 16"/>
 
-                    <!-- Modo oscuro -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
                         <CheckBox IsChecked="{Binding DarkMode}" Margin="0 0 10 0"/>
                         <TextBlock Text="Modo oscuro"
@@ -30,7 +29,6 @@
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
 
-                    <!-- Notificaciones visuales -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
                         <CheckBox IsChecked="{Binding NotificationsEnabled}" Margin="0 0 10 0"/>
                         <TextBlock Text="Notificaciones visuales"
@@ -38,7 +36,6 @@
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
 
-                    <!-- Selector de idioma -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
                         <TextBlock Text="Idioma:"
                                    Width="120"
@@ -54,8 +51,86 @@
             </Border>
 
             <!-- ========================================================= -->
+            <!--  RUTAS DE TRABAJO -->
+            <!-- ========================================================= -->
+            <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
+                <StackPanel>
+                    <TextBlock Text="Rutas de trabajo"
+                               FontSize="18" FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 16"/>
+
+                    <!-- Carpeta de origen -->
+                    <TextBlock Text="Carpeta de origen (juegos BIN/CUE/ISO):"
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
+                    <TextBox Text="{Binding SourcePath, UpdateSourceTrigger=PropertyChanged}"
+                             Height="32"
+                             Background="{StaticResource Brush.PanelAlt}"
+                             Foreground="{StaticResource Brush.TextPrimary}"
+                             BorderBrush="{StaticResource Brush.Border}"
+                             BorderThickness="1"
+                             Padding="6"
+                             Margin="0 0 0 6"/>
+                    <Button Content="Seleccionar carpeta de origen"
+                            Width="180" Height="32"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ChangeSourceFolderCommand}"
+                            Margin="0 0 0 16"/>
+
+                    <!-- Carpeta de destino -->
+                    <TextBlock Text="Carpeta de destino (raíz OPL):"
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
+                    <TextBox Text="{Binding DestinationPath, UpdateSourceTrigger=PropertyChanged}"
+                             Height="32"
+                             Background="{StaticResource Brush.PanelAlt}"
+                             Foreground="{StaticResource Brush.TextPrimary}"
+                             BorderBrush="{StaticResource Brush.Border}"
+                             BorderThickness="1"
+                             Padding="6"
+                             Margin="0 0 0 6"/>
+                    <Button Content="Seleccionar carpeta de destino"
+                            Width="180" Height="32"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ChangeDestinationFolderCommand}"
+                            Margin="0 0 0 16"/>
+
+                    <!-- Carpeta de ELFs -->
+                    <TextBlock Text="Carpeta de ELFs (POPSTARTER.ELF, POPS2.ELF...):"
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
+                    <TextBox Text="{Binding ElfFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                             Height="32"
+                             Background="{StaticResource Brush.PanelAlt}"
+                             Foreground="{StaticResource Brush.TextPrimary}"
+                             BorderBrush="{StaticResource Brush.Border}"
+                             BorderThickness="1"
+                             Padding="6"
+                             Margin="0 0 0 6"/>
+                    <Button Content="Seleccionar carpeta de ELFs"
+                            Width="180" Height="32"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ChangeElfFolderCommand}"
+                            Margin="0 0 0 16"/>
+
+                    <!-- Procesar subcarpetas -->
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding ProcessSubfolders}" Margin="0 0 10 0"/>
+                        <TextBlock Text="Procesar subcarpetas recursivamente"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ========================================================= -->
             <!--  AUTOMATIZACIÓN INTELIGENTE -->
             <!-- ========================================================= -->
+            <!-- (Sección sin cambios) -->
             <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
                 <StackPanel>
                     <TextBlock Text="Automatización inteligente"
@@ -112,7 +187,6 @@
                                   Width="160"/>
                     </StackPanel>
 
-                    <!-- NUEVO: Copiar archivos LNG -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Copiar archivos de idioma (LNG)"
                                    Width="220" VerticalAlignment="Center"
@@ -122,7 +196,6 @@
                                   Width="160"/>
                     </StackPanel>
 
-                    <!-- NUEVO: Copiar temas (THM) -->
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Copiar temas (THM)"
                                    Width="220" VerticalAlignment="Center"
@@ -144,7 +217,6 @@
                                Foreground="{StaticResource Brush.TextPrimary}"
                                Margin="0 0 0 16"/>
 
-                    <!-- Carpeta LNG (Idiomas) -->
                     <TextBlock Text="Carpeta de idiomas (LNG):"
                                FontSize="14"
                                Foreground="{StaticResource Brush.TextSecondary}"
@@ -164,7 +236,6 @@
                             Command="{Binding ChangeLngPathCommand}"
                             Margin="0 0 0 16"/>
 
-                    <!-- Carpeta THM (Temas) -->
                     <TextBlock Text="Carpeta de temas (THM):"
                                FontSize="14"
                                Foreground="{StaticResource Brush.TextSecondary}"
