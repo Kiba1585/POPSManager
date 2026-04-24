@@ -22,8 +22,10 @@ namespace POPSManager.Services
         private readonly Action<string, NotificationType> _notify;
         private readonly Action<string> _setStatus;
 
-        private const int SectorSize = 2352;
-        private const int UserDataSize = 2048;
+        private const int SectorSize = 2352;        // Tamaño de sector original (CD)
+        private const int UserDataSize = 2048;       // Datos de usuario por sector
+        private const int HeaderSize = 0x800;        // Tamaño del header VCD
+        private const int BufferSize = 1024 * 1024;  // 1 MB de buffer de escritura
 
         public ConverterService(
             Action<string> log,
@@ -77,8 +79,8 @@ namespace POPSManager.Services
             int total = files.Length;
             int index = 0;
 
-            int cpu = Environment.ProcessorCount;
-            int maxParallel = Math.Clamp(cpu, 2, 4);
+            // Usamos un paralelismo moderado para no saturar discos mecánicos
+            int maxParallel = Math.Min(Environment.ProcessorCount, 2);
 
             var options = new ParallelOptions
             {
@@ -163,15 +165,23 @@ namespace POPSManager.Services
             await using var input = File.OpenRead(inputPath);
             await using var output = File.Create(outputPath);
 
-            byte[] header = new byte[0x800];
+            // Escribir header VCD
+            byte[] header = new byte[HeaderSize];
             Array.Copy(Encoding.ASCII.GetBytes("PSX"), header, 3);
             await output.WriteAsync(header, 0, header.Length).ConfigureAwait(false);
 
-            byte[] sector = new byte[SectorSize];
-            byte[] userData = new byte[UserDataSize];
-
             long totalSectors = input.Length / SectorSize;
             long processed = 0;
+
+            // Buffer de salida: acumulamos muchos sectores antes de escribir
+            byte[] outputBuffer = new byte[BufferSize];
+            int bufferPos = 0;
+
+            byte[] sector = new byte[SectorSize];
+
+            // Para actualizar el progreso solo cada cierto tiempo
+            var lastReport = System.Diagnostics.Stopwatch.StartNew();
+            const int reportIntervalMs = 500;
 
             while (true)
             {
@@ -184,16 +194,31 @@ namespace POPSManager.Services
                     break;
                 }
 
-                Buffer.BlockCopy(sector, 24, userData, 0, UserDataSize);
-                await output.WriteAsync(userData, 0, UserDataSize).ConfigureAwait(false);
+                // Copiar datos de usuario al buffer de salida
+                if (bufferPos + UserDataSize > outputBuffer.Length)
+                {
+                    // Vaciar el buffer antes de llenarlo
+                    await output.WriteAsync(outputBuffer, 0, bufferPos).ConfigureAwait(false);
+                    bufferPos = 0;
+                }
+
+                Buffer.BlockCopy(sector, 24, outputBuffer, bufferPos, UserDataSize);
+                bufferPos += UserDataSize;
 
                 processed++;
-                if (processed % 200 == 0)
+
+                // Reportar progreso cada medio segundo
+                if (lastReport.ElapsedMilliseconds >= reportIntervalMs)
                 {
                     int percent = (int)((processed / (double)totalSectors) * 100);
                     _setStatus(string.Format(_loc.GetString("Converter_ConvertingPercentage"), name, percent));
+                    lastReport.Restart();
                 }
             }
+
+            // Escribir el resto del buffer
+            if (bufferPos > 0)
+                await output.WriteAsync(outputBuffer, 0, bufferPos).ConfigureAwait(false);
         }
 
         private static bool IsPs2Iso(string isoPath)
