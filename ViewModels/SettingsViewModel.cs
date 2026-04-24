@@ -23,9 +23,6 @@ namespace POPSManager.ViewModels
         private readonly PathsService _paths;
         private readonly SettingsService _settings;
 
-        // ============================================================
-        // CAMPOS PRIVADOS
-        // ============================================================
         private string _rootPath = string.Empty;
         private string _sourcePath = string.Empty;      // Carpeta de origen
         private string _destinationPath = string.Empty;  // Carpeta de destino (raíz OPL)
@@ -36,7 +33,7 @@ namespace POPSManager.ViewModels
         private string _elfFolderPath = string.Empty;    // Carpeta de ELFs
         private bool _darkMode;
         private bool _notificationsEnabled;
-        private bool _processSubfolders = true;          // Procesar subcarpetas recursivamente
+        private bool _processSubfolders = true;          // Procesar subcarpetas
         private AutomationMode _automationMode;
         private AutoBehavior _normalizeNamesBehavior;
         private AutoBehavior _groupMultiDiscBehavior;
@@ -45,9 +42,6 @@ namespace POPSManager.ViewModels
         private AutoBehavior _thmBehavior;
         private AppLanguage _selectedLanguage;
 
-        // ============================================================
-        // CONSTRUCTOR
-        // ============================================================
         public SettingsViewModel()
         {
             _services = App.Services!;
@@ -81,9 +75,6 @@ namespace POPSManager.ViewModels
             LoadSettings();
         }
 
-        // ============================================================
-        // PROPIEDADES
-        // ============================================================
         public ObservableCollection<LanguageItem> Languages { get; }
 
         public AppLanguage SelectedLanguage
@@ -94,7 +85,7 @@ namespace POPSManager.ViewModels
                 if (SetProperty(ref _selectedLanguage, value))
                 {
                     _settings.Language = value;
-                    // Refresco inmediato de la UI
+                    // Refrescar UI inmediatamente
                     _services.Localization?.Refresh();
                     _ = SaveSettingsAsync();
                 }
@@ -164,9 +155,6 @@ namespace POPSManager.ViewModels
             set { if (SetProperty(ref _thmBehavior, value)) _ = SaveSettingsAsync(); }
         }
 
-        // ============================================================
-        // COMANDOS
-        // ============================================================
         public ICommand ChangeRootFolderCommand { get; }
         public ICommand ChangeSourceFolderCommand { get; }
         public ICommand ChangeDestinationFolderCommand { get; }
@@ -178,9 +166,6 @@ namespace POPSManager.ViewModels
         public ICommand OpenProgramFolderCommand { get; }
         public ICommand SaveSettingsCommand { get; }
 
-        // ============================================================
-        // MÉTODOS PRIVADOS
-        // ============================================================
         private void LoadSettings()
         {
             RootPath = _paths.RootFolder;
@@ -265,7 +250,6 @@ namespace POPSManager.ViewModels
             }
 
             _settings.DestinationFolder = dialog.FolderName;
-            // Sincronizamos la raíz con el destino
             _settings.RootFolder = dialog.FolderName;
             await _settings.SaveAsync();
             await _paths.ReloadAsync();
@@ -385,7 +369,7 @@ namespace POPSManager.ViewModels
             }
 
             _settings.ElfFolder = dialog.FolderName;
-            // Buscar automáticamente POPSTARTER.ELF y POPS2.ELF dentro de la carpeta
+            // Buscar automáticamente ELFs dentro
             string popstarter = Path.Combine(dialog.FolderName, "POPSTARTER.ELF");
             string pops2 = Path.Combine(dialog.FolderName, "POPS2.ELF");
             if (File.Exists(popstarter)) await _paths.SetCustomElfPathAsync(popstarter);
@@ -425,7 +409,6 @@ namespace POPSManager.ViewModels
                 _settings.Language = SelectedLanguage;
 
                 await _settings.SaveAsync();
-                // Nota: la UI se refrescó en el setter de SelectedLanguage
             }
             catch (Exception ex)
             {
