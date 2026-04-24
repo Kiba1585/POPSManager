@@ -2,6 +2,12 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ========================================================= -->
+    <!--  EASING FUNCTIONS (DEBEN IR PRIMERO) -->
+    <!-- ========================================================= -->
+    <QuadraticEase x:Key="QuadraticEaseOut" EasingMode="EaseOut"/>
+    <QuadraticEase x:Key="QuadraticEaseIn" EasingMode="EaseIn"/>
+
+    <!-- ========================================================= -->
     <!--  ANIMACIONES DE TOASTS -->
     <!-- ========================================================= -->
 
@@ -29,12 +35,6 @@
                          EasingFunction="{StaticResource QuadraticEaseIn}"/>
     </Storyboard>
 
-
-    <!-- EASING FUNCTIONS -->
-    <QuadraticEase x:Key="QuadraticEaseOut" EasingMode="EaseOut"/>
-    <QuadraticEase x:Key="QuadraticEaseIn" EasingMode="EaseIn"/>
-
-
     <!-- ========================================================= -->
     <!--  ESTILO BASE PARA TOASTS -->
     <!-- ========================================================= -->
@@ -59,7 +59,6 @@
         </Setter>
     </Style>
 
-
     <!-- ========================================================= -->
     <!--  TOAST: SUCCESS -->
     <!-- ========================================================= -->
@@ -69,7 +68,6 @@
            BasedOn="{StaticResource ToastBaseStyle}">
         <Setter Property="Background" Value="{StaticResource Brush.Success}"/>
     </Style>
-
 
     <!-- ========================================================= -->
     <!--  TOAST: INFO -->
@@ -81,7 +79,6 @@
         <Setter Property="Background" Value="{StaticResource Brush.Accent}"/>
     </Style>
 
-
     <!-- ========================================================= -->
     <!--  TOAST: WARNING -->
     <!-- ========================================================= -->
@@ -91,7 +88,6 @@
            BasedOn="{StaticResource ToastBaseStyle}">
         <Setter Property="Background" Value="{StaticResource Brush.Warning}"/>
     </Style>
-
 
     <!-- ========================================================= -->
     <!--  TOAST: ERROR -->
