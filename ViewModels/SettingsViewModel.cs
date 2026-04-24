@@ -23,14 +23,20 @@ namespace POPSManager.ViewModels
         private readonly PathsService _paths;
         private readonly SettingsService _settings;
 
+        // ============================================================
+        // CAMPOS PRIVADOS
+        // ============================================================
         private string _rootPath = string.Empty;
+        private string _sourcePath = string.Empty;      // Carpeta de origen
+        private string _destinationPath = string.Empty;  // Carpeta de destino (raíz OPL)
         private string _popsPath = string.Empty;
         private string _appsPath = string.Empty;
         private string _lngPath = string.Empty;
         private string _thmPath = string.Empty;
-        private string _elfPath = string.Empty;
+        private string _elfFolderPath = string.Empty;    // Carpeta de ELFs
         private bool _darkMode;
         private bool _notificationsEnabled;
+        private bool _processSubfolders = true;          // Procesar subcarpetas recursivamente
         private AutomationMode _automationMode;
         private AutoBehavior _normalizeNamesBehavior;
         private AutoBehavior _groupMultiDiscBehavior;
@@ -39,6 +45,9 @@ namespace POPSManager.ViewModels
         private AutoBehavior _thmBehavior;
         private AppLanguage _selectedLanguage;
 
+        // ============================================================
+        // CONSTRUCTOR
+        // ============================================================
         public SettingsViewModel()
         {
             _services = App.Services!;
@@ -57,18 +66,24 @@ namespace POPSManager.ViewModels
                 new LanguageItem { Value = AppLanguage.Japanese, DisplayName = "日本語" }
             };
 
+            // Comandos existentes + nuevos
             ChangeRootFolderCommand = new RelayCommand(async () => await ChangeRootFolderAsync());
+            ChangeSourceFolderCommand = new RelayCommand(async () => await ChangeSourceFolderAsync());
+            ChangeDestinationFolderCommand = new RelayCommand(async () => await ChangeDestinationFolderAsync());
             ChangePopsPathCommand = new RelayCommand(async () => await ChangePopsPathAsync());
             ChangeAppsPathCommand = new RelayCommand(async () => await ChangeAppsPathAsync());
             ChangeLngPathCommand = new RelayCommand(async () => await ChangeLngPathAsync());
             ChangeThmPathCommand = new RelayCommand(async () => await ChangeThmPathAsync());
-            SelectElfCommand = new RelayCommand(async () => await SelectElfAsync());
+            ChangeElfFolderCommand = new RelayCommand(async () => await ChangeElfFolderAsync());
             OpenProgramFolderCommand = new RelayCommand(OpenProgramFolder);
             SaveSettingsCommand = new RelayCommand(async () => await SaveSettingsAsync());
 
             LoadSettings();
         }
 
+        // ============================================================
+        // PROPIEDADES
+        // ============================================================
         public ObservableCollection<LanguageItem> Languages { get; }
 
         public AppLanguage SelectedLanguage
@@ -79,17 +94,21 @@ namespace POPSManager.ViewModels
                 if (SetProperty(ref _selectedLanguage, value))
                 {
                     _settings.Language = value;
+                    // Refresco inmediato de la UI
+                    _services.Localization?.Refresh();
                     _ = SaveSettingsAsync();
                 }
             }
         }
 
         public string RootPath { get => _rootPath; set => SetProperty(ref _rootPath, value); }
+        public string SourcePath { get => _sourcePath; set => SetProperty(ref _sourcePath, value); }
+        public string DestinationPath { get => _destinationPath; set => SetProperty(ref _destinationPath, value); }
         public string PopsPath { get => _popsPath; set => SetProperty(ref _popsPath, value); }
         public string AppsPath { get => _appsPath; set => SetProperty(ref _appsPath, value); }
         public string LngPath { get => _lngPath; set => SetProperty(ref _lngPath, value); }
         public string ThmPath { get => _thmPath; set => SetProperty(ref _thmPath, value); }
-        public string ElfPath { get => _elfPath; set => SetProperty(ref _elfPath, value); }
+        public string ElfFolderPath { get => _elfFolderPath; set => SetProperty(ref _elfFolderPath, value); }
 
         public bool DarkMode
         {
@@ -101,6 +120,12 @@ namespace POPSManager.ViewModels
         {
             get => _notificationsEnabled;
             set { if (SetProperty(ref _notificationsEnabled, value)) _ = SaveSettingsAsync(); }
+        }
+
+        public bool ProcessSubfolders
+        {
+            get => _processSubfolders;
+            set { if (SetProperty(ref _processSubfolders, value)) _ = SaveSettingsAsync(); }
         }
 
         public AutomationMode AutomationMode
@@ -139,25 +164,36 @@ namespace POPSManager.ViewModels
             set { if (SetProperty(ref _thmBehavior, value)) _ = SaveSettingsAsync(); }
         }
 
+        // ============================================================
+        // COMANDOS
+        // ============================================================
         public ICommand ChangeRootFolderCommand { get; }
+        public ICommand ChangeSourceFolderCommand { get; }
+        public ICommand ChangeDestinationFolderCommand { get; }
         public ICommand ChangePopsPathCommand { get; }
         public ICommand ChangeAppsPathCommand { get; }
         public ICommand ChangeLngPathCommand { get; }
         public ICommand ChangeThmPathCommand { get; }
-        public ICommand SelectElfCommand { get; }
+        public ICommand ChangeElfFolderCommand { get; }
         public ICommand OpenProgramFolderCommand { get; }
         public ICommand SaveSettingsCommand { get; }
 
+        // ============================================================
+        // MÉTODOS PRIVADOS
+        // ============================================================
         private void LoadSettings()
         {
             RootPath = _paths.RootFolder;
+            SourcePath = _settings.SourceFolder ?? "";
+            DestinationPath = _settings.DestinationFolder ?? "";
             PopsPath = _paths.PopsFolder;
             AppsPath = _paths.AppsFolder;
             LngPath = _paths.LngFolder;
             ThmPath = _paths.ThmFolder;
-            ElfPath = _paths.PopstarterElfPath;
+            ElfFolderPath = _settings.ElfFolder ?? "";
             DarkMode = _settings.DarkMode;
             NotificationsEnabled = _settings.NotificationsEnabled;
+            ProcessSubfolders = _settings.ProcessSubfolders;
             AutomationMode = _settings.Automation.Mode;
             NormalizeNamesBehavior = _settings.Automation.Conversion;
             GroupMultiDiscBehavior = _settings.Automation.MultiDisc;
@@ -198,6 +234,43 @@ namespace POPSManager.ViewModels
                 _services.Notifications.Error("No se pudo actualizar la carpeta raíz.");
                 _services.LogService.Error($"[Settings] Error ChangeRootFolder: {ex.Message}");
             }
+        }
+
+        private async Task ChangeSourceFolderAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta de origen de juegos" };
+            if (dialog.ShowDialog() != true) return;
+
+            if (!Directory.Exists(dialog.FolderName))
+            {
+                _services.Notifications.Error("La carpeta seleccionada no existe.");
+                return;
+            }
+
+            _settings.SourceFolder = dialog.FolderName;
+            await _settings.SaveAsync();
+            LoadSettings();
+            _services.Notifications.Success("Carpeta de origen actualizada.");
+        }
+
+        private async Task ChangeDestinationFolderAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta destino (raíz OPL)" };
+            if (dialog.ShowDialog() != true) return;
+
+            if (!Directory.Exists(dialog.FolderName))
+            {
+                _services.Notifications.Error("La carpeta seleccionada no existe.");
+                return;
+            }
+
+            _settings.DestinationFolder = dialog.FolderName;
+            // Sincronizamos la raíz con el destino
+            _settings.RootFolder = dialog.FolderName;
+            await _settings.SaveAsync();
+            await _paths.ReloadAsync();
+            LoadSettings();
+            _services.Notifications.Success("Carpeta destino actualizada.");
         }
 
         private async Task ChangePopsPathAsync()
@@ -300,34 +373,26 @@ namespace POPSManager.ViewModels
             }
         }
 
-        private async Task SelectElfAsync()
+        private async Task ChangeElfFolderAsync()
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "POPStarter ELF|POPSTARTER.ELF|Todos los archivos|*.*",
-                Title = "Seleccionar POPSTARTER.ELF"
-            };
-
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta con archivos ELF" };
             if (dialog.ShowDialog() != true) return;
 
-            string path = dialog.FileName;
-            if (!File.Exists(path))
+            if (!Directory.Exists(dialog.FolderName))
             {
-                _services.Notifications.Error("El archivo seleccionado no existe.");
+                _services.Notifications.Error("La carpeta seleccionada no existe.");
                 return;
             }
 
-            try
-            {
-                await _paths.SetCustomElfPathAsync(path);
-                LoadSettings();
-                _services.Notifications.Success("POPSTARTER.ELF configurado.");
-            }
-            catch (Exception ex)
-            {
-                _services.Notifications.Error("No se pudo configurar POPSTARTER.ELF.");
-                _services.LogService.Error($"[Settings] Error SelectElf: {ex.Message}");
-            }
+            _settings.ElfFolder = dialog.FolderName;
+            // Buscar automáticamente POPSTARTER.ELF y POPS2.ELF dentro de la carpeta
+            string popstarter = Path.Combine(dialog.FolderName, "POPSTARTER.ELF");
+            string pops2 = Path.Combine(dialog.FolderName, "POPS2.ELF");
+            if (File.Exists(popstarter)) await _paths.SetCustomElfPathAsync(popstarter);
+            if (File.Exists(pops2)) await _paths.SetCustomPs2ElfPathAsync(pops2);
+            await _settings.SaveAsync();
+            LoadSettings();
+            _services.Notifications.Success("Carpeta de ELFs actualizada.");
         }
 
         private void OpenProgramFolder()
@@ -350,6 +415,7 @@ namespace POPSManager.ViewModels
             {
                 _settings.DarkMode = DarkMode;
                 _settings.NotificationsEnabled = NotificationsEnabled;
+                _settings.ProcessSubfolders = ProcessSubfolders;
                 _settings.Automation.Mode = AutomationMode;
                 _settings.Automation.Conversion = NormalizeNamesBehavior;
                 _settings.Automation.MultiDisc = GroupMultiDiscBehavior;
@@ -359,7 +425,7 @@ namespace POPSManager.ViewModels
                 _settings.Language = SelectedLanguage;
 
                 await _settings.SaveAsync();
-                _services.Localization?.Refresh();
+                // Nota: la UI se refrescó en el setter de SelectedLanguage
             }
             catch (Exception ex)
             {
