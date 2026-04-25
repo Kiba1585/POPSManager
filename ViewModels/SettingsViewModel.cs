@@ -34,6 +34,8 @@ namespace POPSManager.ViewModels
         private bool _darkMode;
         private bool _notificationsEnabled;
         private bool _processSubfolders = true;
+        private bool _useMetadata = true;            // NUEVO
+        private bool _useTitleInElfName = true;      // NUEVO
         private AutomationMode _automationMode;
         private AutoBehavior _normalizeNamesBehavior;
         private AutoBehavior _groupMultiDiscBehavior;
@@ -104,17 +106,27 @@ namespace POPSManager.ViewModels
             get => _darkMode;
             set { if (SetProperty(ref _darkMode, value)) _ = SaveSettingsAsync(); }
         }
-
         public bool NotificationsEnabled
         {
             get => _notificationsEnabled;
             set { if (SetProperty(ref _notificationsEnabled, value)) _ = SaveSettingsAsync(); }
         }
-
         public bool ProcessSubfolders
         {
             get => _processSubfolders;
             set { if (SetProperty(ref _processSubfolders, value)) _ = SaveSettingsAsync(); }
+        }
+
+        // NUEVAS PROPIEDADES
+        public bool UseMetadata
+        {
+            get => _useMetadata;
+            set { if (SetProperty(ref _useMetadata, value)) _ = SaveSettingsAsync(); }
+        }
+        public bool UseTitleInElfName
+        {
+            get => _useTitleInElfName;
+            set { if (SetProperty(ref _useTitleInElfName, value)) _ = SaveSettingsAsync(); }
         }
 
         public AutomationMode AutomationMode
@@ -122,7 +134,6 @@ namespace POPSManager.ViewModels
             get => _automationMode;
             set { if (SetProperty(ref _automationMode, value)) _ = SaveSettingsAsync(); }
         }
-
         public AutoBehavior NormalizeNamesBehavior
         {
             get => _normalizeNamesBehavior;
@@ -173,6 +184,8 @@ namespace POPSManager.ViewModels
             DarkMode = _settings.DarkMode;
             NotificationsEnabled = _settings.NotificationsEnabled;
             ProcessSubfolders = _settings.ProcessSubfolders;
+            UseMetadata = _settings.UseMetadata;
+            UseTitleInElfName = _settings.UseTitleInElfName;
             AutomationMode = _settings.Automation.Mode;
             NormalizeNamesBehavior = _settings.Automation.Conversion;
             GroupMultiDiscBehavior = _settings.Automation.MultiDisc;
@@ -393,6 +406,8 @@ namespace POPSManager.ViewModels
                 _settings.DarkMode = DarkMode;
                 _settings.NotificationsEnabled = NotificationsEnabled;
                 _settings.ProcessSubfolders = ProcessSubfolders;
+                _settings.UseMetadata = UseMetadata;
+                _settings.UseTitleInElfName = UseTitleInElfName;
                 _settings.Automation.Mode = AutomationMode;
                 _settings.Automation.Conversion = NormalizeNamesBehavior;
                 _settings.Automation.MultiDisc = GroupMultiDiscBehavior;
