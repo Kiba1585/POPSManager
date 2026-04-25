@@ -244,6 +244,7 @@ namespace POPSManager.Logic
             bool useCovers = _settings.UseCovers && _auto.ShouldDownloadCovers();
             bool genCheats = _auto.ShouldGenerateCheats();
             bool handleMultiDisc = _auto.ShouldHandleMultiDisc();
+            bool useMetadata = _settings.UseMetadata;   // NUEVO
 
             string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
             GameEntry dbEntry = null;
@@ -312,6 +313,14 @@ namespace POPSManager.Logic
 
             perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingELF"));
             GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder);
+
+            // NUEVO: Generar archivo de metadatos (.cfg) para OPL
+            if (useMetadata)
+            {
+                perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
+                GenerateMetadataFile(detectedId, cleanTitle, dbEntry);
+            }
+
             _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_ProcessedSuccessfully")));
         }
 
@@ -325,8 +334,29 @@ namespace POPSManager.Logic
                 return;
             }
             bool ok = ElfGenerator.GeneratePs1Elf(_paths.PopstarterElfPath, vcdPath, _paths.AppsFolder, 1, title, gameId, _log.Info);
-            if (!ok) _notify.Error(string.Format("{0} {1}", _loc.GetString("GameProcessor_ErrorGeneratingElf"), gameId));
-            else _log.Info(string.Format("[PS1] ELF {0} {1}", _loc.GetString("GameProcessor_GeneratedFor"), gameId));
+            if (!ok)
+            {
+                _notify.Error(string.Format("{0} {1}", _loc.GetString("GameProcessor_ErrorGeneratingElf"), gameId));
+                return;
+            }
+
+            // NUEVO: Renombrar ELF si el usuario prefiere solo el GameID
+            if (!_settings.UseTitleInElfName)
+            {
+                string appsFolder = _paths.AppsFolder;
+                string oldName = $"{gameId} - {title}.ELF.NTSC";
+                string newName = $"{gameId}.ELF.NTSC";
+                string oldPath = Path.Combine(appsFolder, oldName);
+                string newPath = Path.Combine(appsFolder, newName);
+
+                if (File.Exists(oldPath) && !File.Exists(newPath))
+                {
+                    File.Move(oldPath, newPath);
+                    _log.Info($"[ELF] Renombrado {oldName} -> {newName}");
+                }
+            }
+
+            _log.Info(string.Format("[PS1] ELF {0} {1}", _loc.GetString("GameProcessor_GeneratedFor"), gameId));
         }
 
         private async Task ProcessPS2Async(string isoPath, string gameIdForUi, ProgressViewModel? perGameProgress, CancellationToken ct)
@@ -343,6 +373,7 @@ namespace POPSManager.Logic
 
             bool useDb = _settings.UseDatabase && _auto.ShouldUseDatabase();
             bool useCovers = _settings.UseCovers && _auto.ShouldDownloadCovers();
+            bool useMetadata = _settings.UseMetadata;   // NUEVO
             string cleanTitle = NameCleanerBase.CleanTitleOnly(originalName);
             GameEntry dbEntry = null;
 
@@ -376,7 +407,46 @@ namespace POPSManager.Logic
             ct.ThrowIfCancellationRequested();
             File.Copy(isoPath, dest, true);
             _log.Info(string.Format("[PS2] {0} -> {1}", _loc.GetString("GameProcessor_CopiedIso"), dest));
+
+            // NUEVO: Generar archivo de metadatos (.cfg) para OPL
+            if (useMetadata)
+            {
+                perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
+                GenerateMetadataFile(detectedId, cleanTitle, dbEntry);
+            }
+
             _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_CopiedToDvdSuccessfully")));
+        }
+
+        // ============================================================
+        //  NUEVO: Generar archivo de metadatos (.cfg) para OPL
+        // ============================================================
+         private void GenerateMetadataFile(string gameId, string title, GameEntry? dbEntry)
+        {
+            try
+            {
+                string cfgFolder = Path.Combine(_paths.RootFolder, "CFG");
+                Directory.CreateDirectory(cfgFolder);
+                string cfgPath = Path.Combine(cfgFolder, $"{gameId}.cfg");
+
+                var lines = new List<string>
+                {
+                    $"Title={title}",
+                    $"Description={(dbEntry?.CheatFixes != null ? "Fixes disponibles" : "Sin descripción")}",
+                    $"Release={dbEntry?.Year.ToString() ?? "2000"}",
+                    $"Genre={dbEntry?.Tags != null && dbEntry.Tags.Length > 0 ? dbEntry.Tags[0] : "Action"}",
+                    $"Players=1",
+                    $"Developer={dbEntry?.Publisher ?? "Desconocido"}",
+                    $"Rating=ESRB=E"
+                };
+
+                File.WriteAllLines(cfgPath, lines);
+                _log.Info($"[METADATA] Archivo CFG generado -> {cfgPath}");
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"[METADATA] Error generando CFG para {gameId}: {ex.Message}");
+            }
         }
 
         private void CopyCustomFolderContents(string sourceFolder, string folderName, Action<string> log)
@@ -412,11 +482,11 @@ namespace POPSManager.Logic
             foreach (var file in Directory.GetFiles(source))
             {
                 string destFile = Path.Combine(dest, Path.GetFileName(file));
-                       File.Copy(file, destFile, true);
+                File.Copy(file, destFile, true);
                 log(string.Format("[Copy] {0} -> {1}", file, destFile));
             }
             foreach (var dir in Directory.GetDirectories(source))
                 CopyDirectoryRecursive(dir, Path.Combine(dest, Path.GetFileName(dir)), log);
         }
     }
-}          
+}
