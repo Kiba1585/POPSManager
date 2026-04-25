@@ -25,6 +25,11 @@ namespace POPSManager.Services
         public string PopstarterElfPath { get; private set; } = "";
         public string PopstarterPs2ElfPath { get; private set; } = "";
 
+        // NUEVO: Carpeta temporal por defecto (si no hay una configurada)
+        public string TempFolder => !string.IsNullOrWhiteSpace(_settings.TempFolder) && Directory.Exists(_settings.TempFolder)
+            ? _settings.TempFolder
+            : Path.Combine(Path.GetTempPath(), "POPSManager");
+
         private string? _customPopsFolder;
         private string? _customAppsFolder;
         private string? _customLngFolder;
@@ -111,6 +116,7 @@ namespace POPSManager.Services
             CreateFolder(DvdFolder);
             CreateFolder(LngFolder);
             CreateFolder(ThmFolder);
+            CreateFolder(TempFolder);
         }
 
         private void CreateFolder(string path)
