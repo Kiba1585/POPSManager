@@ -77,6 +77,18 @@
                             Style="{StaticResource PrimaryButton}"
                             Margin="0 0 10 10"
                             Command="{Binding OpenProcessPopsCommand}"/>
+
+                    <Button Content="Abrir carpeta raíz"
+                            Width="180" Height="42"
+                            Style="{StaticResource SecondaryButton}"
+                            Margin="0 0 10 10"
+                            Command="{Binding OpenRootFolderCommand}"/>
+
+                    <Button Content="Abrir ELF"
+                            Width="120" Height="42"
+                            Style="{StaticResource SecondaryButton}"
+                            Margin="0 0 10 10"
+                            Command="{Binding OpenElfFolderCommand}"/>
                 </WrapPanel>
             </StackPanel>
 
