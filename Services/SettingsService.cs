@@ -47,6 +47,9 @@ namespace POPSManager.Services
         // NUEVO: usar metadatos (CFG) para OPL
         public bool UseMetadata { get; set; } = true;
 
+        // NUEVO: usar carpeta temporal para conversión en dispositivos extraíbles
+        public bool UseTempFolderForConversion { get; set; } = true;
+
         public string RootFolder { get; set; } = "";
         public string CustomElfPath { get; set; } = "";
         public string CustomPs2ElfPath { get; set; } = "";
@@ -57,6 +60,9 @@ namespace POPSManager.Services
         public string? CustomLngFolder { get; set; }
         public string? CustomThmFolder { get; set; }
 
+        // NUEVO: carpeta temporal personalizada (si está vacía, se usa %TEMP%\POPSManager\)
+        public string? TempFolder { get; set; }
+
         // ============================
         //  NUEVAS PROPIEDADES (RUTAS CENTRALIZADAS)
         // ============================
@@ -66,8 +72,6 @@ namespace POPSManager.Services
         public bool ProcessSubfolders { get; set; } = true;
 
         // NUEVO: formato del nombre del ELF
-        // true = "GameID - Titulo.ELF.NTSC"  (por defecto)
-        // false = "GameID.ELF" (para temas que requieren este formato)
         public bool UseTitleInElfName { get; set; } = true;
 
         // ============================
@@ -127,6 +131,7 @@ namespace POPSManager.Services
                 UseDatabase = data.UseDatabase;
                 UseCovers = data.UseCovers;
                 UseMetadata = data.UseMetadata;
+                UseTempFolderForConversion = data.UseTempFolderForConversion;
 
                 RootFolder = data.RootFolder ?? "";
                 CustomElfPath = data.CustomElfPath ?? "";
@@ -136,6 +141,7 @@ namespace POPSManager.Services
                 CustomAppsFolder = data.CustomAppsFolder;
                 CustomLngFolder = data.CustomLngFolder;
                 CustomThmFolder = data.CustomThmFolder;
+                TempFolder = data.TempFolder;
 
                 SourceFolder = data.SourceFolder;
                 DestinationFolder = data.DestinationFolder;
@@ -170,6 +176,7 @@ namespace POPSManager.Services
                     UseDatabase = UseDatabase,
                     UseCovers = UseCovers,
                     UseMetadata = UseMetadata,
+                    UseTempFolderForConversion = UseTempFolderForConversion,
 
                     RootFolder = RootFolder,
                     CustomElfPath = CustomElfPath,
@@ -178,6 +185,7 @@ namespace POPSManager.Services
                     CustomAppsFolder = CustomAppsFolder,
                     CustomLngFolder = CustomLngFolder,
                     CustomThmFolder = CustomThmFolder,
+                    TempFolder = TempFolder,
 
                     SourceFolder = SourceFolder,
                     DestinationFolder = DestinationFolder,
@@ -220,6 +228,9 @@ namespace POPSManager.Services
 
             if (!string.IsNullOrWhiteSpace(CustomThmFolder))
                 CustomThmFolder = Normalize(CustomThmFolder);
+
+            if (!string.IsNullOrWhiteSpace(TempFolder))
+                TempFolder = Normalize(TempFolder);
 
             if (!string.IsNullOrWhiteSpace(SourceFolder))
                 SourceFolder = Normalize(SourceFolder);
@@ -293,6 +304,7 @@ namespace POPSManager.Services
             public bool UseDatabase { get; set; } = true;
             public bool UseCovers { get; set; } = true;
             public bool UseMetadata { get; set; } = true;
+            public bool UseTempFolderForConversion { get; set; } = true;
 
             public string? RootFolder { get; set; }
             public string? CustomElfPath { get; set; }
@@ -302,6 +314,7 @@ namespace POPSManager.Services
 
             public string? CustomLngFolder { get; set; }
             public string? CustomThmFolder { get; set; }
+            public string? TempFolder { get; set; }
 
             public string? SourceFolder { get; set; }
             public string? DestinationFolder { get; set; }
