@@ -31,17 +31,17 @@ namespace POPSManager.ViewModels
         private string _lngPath = string.Empty;
         private string _thmPath = string.Empty;
         private string _elfFolderPath = string.Empty;
-        private string _tempFolderPath = string.Empty;   // NUEVO
         private bool _darkMode;
         private bool _notificationsEnabled;
         private bool _processSubfolders = true;
         private bool _useMetadata = true;
         private bool _useTitleInElfName = true;
-        private bool _useTempFolder = true;               // NUEVO
         private AutomationMode _automationMode;
         private AutoBehavior _normalizeNamesBehavior;
         private AutoBehavior _groupMultiDiscBehavior;
         private AutoBehavior _downloadCoversBehavior;
+        private AutoBehavior _elfGenerationBehavior;        // NUEVO
+        private AutoBehavior _metadataBehavior;             // NUEVO
         private AutoBehavior _lngBehavior;
         private AutoBehavior _thmBehavior;
         private AppLanguage _selectedLanguage;
@@ -72,7 +72,6 @@ namespace POPSManager.ViewModels
             ChangeLngPathCommand = new RelayCommand(async () => await ChangeLngPathAsync());
             ChangeThmPathCommand = new RelayCommand(async () => await ChangeThmPathAsync());
             ChangeElfFolderCommand = new RelayCommand(async () => await ChangeElfFolderAsync());
-            ChangeTempFolderCommand = new RelayCommand(async () => await ChangeTempFolderAsync());  // NUEVO
             OpenProgramFolderCommand = new RelayCommand(OpenProgramFolder);
             SaveSettingsCommand = new RelayCommand(async () => await SaveSettingsAsync());
 
@@ -103,7 +102,6 @@ namespace POPSManager.ViewModels
         public string LngPath { get => _lngPath; set => SetProperty(ref _lngPath, value); }
         public string ThmPath { get => _thmPath; set => SetProperty(ref _thmPath, value); }
         public string ElfFolderPath { get => _elfFolderPath; set => SetProperty(ref _elfFolderPath, value); }
-        public string TempFolderPath { get => _tempFolderPath; set => SetProperty(ref _tempFolderPath, value); }  // NUEVO
 
         public bool DarkMode
         {
@@ -120,6 +118,7 @@ namespace POPSManager.ViewModels
             get => _processSubfolders;
             set { if (SetProperty(ref _processSubfolders, value)) _ = SaveSettingsAsync(); }
         }
+
         public bool UseMetadata
         {
             get => _useMetadata;
@@ -129,11 +128,6 @@ namespace POPSManager.ViewModels
         {
             get => _useTitleInElfName;
             set { if (SetProperty(ref _useTitleInElfName, value)) _ = SaveSettingsAsync(); }
-        }
-        public bool UseTempFolder
-        {
-            get => _useTempFolder;
-            set { if (SetProperty(ref _useTempFolder, value)) _ = SaveSettingsAsync(); }
         }
 
         public AutomationMode AutomationMode
@@ -156,6 +150,16 @@ namespace POPSManager.ViewModels
             get => _downloadCoversBehavior;
             set { if (SetProperty(ref _downloadCoversBehavior, value)) _ = SaveSettingsAsync(); }
         }
+        public AutoBehavior ElfGenerationBehavior
+        {
+            get => _elfGenerationBehavior;
+            set { if (SetProperty(ref _elfGenerationBehavior, value)) _ = SaveSettingsAsync(); }
+        }
+        public AutoBehavior MetadataBehavior
+        {
+            get => _metadataBehavior;
+            set { if (SetProperty(ref _metadataBehavior, value)) _ = SaveSettingsAsync(); }
+        }
         public AutoBehavior LngBehavior
         {
             get => _lngBehavior;
@@ -175,7 +179,6 @@ namespace POPSManager.ViewModels
         public ICommand ChangeLngPathCommand { get; }
         public ICommand ChangeThmPathCommand { get; }
         public ICommand ChangeElfFolderCommand { get; }
-        public ICommand ChangeTempFolderCommand { get; }   // NUEVO
         public ICommand OpenProgramFolderCommand { get; }
         public ICommand SaveSettingsCommand { get; }
 
@@ -189,17 +192,17 @@ namespace POPSManager.ViewModels
             LngPath = _paths.LngFolder;
             ThmPath = _paths.ThmFolder;
             ElfFolderPath = _settings.ElfFolder ?? "";
-            TempFolderPath = _settings.TempFolder ?? "";
             DarkMode = _settings.DarkMode;
             NotificationsEnabled = _settings.NotificationsEnabled;
             ProcessSubfolders = _settings.ProcessSubfolders;
             UseMetadata = _settings.UseMetadata;
             UseTitleInElfName = _settings.UseTitleInElfName;
-            UseTempFolder = _settings.UseTempFolderForConversion;
             AutomationMode = _settings.Automation.Mode;
             NormalizeNamesBehavior = _settings.Automation.Conversion;
             GroupMultiDiscBehavior = _settings.Automation.MultiDisc;
             DownloadCoversBehavior = _settings.Automation.Covers;
+            ElfGenerationBehavior = _settings.Automation.ElfGeneration;
+            MetadataBehavior = _settings.Automation.Metadata;
             LngBehavior = _settings.Automation.Lng;
             ThmBehavior = _settings.Automation.Thm;
             SelectedLanguage = _settings.Language;
@@ -395,23 +398,6 @@ namespace POPSManager.ViewModels
             _services.Notifications.Success("Carpeta de ELFs actualizada.");
         }
 
-        private async Task ChangeTempFolderAsync()
-        {
-            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta temporal para conversión" };
-            if (dialog.ShowDialog() != true) return;
-
-            if (!Directory.Exists(dialog.FolderName))
-            {
-                _services.Notifications.Error("La carpeta seleccionada no existe.");
-                return;
-            }
-
-            _settings.TempFolder = dialog.FolderName;
-            await _settings.SaveAsync();
-            LoadSettings();
-            _services.Notifications.Success("Carpeta temporal actualizada.");
-        }
-
         private void OpenProgramFolder()
         {
             try
@@ -435,11 +421,12 @@ namespace POPSManager.ViewModels
                 _settings.ProcessSubfolders = ProcessSubfolders;
                 _settings.UseMetadata = UseMetadata;
                 _settings.UseTitleInElfName = UseTitleInElfName;
-                _settings.UseTempFolderForConversion = UseTempFolder;
                 _settings.Automation.Mode = AutomationMode;
                 _settings.Automation.Conversion = NormalizeNamesBehavior;
                 _settings.Automation.MultiDisc = GroupMultiDiscBehavior;
                 _settings.Automation.Covers = DownloadCoversBehavior;
+                _settings.Automation.ElfGeneration = ElfGenerationBehavior;
+                _settings.Automation.Metadata = MetadataBehavior;
                 _settings.Automation.Lng = LngBehavior;
                 _settings.Automation.Thm = ThmBehavior;
                 _settings.Language = SelectedLanguage;
