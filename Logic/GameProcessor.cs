@@ -243,8 +243,9 @@ namespace POPSManager.Logic
             bool useDb = _settings.UseDatabase && _auto.ShouldUseDatabase();
             bool useCovers = _settings.UseCovers && _auto.ShouldDownloadCovers();
             bool genCheats = _auto.ShouldGenerateCheats();
+            bool genElf = _auto.ShouldGenerateElf();               // NUEVO: control por automatización
             bool handleMultiDisc = _auto.ShouldHandleMultiDisc();
-            bool useMetadata = _settings.UseMetadata;
+            bool useMetadata = _settings.UseMetadata && _auto.ShouldUseMetadata();   // NUEVO: control por automatización
 
             string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
             GameEntry dbEntry = null;
@@ -260,7 +261,7 @@ namespace POPSManager.Logic
 
             if (useCovers && dbEntry?.CoverUrl != null)
             {
-                string artFolder = Path.Combine(_paths.PopsFolder, "ART");
+                string artFolder = Path.Combine(_paths.ArtFolder);
                 Directory.CreateDirectory(artFolder);
                 perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_DownloadingCover"));
                 await _coverSemaphore.WaitAsync(ct);
@@ -311,11 +312,13 @@ namespace POPSManager.Logic
                 CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, _log.Info);
             }
 
-            // Generar un ELF por cada disco
-            perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingELF"));
-            GenerateElfsForAllDiscs(detectedId, cleanTitle, gameRootFolder, discs.Count);
+            if (genElf)   // NUEVO: condicionado al motor de automatización
+            {
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingELF"));
+                GenerateElfsForAllDiscs(detectedId, cleanTitle, gameRootFolder, discs.Count);
+            }
 
-            if (useMetadata)
+            if (useMetadata)   // NUEVO: condicionado al motor de automatización
             {
                 perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
                 GenerateMetadataFile(detectedId, cleanTitle, dbEntry);
@@ -324,9 +327,6 @@ namespace POPSManager.Logic
             _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_ProcessedSuccessfully")));
         }
 
-        /// <summary>
-        /// Genera un ELF independiente para cada disco del juego.
-        /// </summary>
         private void GenerateElfsForAllDiscs(string gameId, string title, string gameRootFolder, int totalDiscs)
         {
             for (int discNumber = 1; discNumber <= totalDiscs; discNumber++)
@@ -356,7 +356,6 @@ namespace POPSManager.Logic
                     continue;
                 }
 
-                // Renombrar ELF si el usuario prefiere solo el GameID
                 if (!_settings.UseTitleInElfName)
                 {
                     string appsFolder = _paths.AppsFolder;
@@ -390,7 +389,7 @@ namespace POPSManager.Logic
 
             bool useDb = _settings.UseDatabase && _auto.ShouldUseDatabase();
             bool useCovers = _settings.UseCovers && _auto.ShouldDownloadCovers();
-            bool useMetadata = _settings.UseMetadata;
+            bool useMetadata = _settings.UseMetadata && _auto.ShouldUseMetadata();
             string cleanTitle = NameCleanerBase.CleanTitleOnly(originalName);
             GameEntry dbEntry = null;
 
@@ -405,7 +404,7 @@ namespace POPSManager.Logic
 
                 if (useCovers && dbEntry?.CoverUrl != null)
                 {
-                    string artFolder = Path.Combine(_paths.DvdFolder, "ART");
+                    string artFolder = Path.Combine(_paths.ArtFolder);
                     Directory.CreateDirectory(artFolder);
                     perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_DownloadingCover"));
                     await _coverSemaphore.WaitAsync(ct);
@@ -423,87 +422,4 @@ namespace POPSManager.Logic
             string dest = Path.Combine(_paths.DvdFolder, string.Format("{0}.ISO", cleanTitle));
             ct.ThrowIfCancellationRequested();
             File.Copy(isoPath, dest, true);
-            _log.Info(string.Format("[PS2] {0} -> {1}", _loc.GetString("GameProcessor_CopiedIso"), dest));
-
-            if (useMetadata)
-            {
-                perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
-                GenerateMetadataFile(detectedId, cleanTitle, dbEntry);
-            }
-
-            _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_CopiedToDvdSuccessfully")));
-        }
-
-        private void GenerateMetadataFile(string gameId, string title, GameEntry? dbEntry)
-        {
-            try
-            {
-                string cfgFolder = Path.Combine(_paths.RootFolder, "CFG");
-                Directory.CreateDirectory(cfgFolder);
-                string cfgPath = Path.Combine(cfgFolder, $"{gameId}.cfg");
-
-                string genre = "Action";
-                if (dbEntry?.Tags != null && dbEntry.Tags.Length > 0)
-                    genre = dbEntry.Tags[0];
-
-                var lines = new List<string>
-                {
-                    $"Title={title}",
-                    $"Description={(dbEntry?.CheatFixes != null ? "Fixes disponibles" : "Sin descripción")}",
-                    $"Release={dbEntry?.Year.ToString() ?? "2000"}",
-                    $"Genre={genre}",
-                    "Players=1",
-                    $"Developer={dbEntry?.Publisher ?? "Desconocido"}",
-                    "Rating=ESRB=E"
-                };
-
-                File.WriteAllLines(cfgPath, lines);
-                _log.Info($"[METADATA] Archivo CFG generado -> {cfgPath}");
-            }
-            catch (Exception ex)
-            {
-                _log.Error($"[METADATA] Error generando CFG para {gameId}: {ex.Message}");
-            }
-        }
-
-        private void CopyCustomFolderContents(string sourceFolder, string folderName, Action<string> log)
-        {
-            if (string.IsNullOrWhiteSpace(sourceFolder) || !Directory.Exists(sourceFolder))
-            {
-                log(string.Format("[Copy] No se encontro carpeta {0} personalizada o no existe.", folderName));
-                return;
-            }
-            string destFolder = Path.Combine(_paths.RootFolder, folderName);
-            try
-            {
-                Directory.CreateDirectory(destFolder);
-                foreach (var file in Directory.GetFiles(sourceFolder))
-                {
-                    string destFile = Path.Combine(destFolder, Path.GetFileName(file));
-                    File.Copy(file, destFile, true);
-                    log(string.Format("[Copy] {0} -> {1}", file, destFile));
-                }
-                foreach (var dir in Directory.GetDirectories(sourceFolder))
-                {
-                    string destDir = Path.Combine(destFolder, Path.GetFileName(dir));
-                    CopyDirectoryRecursive(dir, destDir, log);
-                }
-                log(string.Format("[Copy] Contenido de {0} copiado a {1}", folderName, destFolder));
-            }
-            catch (Exception ex) { log(string.Format("[ERROR] Copiando {0}: {1}", folderName, ex.Message)); }
-        }
-
-        private void CopyDirectoryRecursive(string source, string dest, Action<string> log)
-        {
-            Directory.CreateDirectory(dest);
-            foreach (var file in Directory.GetFiles(source))
-            {
-                string destFile = Path.Combine(dest, Path.GetFileName(file));
-                File.Copy(file, destFile, true);
-                log(string.Format("[Copy] {0} -> {1}", file, destFile));
-            }
-            foreach (var dir in Directory.GetDirectories(source))
-                CopyDirectoryRecursive(dir, Path.Combine(dest, Path.GetFileName(dir)), log);
-        }
-    }
-}
+            _log.Info(string.F
