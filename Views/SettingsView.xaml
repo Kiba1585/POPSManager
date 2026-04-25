@@ -125,7 +125,7 @@
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
 
-                    <!-- NUEVO: Formato del nombre del ELF -->
+                    <!-- Formato del nombre del ELF -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
                         <CheckBox IsChecked="{Binding UseTitleInElfName}" Margin="0 0 10 0"/>
                         <TextBlock Text="Usar 'GameID - Título.ELF' (desmarcar para solo 'GameID.ELF')"
@@ -133,13 +133,39 @@
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
 
-                    <!-- NUEVO: Usar metadatos (CFG) -->
-                    <StackPanel Orientation="Horizontal">
+                    <!-- Usar metadatos (CFG) -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
                         <CheckBox IsChecked="{Binding UseMetadata}" Margin="0 0 10 0"/>
                         <TextBlock Text="Generar metadatos del juego (archivos .cfg para OPL)"
                                    VerticalAlignment="Center"
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
+
+                    <!-- NUEVO: Usar carpeta temporal para conversión rápida -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
+                        <CheckBox IsChecked="{Binding UseTempFolder}" Margin="0 0 10 0"/>
+                        <TextBlock Text="Usar carpeta temporal para acelerar conversión en USB"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                    </StackPanel>
+
+                    <!-- NUEVO: Carpeta temporal personalizada -->
+                    <TextBlock Text="Carpeta temporal (opcional, si no se especifica se usa %TEMP%):"
+                               FontSize="14"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Margin="0 0 0 6"/>
+                    <TextBox Text="{Binding TempFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                             Height="32"
+                             Background="{StaticResource Brush.PanelAlt}"
+                             Foreground="{StaticResource Brush.TextPrimary}"
+                             BorderBrush="{StaticResource Brush.Border}"
+                             BorderThickness="1"
+                             Padding="6"
+                             Margin="0 0 0 6"/>
+                    <Button Content="Seleccionar carpeta temporal"
+                            Width="180" Height="32"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ChangeTempFolderCommand}"/>
                 </StackPanel>
             </Border>
 
