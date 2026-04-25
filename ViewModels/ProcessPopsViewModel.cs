@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
 using POPSManager.Commands;
+using POPSManager.Logic;                // <-- AÑADIDO
 using POPSManager.Services;
 
 namespace POPSManager.ViewModels
