@@ -63,4 +63,11 @@
     </Content>
   </ItemGroup>
 
+  <!-- ========================================================= -->
+  <!-- NUEVO: Incluir el icono como recurso WPF -->
+  <!-- ========================================================= -->
+  <ItemGroup>
+    <Resource Include="Installer\Assets\AppIcon.ico" />
+  </ItemGroup>
+
 </Project>
