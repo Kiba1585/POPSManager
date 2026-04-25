@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -12,12 +11,18 @@ using POPSManager.Services;
 
 namespace POPSManager.ViewModels
 {
+    public class FileItem
+    {
+        public string Name { get; set; } = "";
+        public string Emoji { get; set; } = "";
+    }
+
     public class ConvertViewModel : ViewModelBase
     {
         private readonly AppServices _services;
         private string _sourcePath = string.Empty;
         private string _outputPath = string.Empty;
-        private ObservableCollection<string> _files = new();
+        private ObservableCollection<FileItem> _files = new();
         private bool _isProcessing;
 
         public ConvertViewModel()
@@ -44,7 +49,7 @@ namespace POPSManager.ViewModels
             set { _outputPath = value; OnPropertyChanged(); }
         }
 
-        public ObservableCollection<string> Files
+        public ObservableCollection<FileItem> Files
         {
             get => _files;
             set { _files = value; OnPropertyChanged(); }
@@ -103,9 +108,27 @@ namespace POPSManager.ViewModels
                 .ToList();
 
             foreach (var file in files)
-                Files.Add(file);
+            {
+                Files.Add(new FileItem
+                {
+                    Name = file,
+                    Emoji = GetEmoji(file)
+                });
+            }
 
             _services.Notifications.Info($"Se detectaron {Files.Count} archivos para convertir.");
+        }
+
+        private static string GetEmoji(string fileName)
+        {
+            string ext = Path.GetExtension(fileName).ToLowerInvariant();
+            return ext switch
+            {
+                ".bin" => "💾",
+                ".cue" => "📄",
+                ".iso" => "💿",
+                _ => "📁"
+            };
         }
 
         private async Task ConvertAsync()
@@ -136,7 +159,7 @@ namespace POPSManager.ViewModels
                 // 2. POST‑PROCESAMIENTO (automático según configuración)
                 var convertedFiles = Directory.GetFiles(OutputPath, "*.vcd")
                     .Where(vcd => Files.Any(f =>
-                        Path.GetFileNameWithoutExtension(f).Equals(
+                        Path.GetFileNameWithoutExtension(f.Name).Equals(
                             Path.GetFileNameWithoutExtension(vcd),
                             StringComparison.OrdinalIgnoreCase)))
                     .ToList();
@@ -159,16 +182,12 @@ namespace POPSManager.ViewModels
             }
         }
 
-        /// <summary>
-        /// Procesa un VCD recién convertido según el modo de automatización global.
-        /// </summary>
         private async Task ProcessConvertedFileAsync(string vcdPath)
         {
             var mode = _services.Automation.Mode;
 
             if (mode == Logic.Automation.AutomationMode.Manual)
             {
-                // No hacer nada extra
                 return;
             }
 
@@ -184,7 +203,6 @@ namespace POPSManager.ViewModels
                     return;
             }
 
-            // Procesar el VCD
             await _services.GameProcessor.ProcessSingleGameAsync(vcdPath, "PS1");
         }
     }
