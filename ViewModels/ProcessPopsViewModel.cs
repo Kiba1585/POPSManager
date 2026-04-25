@@ -5,18 +5,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
 using POPSManager.Commands;
 using POPSManager.Services;
 
 namespace POPSManager.ViewModels
 {
-    // Modelo para cada juego en la lista
     public class GameItem
     {
         public string Name { get; set; } = "";
         public string GameId { get; set; } = "";
         public string Path { get; set; } = "";
-        public string Category { get; set; } = ""; // PS1, PS2 o APP
+        public string Category { get; set; } = "";
     }
 
     public class ProcessPopsViewModel : ViewModelBase
@@ -35,6 +35,10 @@ namespace POPSManager.ViewModels
         {
             _services = App.Services!;
 
+            // Suscribirse a cambios globales
+            _services.Settings.OnSettingsChanged += () => LoadGamesFromOplRoot();
+            _services.Localization.PropertyChanged += (_, _) => LoadGamesFromOplRoot();
+
             RefreshGamesCommand = new RelayCommand(LoadGamesFromOplRoot);
             ProcessSelectedCommand = new RelayCommand(async () => await ProcessSelectedAsync(), () => !IsProcessing);
             DownloadCoversCommand = new RelayCommand(async () => await DownloadCoversAsync(), () => SelectedGame != null && !IsProcessing);
@@ -45,28 +49,23 @@ namespace POPSManager.ViewModels
             LoadGamesFromOplRoot();
         }
 
-        // Colecciones para las tres listas
         public ObservableCollection<GameItem> Ps1Games { get => _ps1Games; set => SetProperty(ref _ps1Games, value); }
         public ObservableCollection<GameItem> Ps2Games { get => _ps2Games; set => SetProperty(ref _ps2Games, value); }
         public ObservableCollection<GameItem> AppsGames { get => _appsGames; set => SetProperty(ref _appsGames, value); }
 
-        // Elementos seleccionados
         public GameItem? SelectedPs1Game { get => _selectedPs1Game; set => SetProperty(ref _selectedPs1Game, value); }
         public GameItem? SelectedPs2Game { get => _selectedPs2Game; set => SetProperty(ref _selectedPs2Game, value); }
         public GameItem? SelectedAppsGame { get => _selectedAppsGame; set => SetProperty(ref _selectedAppsGame, value); }
 
-        // Para obtener el juego seleccionado actualmente (cualquiera de las tres listas)
         private GameItem? SelectedGame =>
             SelectedPs1Game ?? SelectedPs2Game ?? SelectedAppsGame;
 
-        // Indicador de procesamiento
         public bool IsProcessing
         {
             get => _isProcessing;
             set => SetProperty(ref _isProcessing, value);
         }
 
-        // Comandos
         public ICommand RefreshGamesCommand { get; }
         public ICommand ProcessSelectedCommand { get; }
         public ICommand DownloadCoversCommand { get; }
@@ -74,9 +73,6 @@ namespace POPSManager.ViewModels
         public ICommand GenerateMetadataCommand { get; }
         public ICommand GenerateCheatsCommand { get; }
 
-        // ============================================================
-        //  ESCANEAR RAÍZ OPL (sin duplicar PS1/APPs)
-        // ============================================================
         private void LoadGamesFromOplRoot()
         {
             Ps1Games.Clear();
@@ -90,7 +86,6 @@ namespace POPSManager.ViewModels
                 return;
             }
 
-            // --- PS1: carpetas dentro de POPS/ ---
             string popsFolder = _services.Paths.PopsFolder;
             if (Directory.Exists(popsFolder))
             {
@@ -98,7 +93,6 @@ namespace POPSManager.ViewModels
                 foreach (var dir in ps1Dirs)
                 {
                     string dirName = Path.GetFileName(dir);
-                    // Buscar el primer VCD en CD1/
                     string cd1Folder = Path.Combine(dir, "CD1");
                     string? vcdFile = Directory.Exists(cd1Folder)
                         ? Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault()
@@ -118,7 +112,6 @@ namespace POPSManager.ViewModels
                 }
             }
 
-            // --- PS2: archivos .iso dentro de DVD/ ---
             string dvdFolder = _services.Paths.DvdFolder;
             if (Directory.Exists(dvdFolder))
             {
@@ -138,8 +131,6 @@ namespace POPSManager.ViewModels
                 }
             }
 
-            // --- APPs: archivos .ELF dentro de APPS/ ---
-            // Solo se añaden si no tienen un VCD correspondiente en PS1 (evita duplicados)
             string appsFolder = _services.Paths.AppsFolder;
             if (Directory.Exists(appsFolder))
             {
@@ -149,10 +140,8 @@ namespace POPSManager.ViewModels
                 foreach (var elf in elfFiles)
                 {
                     string name = Path.GetFileName(elf);
-                    // Extraer GameID del nombre del ELF o del archivo
                     string gameId = GameIdDetector.DetectFromName(name);
 
-                    // Si el GameID ya está en la lista de PS1, no lo añadimos como APP
                     if (!string.IsNullOrWhiteSpace(gameId) && ps1GameIds.Contains(gameId))
                         continue;
 
@@ -169,9 +158,6 @@ namespace POPSManager.ViewModels
             _services.Notifications.Info($"Juegos encontrados: PS1={Ps1Games.Count}, PS2={Ps2Games.Count}, APPs={AppsGames.Count}");
         }
 
-        // ============================================================
-        //  PROCESAR JUEGO SELECCIONADO
-        // ============================================================
         private async Task ProcessSelectedAsync()
         {
             var game = SelectedGame;
@@ -182,7 +168,7 @@ namespace POPSManager.ViewModels
             {
                 await _services.GameProcessor.ProcessSingleGameAsync(game.Path, game.Category);
                 _services.Notifications.Success($"{game.Name} procesado correctamente.");
-                LoadGamesFromOplRoot(); // Refrescar lista
+                LoadGamesFromOplRoot();
             }
             catch (Exception ex)
             {
@@ -194,9 +180,6 @@ namespace POPSManager.ViewModels
             }
         }
 
-        // ============================================================
-        //  ACCIONES INDIVIDUALES
-        // ============================================================
         private async Task DownloadCoversAsync()
         {
             var game = SelectedGame;
