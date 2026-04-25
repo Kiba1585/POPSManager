@@ -22,10 +22,10 @@ namespace POPSManager.Services
         private readonly Action<string, NotificationType> _notify;
         private readonly Action<string> _setStatus;
 
-        private const int SectorSize = 2352;        // Tamaño de sector original (CD)
-        private const int UserDataSize = 2048;       // Datos de usuario por sector
-        private const int HeaderSize = 0x800;        // Tamaño del header VCD
-        private const int BufferSize = 1024 * 1024;  // 1 MB de buffer de escritura
+        private const int SectorSize = 2352;
+        private const int UserDataSize = 2048;
+        private const int HeaderSize = 0x800;
+        private const int BufferSize = 1024 * 1024; // 1 MB
 
         public ConverterService(
             Action<string> log,
@@ -60,7 +60,24 @@ namespace POPSManager.Services
                 return;
             }
 
-            Directory.CreateDirectory(outputFolder);
+            // Determinar carpeta de trabajo (temporal si el destino es extraíble)
+            string workFolder = outputFolder;
+            bool useTempFolder = _settings.UseTempFolderForConversion && IsRemovableDrive(outputFolder);
+            string? tempFolder = null;
+
+            if (useTempFolder)
+            {
+                tempFolder = _settings.TempFolder;
+                if (string.IsNullOrWhiteSpace(tempFolder) || !Directory.Exists(tempFolder))
+                {
+                    tempFolder = Path.Combine(Path.GetTempPath(), "POPSManager");
+                }
+                Directory.CreateDirectory(tempFolder);
+                workFolder = tempFolder;
+                _log($"[Convert] Usando carpeta temporal: {workFolder}");
+            }
+
+            Directory.CreateDirectory(workFolder);
 
             var files = Directory.GetFiles(sourceFolder)
                 .Where(f =>
@@ -79,7 +96,6 @@ namespace POPSManager.Services
             int total = files.Length;
             int index = 0;
 
-            // Usamos un paralelismo moderado para no saturar discos mecánicos
             int maxParallel = Math.Min(Environment.ProcessorCount, 2);
 
             var options = new ParallelOptions
@@ -87,6 +103,9 @@ namespace POPSManager.Services
                 MaxDegreeOfParallelism = maxParallel,
                 CancellationToken = ct
             };
+
+            // Cola de copia final si usamos carpeta temporal
+            Task? copyTask = null;
 
             try
             {
@@ -99,10 +118,31 @@ namespace POPSManager.Services
 
                     try
                     {
-                        var result = await ConvertToVcdAsync(file, outputFolder).ConfigureAwait(false);
+                        var result = await ConvertToVcdAsync(file, workFolder).ConfigureAwait(false);
 
                         if (result != null)
+                        {
                             _log($"Convertido: {file} → {result.VcdPath}");
+
+                            // Si estamos usando carpeta temporal, copiar al destino final
+                            if (useTempFolder && tempFolder != null)
+                            {
+                                string finalPath = Path.Combine(outputFolder, Path.GetFileName(result.VcdPath));
+                                // Copiar en background sin esperar
+                                _ = Task.Run(() =>
+                                {
+                                    try
+                                    {
+                                        File.Copy(result.VcdPath, finalPath, true);
+                                        _log($"[Copy] VCD copiado a destino final: {finalPath}");
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _log($"[ERROR] Copiando VCD al destino final: {ex.Message}");
+                                    }
+                                }, CancellationToken.None);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -111,6 +151,10 @@ namespace POPSManager.Services
                     }
                 }).ConfigureAwait(false);
 
+                // Esperar a que terminen las copias pendientes (si las hay)
+                if (copyTask != null)
+                    await copyTask.ConfigureAwait(false);
+
                 _notify(_loc.GetString("Converter_ConversionCompleted"), NotificationType.Success);
                 _setStatus(_loc.GetString("Converter_ConversionFinished"));
             }
@@ -118,6 +162,15 @@ namespace POPSManager.Services
             {
                 _notify(_loc.GetString("Converter_ConversionCancelled"), NotificationType.Warning);
                 _log("[Convert] Conversión cancelada por el usuario.");
+            }
+            finally
+            {
+                // Limpiar carpeta temporal si se usó
+                if (useTempFolder && tempFolder != null && Directory.Exists(tempFolder))
+                {
+                    try { Directory.Delete(tempFolder, true); }
+                    catch (Exception ex) { _log($"[Convert] No se pudo eliminar carpeta temporal: {ex.Message}"); }
+                }
             }
         }
 
@@ -165,7 +218,6 @@ namespace POPSManager.Services
             await using var input = File.OpenRead(inputPath);
             await using var output = File.Create(outputPath);
 
-            // Escribir header VCD
             byte[] header = new byte[HeaderSize];
             Array.Copy(Encoding.ASCII.GetBytes("PSX"), header, 3);
             await output.WriteAsync(header, 0, header.Length).ConfigureAwait(false);
@@ -173,13 +225,11 @@ namespace POPSManager.Services
             long totalSectors = input.Length / SectorSize;
             long processed = 0;
 
-            // Buffer de salida: acumulamos muchos sectores antes de escribir
             byte[] outputBuffer = new byte[BufferSize];
             int bufferPos = 0;
 
             byte[] sector = new byte[SectorSize];
 
-            // Para actualizar el progreso solo cada cierto tiempo
             var lastReport = System.Diagnostics.Stopwatch.StartNew();
             const int reportIntervalMs = 500;
 
@@ -194,10 +244,8 @@ namespace POPSManager.Services
                     break;
                 }
 
-                // Copiar datos de usuario al buffer de salida
                 if (bufferPos + UserDataSize > outputBuffer.Length)
                 {
-                    // Vaciar el buffer antes de llenarlo
                     await output.WriteAsync(outputBuffer, 0, bufferPos).ConfigureAwait(false);
                     bufferPos = 0;
                 }
@@ -207,7 +255,6 @@ namespace POPSManager.Services
 
                 processed++;
 
-                // Reportar progreso cada medio segundo
                 if (lastReport.ElapsedMilliseconds >= reportIntervalMs)
                 {
                     int percent = (int)((processed / (double)totalSectors) * 100);
@@ -216,9 +263,18 @@ namespace POPSManager.Services
                 }
             }
 
-            // Escribir el resto del buffer
             if (bufferPos > 0)
                 await output.WriteAsync(outputBuffer, 0, bufferPos).ConfigureAwait(false);
+        }
+
+        private static bool IsRemovableDrive(string path)
+        {
+            try
+            {
+                var drive = new DriveInfo(Path.GetPathRoot(path)!);
+                return drive.DriveType == DriveType.Removable;
+            }
+            catch { return false; }
         }
 
         private static bool IsPs2Iso(string isoPath)
