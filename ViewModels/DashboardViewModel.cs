@@ -26,8 +26,6 @@ namespace POPSManager.ViewModels
             OpenProcessPopsCommand = new RelayCommand(() => NavigateTo(new ProcessPopsView()));
             OpenRootFolderCommand = new RelayCommand(OpenRootFolder, () => Directory.Exists(RootPath));
             OpenElfFolderCommand = new RelayCommand(OpenElfFolder, () => File.Exists(ElfPath));
-            ChangeRootPathCommand = new RelayCommand(ChangeRootPath);
-            SelectElfCommand = new RelayCommand(SelectElf);
 
             LoadData();
         }
@@ -44,8 +42,6 @@ namespace POPSManager.ViewModels
         public ICommand OpenProcessPopsCommand { get; }
         public ICommand OpenRootFolderCommand { get; }
         public ICommand OpenElfFolderCommand { get; }
-        public ICommand ChangeRootPathCommand { get; }
-        public ICommand SelectElfCommand { get; }
 
         private void LoadData()
         {
@@ -112,45 +108,6 @@ namespace POPSManager.ViewModels
             {
                 _services.Notifications.Error("No se pudo abrir la carpeta del ELF.");
             }
-        }
-
-        private void ChangeRootPath()
-        {
-            var dialog = new OpenFolderDialog { Title = "Selecciona la carpeta raíz" };
-            if (dialog.ShowDialog() != true) return;
-
-            string newPath = dialog.FolderName;
-            if (!Directory.Exists(newPath))
-            {
-                _services.Notifications.Error("La carpeta seleccionada no existe.");
-                return;
-            }
-
-            _services.Settings.SetRootFolder(newPath);
-            LoadData();
-            _services.Notifications.Success("Ruta raíz actualizada correctamente.");
-        }
-
-        private void SelectElf()
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = "Seleccionar POPSTARTER.ELF",
-                Filter = "ELF files (*.ELF)|*.ELF|Todos los archivos (*.*)|*.*"
-            };
-
-            if (dialog.ShowDialog() != true) return;
-
-            string path = dialog.FileName;
-            if (!File.Exists(path))
-            {
-                _services.Notifications.Error("El archivo seleccionado no existe.");
-                return;
-            }
-
-            _services.Settings.SetCustomElfPath(path);
-            LoadData();
-            _services.Notifications.Success("POPSTARTER.ELF actualizado correctamente.");
         }
     }
 }
