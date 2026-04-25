@@ -7,6 +7,9 @@
     <UseWPF>true</UseWPF>
     <!-- ⚠️ ELIMINADO: <UseWindowsForms>true</UseWindowsForms> -->
 
+    <!-- NUEVO: Icono de la aplicación -->
+    <ApplicationIcon>Installer\Assets\AppIcon.ico</ApplicationIcon>
+
     <!-- Arquitectura obligatoria para MSIX -->
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
