@@ -294,6 +294,16 @@
                 </StackPanel>
             </Border>
 
+            <!-- ========================================================= -->
+            <!--  BOTÓN GUARDAR CONFIGURACIÓN -->
+            <!-- ========================================================= -->
+            <Button Content="💾 Guardar configuración"
+                    Width="220" Height="42"
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding SaveSettingsCommand}"
+                    Margin="0 20 0 0"
+                    HorizontalAlignment="Right"/>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>
