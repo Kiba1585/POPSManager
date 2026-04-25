@@ -62,15 +62,6 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // Determinar si usamos carpeta temporal
-            bool useTemp = _settings.UseTempFolderForConversion && IsRemovableDrive(_paths.RootFolder);
-            string tempRoot = useTemp ? _paths.TempFolder : _paths.RootFolder;
-            if (useTemp)
-            {
-                Directory.CreateDirectory(tempRoot);
-                _log.Info($"[GameProcessor] Usando carpeta temporal: {tempRoot}");
-            }
-
             var files = Directory.GetFiles(folder)
                 .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(f => f).ToArray();
@@ -118,7 +109,7 @@ namespace POPSManager.Logic
                             }
                             else
                             {
-                                await ProcessPS1GroupAsync(baseTitle, valid, gameIdForUi, perGameProgress, token, tempRoot);
+                                await ProcessPS1GroupAsync(baseTitle, valid, gameIdForUi, perGameProgress, token);
                                 perGameProgress?.MarkCompleted(gameIdForUi);
                             }
                         }
@@ -139,7 +130,7 @@ namespace POPSManager.Logic
                             }
                             else
                             {
-                                await ProcessPS2Async(iso, gameIdForUi, perGameProgress, token, tempRoot);
+                                await ProcessPS2Async(iso, gameIdForUi, perGameProgress, token);
                                 perGameProgress?.MarkCompleted(gameIdForUi);
                             }
                         }
@@ -165,17 +156,6 @@ namespace POPSManager.Logic
                 });
 
                 _progress.SetStatus(_loc.GetString("Label_Completed"));
-
-                // Copiar todo al destino final si se usó carpeta temporal
-                if (useTemp)
-                {
-                    _progress.SetStatus("Copiando al destino final...");
-                    await Task.Run(() => CopyDirectoryRecursive(tempRoot, _paths.RootFolder, _log.Info));
-                    // Limpiar carpeta temporal
-                    try { Directory.Delete(tempRoot, true); } catch { }
-                    _log.Info("[GameProcessor] Copia al destino final completada.");
-                }
-
                 await CopyCustomAssetsAsync();
             }
             catch (OperationCanceledException)
@@ -195,16 +175,6 @@ namespace POPSManager.Logic
                 await Task.Run(() => CopyCustomFolderContents(_paths.ThmFolder, "THM", _log.Info));
             else
                 _log.Info("[AUTO] Copia de temas THM desactivada por automatizacion.");
-        }
-
-        private static bool IsRemovableDrive(string path)
-        {
-            try
-            {
-                var drive = new DriveInfo(Path.GetPathRoot(path)!);
-                return drive.DriveType == DriveType.Removable;
-            }
-            catch { return false; }
         }
 
         private Dictionary<string, List<string>> GroupByRealGame(string[] files)
@@ -250,8 +220,7 @@ namespace POPSManager.Logic
             }
         }
 
-        private async Task ProcessPS1GroupAsync(string baseName, List<string> discs, string gameIdForUi,
-            ProgressViewModel? perGameProgress, CancellationToken ct, string workingRoot)
+        private async Task ProcessPS1GroupAsync(string baseName, List<string> discs, string gameIdForUi, ProgressViewModel? perGameProgress, CancellationToken ct)
         {
             _log.Info(string.Format("[PS1] {0}: {1}", _loc.GetString("GameProcessor_ProcessingGroup"), baseName));
 
@@ -289,14 +258,9 @@ namespace POPSManager.Logic
                 }
             }
 
-            // Las rutas ahora usan workingRoot en lugar de _paths.RootFolder
-            string popsFolder = Path.Combine(workingRoot, "POPS");
-            string appsFolder = Path.Combine(workingRoot, "APPS");
-            string artFolder = Path.Combine(popsFolder, "ART");
-            string cfgFolder = Path.Combine(workingRoot, "CFG");
-
             if (useCovers && dbEntry?.CoverUrl != null)
             {
+                string artFolder = Path.Combine(_paths.PopsFolder, "ART");
                 Directory.CreateDirectory(artFolder);
                 perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_DownloadingCover"));
                 await _coverSemaphore.WaitAsync(ct);
@@ -308,7 +272,7 @@ namespace POPSManager.Logic
                 finally { _coverSemaphore.Release(); }
             }
 
-            string gameRootFolder = Path.Combine(popsFolder, cleanTitle);
+            string gameRootFolder = Path.Combine(_paths.PopsFolder, cleanTitle);
             Directory.CreateDirectory(gameRootFolder);
             int discNumber = 1;
             List<string> discPaths = new();
@@ -337,7 +301,7 @@ namespace POPSManager.Logic
             if (handleMultiDisc)
             {
                 perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingDiscsTxt"));
-                MultiDiscManager.GenerateDiscsTxt(popsFolder, detectedId, discPaths, _log.Info, _auto);
+                MultiDiscManager.GenerateDiscsTxt(_paths.PopsFolder, detectedId, discPaths, _log.Info, _auto);
             }
 
             if (genCheats && GameIdDetector.IsPalRegion(detectedId))
@@ -347,53 +311,72 @@ namespace POPSManager.Logic
                 CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, _log.Info);
             }
 
+            // Generar un ELF por cada disco
             perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingELF"));
-            GenerateElfForDisc1(detectedId, cleanTitle, gameRootFolder, appsFolder);
+            GenerateElfsForAllDiscs(detectedId, cleanTitle, gameRootFolder, discs.Count);
 
             if (useMetadata)
             {
                 perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
-                GenerateMetadataFile(detectedId, cleanTitle, dbEntry, cfgFolder);
+                GenerateMetadataFile(detectedId, cleanTitle, dbEntry);
             }
 
             _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_ProcessedSuccessfully")));
         }
 
-        private void GenerateElfForDisc1(string gameId, string title, string gameRootFolder, string appsFolder)
+        /// <summary>
+        /// Genera un ELF independiente para cada disco del juego.
+        /// </summary>
+        private void GenerateElfsForAllDiscs(string gameId, string title, string gameRootFolder, int totalDiscs)
         {
-            string cd1Folder = Path.Combine(gameRootFolder, "CD1");
-            string vcdPath = Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault();
-            if (vcdPath == null)
+            for (int discNumber = 1; discNumber <= totalDiscs; discNumber++)
             {
-                _log.Warn(string.Format("[PS1] {0} {1}", _loc.GetString("GameProcessor_NoVcdFoundIn"), cd1Folder));
-                return;
-            }
-            bool ok = ElfGenerator.GeneratePs1Elf(_paths.PopstarterElfPath, vcdPath, appsFolder, 1, title, gameId, _log.Info);
-            if (!ok)
-            {
-                _notify.Error(string.Format("{0} {1}", _loc.GetString("GameProcessor_ErrorGeneratingElf"), gameId));
-                return;
-            }
+                string cdFolder = Path.Combine(gameRootFolder, string.Format("CD{0}", discNumber));
+                string? vcdPath = Directory.GetFiles(cdFolder, "*.VCD").FirstOrDefault();
 
-            if (!_settings.UseTitleInElfName)
-            {
-                string oldName = $"{gameId} - {title}.ELF.NTSC";
-                string newName = $"{gameId}.ELF.NTSC";
-                string oldPath = Path.Combine(appsFolder, oldName);
-                string newPath = Path.Combine(appsFolder, newName);
-
-                if (File.Exists(oldPath) && !File.Exists(newPath))
+                if (vcdPath == null)
                 {
-                    File.Move(oldPath, newPath);
-                    _log.Info($"[ELF] Renombrado {oldName} -> {newName}");
+                    _log.Warn(string.Format("[PS1] {0} {1} {2}", _loc.GetString("GameProcessor_NoVcdFoundIn"), cdFolder, $"(Disco {discNumber})"));
+                    continue;
                 }
-            }
 
-            _log.Info(string.Format("[PS1] ELF {0} {1}", _loc.GetString("GameProcessor_GeneratedFor"), gameId));
+                bool ok = ElfGenerator.GeneratePs1Elf(
+                    _paths.PopstarterElfPath,
+                    vcdPath,
+                    _paths.AppsFolder,
+                    discNumber,
+                    title,
+                    gameId,
+                    _log.Info
+                );
+
+                if (!ok)
+                {
+                    _notify.Error(string.Format("{0} {1} (Disco {2})", _loc.GetString("GameProcessor_ErrorGeneratingElf"), gameId, discNumber));
+                    continue;
+                }
+
+                // Renombrar ELF si el usuario prefiere solo el GameID
+                if (!_settings.UseTitleInElfName)
+                {
+                    string appsFolder = _paths.AppsFolder;
+                    string oldName = $"{gameId} - {title}.ELF.NTSC";
+                    string newName = $"{gameId}.ELF.NTSC";
+                    string oldPath = Path.Combine(appsFolder, oldName);
+                    string newPath = Path.Combine(appsFolder, newName);
+
+                    if (File.Exists(oldPath) && !File.Exists(newPath))
+                    {
+                        File.Move(oldPath, newPath);
+                        _log.Info($"[ELF] Renombrado {oldName} -> {newName}");
+                    }
+                }
+
+                _log.Info(string.Format("[PS1] ELF {0} (Disco {1}) {2}", _loc.GetString("GameProcessor_GeneratedFor"), discNumber, gameId));
+            }
         }
 
-        private async Task ProcessPS2Async(string isoPath, string gameIdForUi,
-            ProgressViewModel? perGameProgress, CancellationToken ct, string workingRoot)
+        private async Task ProcessPS2Async(string isoPath, string gameIdForUi, ProgressViewModel? perGameProgress, CancellationToken ct)
         {
             string originalName = Path.GetFileNameWithoutExtension(isoPath);
             _log.Info(string.Format("[PS2] {0}: {1}", _loc.GetString("GameProcessor_Processing"), originalName));
@@ -411,10 +394,6 @@ namespace POPSManager.Logic
             string cleanTitle = NameCleanerBase.CleanTitleOnly(originalName);
             GameEntry dbEntry = null;
 
-            string dvdFolder = Path.Combine(workingRoot, "DVD");
-            string artFolder = Path.Combine(dvdFolder, "ART");
-            string cfgFolder = Path.Combine(workingRoot, "CFG");
-
             if (useDb && GameDatabase.TryGetEntry(detectedId, out var entry))
             {
                 dbEntry = entry;
@@ -426,6 +405,7 @@ namespace POPSManager.Logic
 
                 if (useCovers && dbEntry?.CoverUrl != null)
                 {
+                    string artFolder = Path.Combine(_paths.DvdFolder, "ART");
                     Directory.CreateDirectory(artFolder);
                     perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_DownloadingCover"));
                     await _coverSemaphore.WaitAsync(ct);
@@ -438,94 +418,13 @@ namespace POPSManager.Logic
                 }
             }
 
-            Directory.CreateDirectory(dvdFolder);
+            Directory.CreateDirectory(_paths.DvdFolder);
             perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_CopyingISO"));
-            string dest = Path.Combine(dvdFolder, string.Format("{0}.ISO", cleanTitle));
+            string dest = Path.Combine(_paths.DvdFolder, string.Format("{0}.ISO", cleanTitle));
             ct.ThrowIfCancellationRequested();
             File.Copy(isoPath, dest, true);
             _log.Info(string.Format("[PS2] {0} -> {1}", _loc.GetString("GameProcessor_CopiedIso"), dest));
 
             if (useMetadata)
             {
-                perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
-                GenerateMetadataFile(detectedId, cleanTitle, dbEntry, cfgFolder);
-            }
-
-            _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_CopiedToDvdSuccessfully")));
-        }
-
-private void GenerateMetadataFile(string gameId, string title, GameEntry? dbEntry, string cfgFolder)
-{
-    try
-    {
-        Directory.CreateDirectory(cfgFolder);
-        string cfgPath = Path.Combine(cfgFolder, $"{gameId}.cfg");
-
-        // Determinar la descripción (evitamos el ternario en string interpolada)
-        string description;
-        if (dbEntry?.CheatFixes != null)
-            description = "Fixes disponibles";
-        else
-            description = "Sin descripción";
-
-        var lines = new List<string>
-        {
-            $"Title={title}",
-            $"Description={description}",
-            $"Release={dbEntry?.Year.ToString() ?? "2000"}",
-            $"Genre={(dbEntry?.Tags != null && dbEntry.Tags.Length > 0 ? dbEntry.Tags[0] : "Action")}",
-            "Players=1",
-            $"Developer={dbEntry?.Publisher ?? "Desconocido"}",
-            "Rating=ESRB=E"
-        };
-
-        File.WriteAllLines(cfgPath, lines);
-        _log.Info($"[METADATA] Archivo CFG generado -> {cfgPath}");
-    }
-    catch (Exception ex)
-    {
-        _log.Error($"[METADATA] Error generando CFG para {gameId}: {ex.Message}");
-    }
-}
-
-        private void CopyCustomFolderContents(string sourceFolder, string folderName, Action<string> log)
-        {
-            if (string.IsNullOrWhiteSpace(sourceFolder) || !Directory.Exists(sourceFolder))
-            {
-                log(string.Format("[Copy] No se encontro carpeta {0} personalizada o no existe.", folderName));
-                return;
-            }
-            string destFolder = Path.Combine(_paths.RootFolder, folderName);
-            try
-            {
-                Directory.CreateDirectory(destFolder);
-                foreach (var file in Directory.GetFiles(sourceFolder))
-                {
-                    string destFile = Path.Combine(destFolder, Path.GetFileName(file));
-                    File.Copy(file, destFile, true);
-                    log(string.Format("[Copy] {0} -> {1}", file, destFile));
-                }
-                foreach (var dir in Directory.GetDirectories(sourceFolder))
-                {
-                    string destDir = Path.Combine(destFolder, Path.GetFileName(dir));
-                    CopyDirectoryRecursive(dir, destDir, log);
-                }
-                log(string.Format("[Copy] Contenido de {0} copiado a {1}", folderName, destFolder));
-            }
-            catch (Exception ex) { log(string.Format("[ERROR] Copiando {0}: {1}", folderName, ex.Message)); }
-        }
-
-        private void CopyDirectoryRecursive(string source, string dest, Action<string> log)
-        {
-            Directory.CreateDirectory(dest);
-            foreach (var file in Directory.GetFiles(source))
-            {
-                string destFile = Path.Combine(dest, Path.GetFileName(file));
-                File.Copy(file, destFile, true);
-                log(string.Format("[Copy] {0} -> {1}", file, destFile));
-            }
-            foreach (var dir in Directory.GetDirectories(source))
-                CopyDirectoryRecursive(dir, Path.Combine(dest, Path.GetFileName(dir)), log);
-        }
-    }
-}
+ 
