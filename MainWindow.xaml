@@ -6,7 +6,7 @@
         xmlns:ui="clr-namespace:POPSManager.UI.Notifications"
         xmlns:viewModels="clr-namespace:POPSManager.ViewModels"
         Title="POPSManager"
-        Icon="/Installer/Assets/AppIcon.ico"
+        Icon="pack://application:,,,/Installer/Assets/AppIcon.ico"
         MinWidth="800"
         MinHeight="600"
         WindowStartupLocation="CenterScreen"
@@ -67,7 +67,6 @@
                 Background="{StaticResource Brush.Panel}"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="0,0,1,0">
-            <!-- ScrollViewer para cuando la ventana es muy baja -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="10">
                     <TextBlock Text="Menú"
