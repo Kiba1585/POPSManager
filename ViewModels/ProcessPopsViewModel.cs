@@ -11,7 +11,7 @@ using POPSManager.Services;
 
 namespace POPSManager.ViewModels
 {
-    public class GameItem
+    public class ProcessGameItem
     {
         public string Name { get; set; } = "";
         public string GameId { get; set; } = "";
@@ -23,12 +23,12 @@ namespace POPSManager.ViewModels
     {
         private readonly AppServices _services;
         
-        private ObservableCollection<GameItem> _ps1Games = new();
-        private ObservableCollection<GameItem> _ps2Games = new();
-        private ObservableCollection<GameItem> _appsGames = new();
-        private GameItem? _selectedPs1Game;
-        private GameItem? _selectedPs2Game;
-        private GameItem? _selectedAppsGame;
+        private ObservableCollection<ProcessGameItem> _ps1Games = new();
+        private ObservableCollection<ProcessGameItem> _ps2Games = new();
+        private ObservableCollection<ProcessGameItem> _appsGames = new();
+        private ProcessGameItem? _selectedPs1Game;
+        private ProcessGameItem? _selectedPs2Game;
+        private ProcessGameItem? _selectedAppsGame;
         private bool _isProcessing;
 
         public ProcessPopsViewModel()
@@ -49,15 +49,15 @@ namespace POPSManager.ViewModels
             LoadGamesFromOplRoot();
         }
 
-        public ObservableCollection<GameItem> Ps1Games { get => _ps1Games; set => SetProperty(ref _ps1Games, value); }
-        public ObservableCollection<GameItem> Ps2Games { get => _ps2Games; set => SetProperty(ref _ps2Games, value); }
-        public ObservableCollection<GameItem> AppsGames { get => _appsGames; set => SetProperty(ref _appsGames, value); }
+        public ObservableCollection<ProcessGameItem> Ps1Games { get => _ps1Games; set => SetProperty(ref _ps1Games, value); }
+        public ObservableCollection<ProcessGameItem> Ps2Games { get => _ps2Games; set => SetProperty(ref _ps2Games, value); }
+        public ObservableCollection<ProcessGameItem> AppsGames { get => _appsGames; set => SetProperty(ref _appsGames, value); }
 
-        public GameItem? SelectedPs1Game { get => _selectedPs1Game; set => SetProperty(ref _selectedPs1Game, value); }
-        public GameItem? SelectedPs2Game { get => _selectedPs2Game; set => SetProperty(ref _selectedPs2Game, value); }
-        public GameItem? SelectedAppsGame { get => _selectedAppsGame; set => SetProperty(ref _selectedAppsGame, value); }
+        public ProcessGameItem? SelectedPs1Game { get => _selectedPs1Game; set => SetProperty(ref _selectedPs1Game, value); }
+        public ProcessGameItem? SelectedPs2Game { get => _selectedPs2Game; set => SetProperty(ref _selectedPs2Game, value); }
+        public ProcessGameItem? SelectedAppsGame { get => _selectedAppsGame; set => SetProperty(ref _selectedAppsGame, value); }
 
-        private GameItem? SelectedGame =>
+        private ProcessGameItem? SelectedGame =>
             SelectedPs1Game ?? SelectedPs2Game ?? SelectedAppsGame;
 
         public bool IsProcessing
@@ -102,7 +102,7 @@ namespace POPSManager.ViewModels
                         ? GameIdDetector.DetectGameId(vcdFile) ?? dirName
                         : dirName;
 
-                    Ps1Games.Add(new GameItem
+                    Ps1Games.Add(new ProcessGameItem
                     {
                         Name = dirName,
                         GameId = gameId,
@@ -121,7 +121,7 @@ namespace POPSManager.ViewModels
                     string name = Path.GetFileNameWithoutExtension(iso);
                     string gameId = GameIdDetector.DetectGameId(iso) ?? name;
 
-                    Ps2Games.Add(new GameItem
+                    Ps2Games.Add(new ProcessGameItem
                     {
                         Name = name,
                         GameId = gameId,
@@ -145,7 +145,7 @@ namespace POPSManager.ViewModels
                     if (!string.IsNullOrWhiteSpace(gameId) && ps1GameIds.Contains(gameId))
                         continue;
 
-                    AppsGames.Add(new GameItem
+                    AppsGames.Add(new ProcessGameItem
                     {
                         Name = name,
                         GameId = gameId,
