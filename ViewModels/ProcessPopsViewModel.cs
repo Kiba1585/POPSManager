@@ -5,170 +5,280 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.Win32;
 using POPSManager.Commands;
 using POPSManager.Services;
-using POPSManager.UI.Windows;
 
 namespace POPSManager.ViewModels
 {
+    // Modelo para cada juego en la lista
+    public class GameItem
+    {
+        public string Name { get; set; } = "";
+        public string GameId { get; set; } = "";
+        public string Path { get; set; } = "";
+        public string Category { get; set; } = ""; // PS1, PS2 o APP
+    }
+
     public class ProcessPopsViewModel : ViewModelBase
     {
         private readonly AppServices _services;
-        private string _vcdPath = string.Empty;
-        private ObservableCollection<string> _games = new();
+        
+        private ObservableCollection<GameItem> _ps1Games = new();
+        private ObservableCollection<GameItem> _ps2Games = new();
+        private ObservableCollection<GameItem> _appsGames = new();
+        private GameItem? _selectedPs1Game;
+        private GameItem? _selectedPs2Game;
+        private GameItem? _selectedAppsGame;
+        private bool _isProcessing;
 
         public ProcessPopsViewModel()
         {
             _services = App.Services!;
 
-            // Cargar carpeta de origen desde Settings
-            VcdPath = _services.Settings.SourceFolder ?? "";
+            RefreshGamesCommand = new RelayCommand(LoadGamesFromOplRoot);
+            ProcessSelectedCommand = new RelayCommand(async () => await ProcessSelectedAsync(), () => !IsProcessing);
+            DownloadCoversCommand = new RelayCommand(async () => await DownloadCoversAsync(), () => SelectedGame != null && !IsProcessing);
+            GenerateElfCommand = new RelayCommand(async () => await GenerateElfAsync(), () => SelectedGame != null && !IsProcessing);
+            GenerateMetadataCommand = new RelayCommand(async () => await GenerateMetadataAsync(), () => SelectedGame != null && !IsProcessing);
+            GenerateCheatsCommand = new RelayCommand(async () => await GenerateCheatsAsync(), () => SelectedGame != null && !IsProcessing);
 
-            BrowseVcdCommand = new RelayCommand(BrowseVcd);
-            ProcessCommand = new RelayCommand(async () => await ProcessAsync(), CanProcess);
+            LoadGamesFromOplRoot();
         }
 
-        public string VcdPath
+        // Colecciones para las tres listas
+        public ObservableCollection<GameItem> Ps1Games { get => _ps1Games; set => SetProperty(ref _ps1Games, value); }
+        public ObservableCollection<GameItem> Ps2Games { get => _ps2Games; set => SetProperty(ref _ps2Games, value); }
+        public ObservableCollection<GameItem> AppsGames { get => _appsGames; set => SetProperty(ref _appsGames, value); }
+
+        // Elementos seleccionados
+        public GameItem? SelectedPs1Game { get => _selectedPs1Game; set => SetProperty(ref _selectedPs1Game, value); }
+        public GameItem? SelectedPs2Game { get => _selectedPs2Game; set => SetProperty(ref _selectedPs2Game, value); }
+        public GameItem? SelectedAppsGame { get => _selectedAppsGame; set => SetProperty(ref _selectedAppsGame, value); }
+
+        // Para obtener el juego seleccionado actualmente (cualquiera de las tres listas)
+        private GameItem? SelectedGame =>
+            SelectedPs1Game ?? SelectedPs2Game ?? SelectedAppsGame;
+
+        // Indicador de procesamiento
+        public bool IsProcessing
         {
-            get => _vcdPath;
-            set { _vcdPath = value; OnPropertyChanged(); LoadGames(); }
+            get => _isProcessing;
+            set => SetProperty(ref _isProcessing, value);
         }
 
-        public ObservableCollection<string> Games
-        {
-            get => _games;
-            set { _games = value; OnPropertyChanged(); }
-        }
+        // Comandos
+        public ICommand RefreshGamesCommand { get; }
+        public ICommand ProcessSelectedCommand { get; }
+        public ICommand DownloadCoversCommand { get; }
+        public ICommand GenerateElfCommand { get; }
+        public ICommand GenerateMetadataCommand { get; }
+        public ICommand GenerateCheatsCommand { get; }
 
-        public ICommand BrowseVcdCommand { get; }
-        public ICommand ProcessCommand { get; }
-
-        private void BrowseVcd()
+        // ============================================================
+        //  ESCANEAR RAÍZ OPL (sin duplicar PS1/APPs)
+        // ============================================================
+        private void LoadGamesFromOplRoot()
         {
-            var dialog = new OpenFolderDialog
+            Ps1Games.Clear();
+            Ps2Games.Clear();
+            AppsGames.Clear();
+
+            string root = _services.Paths.RootFolder;
+            if (!Directory.Exists(root))
             {
-                Title = "Seleccionar carpeta con juegos (VCD / ISO)",
-                Multiselect = false
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                VcdPath = dialog.FolderName;
-            }
-        }
-
-        private async void LoadGames()
-        {
-            Games.Clear();
-            if (!Directory.Exists(VcdPath))
-            {
-                _services.Notifications.Warning("La carpeta seleccionada no existe.");
+                _services.Notifications.Warning("La carpeta raíz OPL no existe. Configúrala en el Dashboard o en Configuración.");
                 return;
             }
 
-            try
+            // --- PS1: carpetas dentro de POPS/ ---
+            string popsFolder = _services.Paths.PopsFolder;
+            if (Directory.Exists(popsFolder))
             {
-                var files = await Task.Run(() =>
+                var ps1Dirs = Directory.GetDirectories(popsFolder);
+                foreach (var dir in ps1Dirs)
                 {
-                    var allFiles = Directory.GetFiles(VcdPath, "*.*", SearchOption.TopDirectoryOnly)
-                        .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
-                                    f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                        .OrderBy(f => f)
-                        .Select(Path.GetFileName)
-                        .ToList();
+                    string dirName = Path.GetFileName(dir);
+                    // Buscar el primer VCD en CD1/
+                    string cd1Folder = Path.Combine(dir, "CD1");
+                    string? vcdFile = Directory.Exists(cd1Folder)
+                        ? Directory.GetFiles(cd1Folder, "*.VCD").FirstOrDefault()
+                        : null;
 
-                    // Si está activado el procesamiento recursivo, incluir subcarpetas
-                    if (_services.Settings.ProcessSubfolders)
+                    string gameId = vcdFile != null
+                        ? GameIdDetector.DetectGameId(vcdFile) ?? dirName
+                        : dirName;
+
+                    Ps1Games.Add(new GameItem
                     {
-                        var subFiles = Directory.GetFiles(VcdPath, "*.*", SearchOption.AllDirectories)
-                            .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
-                                        f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                            .OrderBy(f => f)
-                            .Select(Path.GetFileName)
-                            .ToList();
-
-                        // Unir ambas listas sin duplicados
-                        allFiles = allFiles.Union(subFiles).ToList();
-                    }
-
-                    return allFiles.ToArray();
-                });
-
-                foreach (var file in files)
-                    Games.Add(file!);
-
-                _services.Notifications.Info($"Se detectaron {Games.Count} juegos (PS1/PS2).");
-            }
-            catch (Exception ex)
-            {
-                _services.Notifications.Error("No se pudieron cargar los juegos.");
-                _services.LogService.Error($"[ProcessPopsViewModel] Error cargando juegos: {ex.Message}");
-            }
-        }
-
-        private bool CanProcess()
-        {
-            if (string.IsNullOrWhiteSpace(VcdPath))
-            {
-                _services.Notifications.Warning("No se ha configurado una carpeta de origen. Vaya a Configuración o seleccione una carpeta.");
-                return false;
-            }
-            return Directory.Exists(VcdPath) && Games.Count > 0;
-        }
-
-        private async Task ProcessAsync()
-        {
-            if (string.IsNullOrWhiteSpace(VcdPath))
-            {
-                _services.Notifications.Error("No se ha especificado una carpeta de origen.");
-                return;
+                        Name = dirName,
+                        GameId = gameId,
+                        Path = dir,
+                        Category = "PS1"
+                    });
+                }
             }
 
-            if (Games.Count == 0)
+            // --- PS2: archivos .iso dentro de DVD/ ---
+            string dvdFolder = _services.Paths.DvdFolder;
+            if (Directory.Exists(dvdFolder))
             {
-                _services.Notifications.Warning("No hay juegos para procesar.");
-                return;
-            }
-
-            bool useAdvancedWindow = Games.Count >= 2;
-            ProgressWindow? win = null;
-
-            if (useAdvancedWindow)
-            {
-                win = new ProgressWindow
+                var isoFiles = Directory.GetFiles(dvdFolder, "*.ISO");
+                foreach (var iso in isoFiles)
                 {
-                    Owner = System.Windows.Application.Current.MainWindow
-                };
-                win.Show();
-            }
-            else
-            {
-                _services.Progress.Reset();
-                _services.Progress.Start(_services.Localization.GetString("Label_ProcessingGames"));
+                    string name = Path.GetFileNameWithoutExtension(iso);
+                    string gameId = GameIdDetector.DetectGameId(iso) ?? name;
+
+                    Ps2Games.Add(new GameItem
+                    {
+                        Name = name,
+                        GameId = gameId,
+                        Path = iso,
+                        Category = "PS2"
+                    });
+                }
             }
 
+            // --- APPs: archivos .ELF dentro de APPS/ ---
+            // Solo se añaden si no tienen un VCD correspondiente en PS1 (evita duplicados)
+            string appsFolder = _services.Paths.AppsFolder;
+            if (Directory.Exists(appsFolder))
+            {
+                var elfFiles = Directory.GetFiles(appsFolder, "*.ELF*");
+                var ps1GameIds = Ps1Games.Select(g => g.GameId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var elf in elfFiles)
+                {
+                    string name = Path.GetFileName(elf);
+                    // Extraer GameID del nombre del ELF o del archivo
+                    string gameId = GameIdDetector.DetectFromName(name);
+
+                    // Si el GameID ya está en la lista de PS1, no lo añadimos como APP
+                    if (!string.IsNullOrWhiteSpace(gameId) && ps1GameIds.Contains(gameId))
+                        continue;
+
+                    AppsGames.Add(new GameItem
+                    {
+                        Name = name,
+                        GameId = gameId,
+                        Path = elf,
+                        Category = "APP"
+                    });
+                }
+            }
+
+            _services.Notifications.Info($"Juegos encontrados: PS1={Ps1Games.Count}, PS2={Ps2Games.Count}, APPs={AppsGames.Count}");
+        }
+
+        // ============================================================
+        //  PROCESAR JUEGO SELECCIONADO
+        // ============================================================
+        private async Task ProcessSelectedAsync()
+        {
+            var game = SelectedGame;
+            if (game == null) return;
+
+            IsProcessing = true;
             try
             {
-                await Task.Run(async () =>
-                {
-                    await _services.GameProcessor.ProcessFolderAsync(
-                        VcdPath,
-                        win?.ViewModel
-                    );
-                });
-
-                _services.Notifications.Success("Procesamiento completado.");
+                await _services.GameProcessor.ProcessSingleGameAsync(game.Path, game.Category);
+                _services.Notifications.Success($"{game.Name} procesado correctamente.");
+                LoadGamesFromOplRoot(); // Refrescar lista
             }
             catch (Exception ex)
             {
-                _services.Notifications.Error($"Error durante el procesamiento: {ex.Message}");
-                _services.LogService.Error($"[ProcessPopsViewModel] Error procesando juegos: {ex}");
+                _services.Notifications.Error($"Error procesando {game.Name}: {ex.Message}");
             }
             finally
             {
-                _services.Progress.Stop();
-                win?.Close();
+                IsProcessing = false;
+            }
+        }
+
+        // ============================================================
+        //  ACCIONES INDIVIDUALES
+        // ============================================================
+        private async Task DownloadCoversAsync()
+        {
+            var game = SelectedGame;
+            if (game == null) return;
+
+            IsProcessing = true;
+            try
+            {
+                await _services.GameProcessor.DownloadCoverAsync(game.GameId, game.Category);
+                _services.Notifications.Success($"Carátula descargada para {game.Name}.");
+            }
+            catch (Exception ex)
+            {
+                _services.Notifications.Error($"Error descargando carátula: {ex.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+        private async Task GenerateElfAsync()
+        {
+            var game = SelectedGame;
+            if (game == null) return;
+
+            IsProcessing = true;
+            try
+            {
+                await _services.GameProcessor.GenerateElfAsync(game.Path, game.GameId, game.Category);
+                _services.Notifications.Success($"ELF generado para {game.Name}.");
+                LoadGamesFromOplRoot();
+            }
+            catch (Exception ex)
+            {
+                _services.Notifications.Error($"Error generando ELF: {ex.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+        private async Task GenerateMetadataAsync()
+        {
+            var game = SelectedGame;
+            if (game == null) return;
+
+            IsProcessing = true;
+            try
+            {
+                await _services.GameProcessor.GenerateMetadataAsync(game.GameId, game.Path, game.Category);
+                _services.Notifications.Success($"Metadatos generados para {game.Name}.");
+            }
+            catch (Exception ex)
+            {
+                _services.Notifications.Error($"Error generando metadatos: {ex.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+        private async Task GenerateCheatsAsync()
+        {
+            var game = SelectedGame;
+            if (game == null) return;
+
+            IsProcessing = true;
+            try
+            {
+                await _services.GameProcessor.GenerateCheatsAsync(game.GameId, game.Path, game.Category);
+                _services.Notifications.Success($"Cheats generados para {game.Name}.");
+            }
+            catch (Exception ex)
+            {
+                _services.Notifications.Error($"Error generando cheats: {ex.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
             }
         }
     }
