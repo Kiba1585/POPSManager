@@ -53,7 +53,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  PROCESAMIENTO DE CARPETA COMPLETA (usado por el antiguo flujo)
+        //  PROCESAMIENTO DE CARPETA COMPLETA
         // ============================================================
         public void ProcessFolder(string folder) => ProcessFolderAsync(folder, null).GetAwaiter().GetResult();
 
@@ -168,7 +168,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  NUEVO: PROCESAR UN ÚNICO ARCHIVO (VCD/ISO) DESDE CONVERTIDOR O GESTOR
+        //  PROCESAR UN ÚNICO ARCHIVO
         // ============================================================
         public async Task ProcessSingleGameAsync(string filePath, string category)
         {
@@ -182,7 +182,7 @@ namespace POPSManager.Logic
             {
                 await ProcessPS2Async(filePath, Path.GetFileNameWithoutExtension(filePath), null, CancellationToken.None);
             }
-            else // PS1 o desconocido
+            else
             {
                 var group = GroupByRealGame(new[] { filePath });
                 var kv = group.First();
@@ -191,7 +191,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  NUEVOS MÉTODOS PARA ACCIONES INDIVIDUALES (GESTOR DE JUEGOS)
+        //  ACCIONES INDIVIDUALES (GESTOR DE JUEGOS)
         // ============================================================
         public async Task DownloadCoverAsync(string gameId, string category)
         {
@@ -221,7 +221,6 @@ namespace POPSManager.Logic
                 return;
             }
 
-            // Buscar el VCD correspondiente
             string vcdPath = Directory.Exists(gamePath)
                 ? Directory.GetFiles(gamePath, "*.VCD").FirstOrDefault() ?? ""
                 : gamePath;
@@ -270,7 +269,7 @@ namespace POPSManager.Logic
         }
 
         // ============================================================
-        //  MÉTODOS PRIVADOS EXISTENTES (sin cambios relevantes)
+        //  MÉTODOS PRIVADOS COMPLETOS
         // ============================================================
         private async Task CopyCustomAssetsAsync()
         {
@@ -298,7 +297,16 @@ namespace POPSManager.Logic
             return groups;
         }
 
-        private bool ValidateVcd(string vcdPath) => IntegrityValidator.Validate(vcdPath);
+        private bool ValidateVcd(string vcdPath)
+        {
+            if (!IntegrityValidator.Validate(vcdPath))
+            {
+                _log.Warn(string.Format("[PS1] {0}: {1}", _loc.GetString("GameProcessor_InvalidVcd"), vcdPath));
+                _notify.Warning(string.Format("{0}: {1}", _loc.GetString("GameProcessor_InvalidVcd"), Path.GetFileName(vcdPath)));
+                return false;
+            }
+            return true;
+        }
 
         private bool ValidateIso(string isoPath)
         {
@@ -312,32 +320,134 @@ namespace POPSManager.Logic
 
         private async Task ProcessPS1GroupAsync(string baseName, List<string> discs, string gameIdForUi, ProgressViewModel? perGameProgress, CancellationToken ct)
         {
-            // ... (código existente sin cambios)
+            _log.Info(string.Format("[PS1] {0}: {1}", _loc.GetString("GameProcessor_ProcessingGroup"), baseName));
+
+            discs = discs.OrderBy(d =>
+            {
+                string fileName = Path.GetFileNameWithoutExtension(d);
+                NameCleanerBase.Clean(fileName, out string cdTag);
+                return MultiDiscManager.ExtractDiscNumber(cdTag ?? fileName);
+            }).ToList();
+
+            string firstDisc = discs.First();
+            string detectedId = GameIdDetector.DetectGameId(firstDisc) ?? GameIdDetector.DetectFromName(baseName) ?? "";
+            if (string.IsNullOrWhiteSpace(detectedId))
+            {
+                _notify.Warning(string.Format("{0} {1}", _loc.GetString("GameProcessor_CouldNotDetectId"), baseName));
+                perGameProgress?.MarkError(gameIdForUi, _loc.GetString("GameProcessor_CouldNotDetectId"));
+                return;
+            }
+
+            bool useDb = _settings.UseDatabase && _auto.ShouldUseDatabase();
+            bool useCovers = _settings.UseCovers && _auto.ShouldDownloadCovers();
+            bool genCheats = _auto.ShouldGenerateCheats();
+            bool genElf = _auto.ShouldGenerateElf();
+            bool handleMultiDisc = _auto.ShouldHandleMultiDisc();
+            bool useMetadata = _settings.UseMetadata && _auto.ShouldUseMetadata();
+
+            string cleanTitle = NameCleanerBase.CleanTitleOnly(baseName);
+            GameEntry dbEntry = null;
+            if (useDb && GameDatabase.TryGetEntry(detectedId, out var entry))
+            {
+                dbEntry = entry;
+                if (!string.IsNullOrWhiteSpace(dbEntry.Name))
+                {
+                    cleanTitle = dbEntry.Name;
+                    _log.Info(string.Format("[DB] {0}: {1}", _loc.GetString("GameProcessor_OfficialNameFound"), cleanTitle));
+                }
+            }
+
+            if (useCovers && dbEntry?.CoverUrl != null)
+            {
+                string artFolder = Path.Combine(_paths.ArtFolder);
+                Directory.CreateDirectory(artFolder);
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_DownloadingCover"));
+                await _coverSemaphore.WaitAsync(ct);
+                try
+                {
+                    string art = await ArtDownloader.DownloadArtAsync(detectedId, dbEntry.CoverUrl, artFolder, _log.Info);
+                    if (art != null) _log.Info(string.Format("[COVER] PS1 ART {0} -> {1}", _loc.GetString("GameProcessor_Generated"), art));
+                }
+                finally { _coverSemaphore.Release(); }
+            }
+
+            string gameRootFolder = Path.Combine(_paths.PopsFolder, cleanTitle);
+            Directory.CreateDirectory(gameRootFolder);
+            int discNumber = 1;
+            List<string> discPaths = new();
+
+            foreach (var disc in discs)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    perGameProgress?.UpdateStatus(gameIdForUi, string.Format(_loc.GetString("Progress_CopyingDisc"), discNumber));
+                    string discFolder = Path.Combine(gameRootFolder, string.Format("CD{0}", discNumber));
+                    Directory.CreateDirectory(discFolder);
+                    string finalFileName = string.Format("{0} (Disc {1}).VCD", cleanTitle, discNumber);
+                    string destVcd = Path.Combine(discFolder, finalFileName);
+                    File.Copy(disc, destVcd, true);
+                    discPaths.Add(destVcd);
+                    _log.Info(string.Format("[PS1] {0} {1} -> {2}", _loc.GetString("GameProcessor_CopiedDisc"), discNumber, destVcd));
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(string.Format("[PS1] {0} {1}: {2}", _loc.GetString("GameProcessor_ErrorCopyingDisc"), discNumber, ex.Message));
+                }
+                discNumber++;
+            }
+
+            if (handleMultiDisc)
+            {
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingDiscsTxt"));
+                MultiDiscManager.GenerateDiscsTxt(_paths.PopsFolder, detectedId, discPaths, _log.Info, _auto);
+            }
+
+            if (genCheats && GameIdDetector.IsPalRegion(detectedId))
+            {
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingCheats"));
+                string cd1Folder = Path.Combine(gameRootFolder, "CD1");
+                CheatGenerator.GenerateCheatTxt(detectedId, cd1Folder, _log.Info);
+            }
+
+            if (genElf)
+            {
+                perGameProgress?.UpdateStatus(gameIdForUi, _loc.GetString("Progress_GeneratingELF"));
+                GenerateElfsForAllDiscs(detectedId, cleanTitle, gameRootFolder, discs.Count);
+            }
+
+            if (useMetadata)
+            {
+                perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
+                GenerateMetadataFile(detectedId, cleanTitle, dbEntry);
+            }
+
+            _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_ProcessedSuccessfully")));
         }
 
         private void GenerateElfsForAllDiscs(string gameId, string title, string gameRootFolder, int totalDiscs)
         {
-            // ... (código existente sin cambios)
-        }
+            for (int discNumber = 1; discNumber <= totalDiscs; discNumber++)
+            {
+                string cdFolder = Path.Combine(gameRootFolder, string.Format("CD{0}", discNumber));
+                string? vcdPath = Directory.GetFiles(cdFolder, "*.VCD").FirstOrDefault();
 
-        private async Task ProcessPS2Async(string isoPath, string gameIdForUi, ProgressViewModel? perGameProgress, CancellationToken ct)
-        {
-            // ... (código existente sin cambios)
-        }
+                if (vcdPath == null)
+                {
+                    _log.Warn(string.Format("[PS1] {0} {1} {2}", _loc.GetString("GameProcessor_NoVcdFoundIn"), cdFolder, $"(Disco {discNumber})"));
+                    continue;
+                }
 
-        private void GenerateMetadataFile(string gameId, string title, GameEntry? dbEntry)
-        {
-            // ... (código existente sin cambios)
-        }
+                bool ok = ElfGenerator.GeneratePs1Elf(
+                    _paths.PopstarterElfPath,
+                    vcdPath,
+                    _paths.AppsFolder,
+                    discNumber,
+                    title,
+                    gameId,
+                    _log.Info
+                );
 
-        private void CopyCustomFolderContents(string sourceFolder, string folderName, Action<string> log)
-        {
-            // ... (código existente sin cambios)
-        }
-
-        private void CopyDirectoryRecursive(string source, string dest, Action<string> log)
-        {
-            // ... (código existente sin cambios)
-        }
-    }
-}
+                if (!ok)
+                {
+                    _notify.Error(string.Format("{0} {1} (Disco {2})", _loc.GetString("GameProcessor_ErrorGeneratingElf"
