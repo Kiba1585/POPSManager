@@ -22,6 +22,9 @@ namespace POPSManager.ViewModels
         {
             _services = App.Services!;
 
+            // Cargar carpeta de origen desde Settings
+            VcdPath = _services.Settings.SourceFolder ?? "";
+
             BrowseVcdCommand = new RelayCommand(BrowseVcd);
             ProcessCommand = new RelayCommand(async () => await ProcessAsync(), CanProcess);
         }
@@ -58,7 +61,6 @@ namespace POPSManager.ViewModels
         private async void LoadGames()
         {
             Games.Clear();
-
             if (!Directory.Exists(VcdPath))
             {
                 _services.Notifications.Warning("La carpeta seleccionada no existe.");
@@ -73,8 +75,7 @@ namespace POPSManager.ViewModels
                                          f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
                              .OrderBy(f => f)
                              .Select(Path.GetFileName)
-                             .ToArray()
-                );
+                             .ToArray());
 
                 foreach (var file in files)
                     Games.Add(file!);
