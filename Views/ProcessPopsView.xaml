@@ -4,8 +4,6 @@
              xmlns:viewModels="clr-namespace:POPSManager.ViewModels"
              Background="{StaticResource Brush.Background}">
 
-    <!-- ❌ Eliminado DataContext en XAML -->
-
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
