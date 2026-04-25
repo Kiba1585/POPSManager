@@ -21,6 +21,10 @@ namespace POPSManager.ViewModels
         {
             _services = App.Services!;
 
+            // Cargar rutas predefinidas desde Settings
+            SourcePath = _services.Settings.SourceFolder ?? "";
+            OutputPath = _services.Settings.DestinationFolder ?? "";
+
             BrowseSourceCommand = new RelayCommand(BrowseSource);
             BrowseOutputCommand = new RelayCommand(BrowseOutput);
             ConvertCommand = new RelayCommand(async () => await ConvertAsync(), CanConvert);
@@ -89,7 +93,7 @@ namespace POPSManager.ViewModels
                             f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(f => f)
                 .Select(Path.GetFileName)
-                .Where(name => !string.IsNullOrEmpty(name)) // Filtra posibles null
+                .Where(name => !string.IsNullOrEmpty(name))
                 .ToList();
 
             foreach (var file in files)
