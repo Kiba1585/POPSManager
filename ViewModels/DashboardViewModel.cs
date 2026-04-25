@@ -32,14 +32,18 @@ namespace POPSManager.ViewModels
             OpenConvertCommand = new RelayCommand(() => NavigateTo(new ConvertView()));
             OpenProcessPopsCommand = new RelayCommand(() => NavigateTo(new ProcessPopsView()));
 
-            // Accesos rápidos existentes
+            // Accesos rápidos
             OpenRootFolderCommand = new RelayCommand(OpenRootFolder, () => Directory.Exists(RootPath));
             OpenElfFolderCommand = new RelayCommand(OpenElfFolder, () => File.Exists(ElfPath));
 
-            // NUEVOS COMANDOS para seleccionar rutas
+            // Selectores de rutas
             ChangeSourceFolderCommand = new RelayCommand(async () => await ChangeSourceFolderAsync());
             ChangeDestinationFolderCommand = new RelayCommand(async () => await ChangeDestinationFolderAsync());
             ChangeElfFolderCommand = new RelayCommand(async () => await ChangeElfFolderAsync());
+
+            // Sincronizar cambios globales
+            _settings.OnSettingsChanged += () => LoadData();
+            _services.Localization.PropertyChanged += (_, _) => LoadData();
 
             LoadData();
         }
@@ -55,20 +59,14 @@ namespace POPSManager.ViewModels
         public string SourcePath { get => _sourcePath; set => SetProperty(ref _sourcePath, value); }
         public string DestinationPath { get => _destinationPath; set => SetProperty(ref _destinationPath, value); }
         public string ElfFolderPath { get => _elfFolderPath; set => SetProperty(ref _elfFolderPath, value); }
-        public bool ProcessSubfolders
-        {
-            get => _processSubfolders;
-            set => SetProperty(ref _processSubfolders, value);
-        }
+        public bool ProcessSubfolders { get => _processSubfolders; set => SetProperty(ref _processSubfolders, value); }
         public string SystemInfo { get => _systemInfo; set => SetProperty(ref _systemInfo, value); }
 
-        // Comandos existentes
+        // Comandos
         public ICommand OpenConvertCommand { get; }
         public ICommand OpenProcessPopsCommand { get; }
         public ICommand OpenRootFolderCommand { get; }
         public ICommand OpenElfFolderCommand { get; }
-
-        // NUEVOS COMANDOS públicos
         public ICommand ChangeSourceFolderCommand { get; }
         public ICommand ChangeDestinationFolderCommand { get; }
         public ICommand ChangeElfFolderCommand { get; }
@@ -99,7 +97,6 @@ namespace POPSManager.ViewModels
             }
         }
 
-        // --- Métodos de acceso rápido (sin cambios) ---
         private void OpenRootFolder()
         {
             if (!Directory.Exists(RootPath))
@@ -145,7 +142,6 @@ namespace POPSManager.ViewModels
             }
         }
 
-        // --- NUEVOS MÉTODOS para seleccionar rutas ---
         private async Task ChangeSourceFolderAsync()
         {
             var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta de origen de juegos" };
@@ -194,7 +190,6 @@ namespace POPSManager.ViewModels
             }
 
             _settings.ElfFolder = dialog.FolderName;
-            // Buscar automáticamente los ELFs dentro de la carpeta
             string popstarter = Path.Combine(dialog.FolderName, "POPSTARTER.ELF");
             string pops2 = Path.Combine(dialog.FolderName, "POPS2.ELF");
             if (File.Exists(popstarter)) await _paths.SetCustomElfPathAsync(popstarter);
