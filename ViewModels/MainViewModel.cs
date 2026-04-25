@@ -34,6 +34,19 @@ namespace POPSManager.ViewModels
             OpenAboutCommand = new RelayCommand(OpenAbout);
             OpenCheatsSettingsCommand = new RelayCommand(OpenCheatsSettings);
 
+            // Forzar refresco de la vista actual al cambiar el idioma
+            _services.Localization.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(_services.Localization.CurrentLanguage))
+                {
+                    SafeUpdate(() =>
+                    {
+                        var type = _currentView.GetType();
+                        CurrentView = (System.Windows.Controls.UserControl)Activator.CreateInstance(type)!;
+                    });
+                }
+            };
+
             SubscribeToServiceEvents();
         }
 
