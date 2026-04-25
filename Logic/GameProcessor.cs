@@ -506,3 +506,4 @@ namespace POPSManager.Logic
                 CopyDirectoryRecursive(dir, Path.Combine(dest, Path.GetFileName(dir)), log);
         }
     }
+}
