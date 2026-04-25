@@ -454,32 +454,39 @@ namespace POPSManager.Logic
             _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_CopiedToDvdSuccessfully")));
         }
 
-        private void GenerateMetadataFile(string gameId, string title, GameEntry? dbEntry, string cfgFolder)
+private void GenerateMetadataFile(string gameId, string title, GameEntry? dbEntry, string cfgFolder)
+{
+    try
+    {
+        Directory.CreateDirectory(cfgFolder);
+        string cfgPath = Path.Combine(cfgFolder, $"{gameId}.cfg");
+
+        // Determinar la descripción (evitamos el ternario en string interpolada)
+        string description;
+        if (dbEntry?.CheatFixes != null)
+            description = "Fixes disponibles";
+        else
+            description = "Sin descripción";
+
+        var lines = new List<string>
         {
-            try
-            {
-                Directory.CreateDirectory(cfgFolder);
-                string cfgPath = Path.Combine(cfgFolder, $"{gameId}.cfg");
+            $"Title={title}",
+            $"Description={description}",
+            $"Release={dbEntry?.Year.ToString() ?? "2000"}",
+            $"Genre={(dbEntry?.Tags != null && dbEntry.Tags.Length > 0 ? dbEntry.Tags[0] : "Action")}",
+            "Players=1",
+            $"Developer={dbEntry?.Publisher ?? "Desconocido"}",
+            "Rating=ESRB=E"
+        };
 
-                var lines = new List<string>
-                {
-                    $"Title={title}",
-                    $"Description={(dbEntry?.CheatFixes != null ? "Fixes disponibles" : "Sin descripción")}",
-                    $"Release={dbEntry?.Year.ToString() ?? "2000"}",
-                    $"Genre={dbEntry?.Tags != null && dbEntry.Tags.Length > 0 ? dbEntry.Tags[0] : "Action"}",
-                    $"Players=1",
-                    $"Developer={dbEntry?.Publisher ?? "Desconocido"}",
-                    $"Rating=ESRB=E"
-                };
-
-                File.WriteAllLines(cfgPath, lines);
-                _log.Info($"[METADATA] Archivo CFG generado -> {cfgPath}");
-            }
-            catch (Exception ex)
-            {
-                _log.Error($"[METADATA] Error generando CFG para {gameId}: {ex.Message}");
-            }
-        }
+        File.WriteAllLines(cfgPath, lines);
+        _log.Info($"[METADATA] Archivo CFG generado -> {cfgPath}");
+    }
+    catch (Exception ex)
+    {
+        _log.Error($"[METADATA] Error generando CFG para {gameId}: {ex.Message}");
+    }
+}
 
         private void CopyCustomFolderContents(string sourceFolder, string folderName, Action<string> log)
         {
