@@ -70,12 +70,30 @@ namespace POPSManager.ViewModels
             try
             {
                 var files = await Task.Run(() =>
-                    Directory.GetFiles(VcdPath)
-                             .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
-                                         f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
-                             .OrderBy(f => f)
-                             .Select(Path.GetFileName)
-                             .ToArray());
+                {
+                    var allFiles = Directory.GetFiles(VcdPath, "*.*", SearchOption.TopDirectoryOnly)
+                        .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
+                                    f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(f => f)
+                        .Select(Path.GetFileName)
+                        .ToList();
+
+                    // Si está activado el procesamiento recursivo, incluir subcarpetas
+                    if (_services.Settings.ProcessSubfolders)
+                    {
+                        var subFiles = Directory.GetFiles(VcdPath, "*.*", SearchOption.AllDirectories)
+                            .Where(f => f.EndsWith(".vcd", StringComparison.OrdinalIgnoreCase) ||
+                                        f.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
+                            .OrderBy(f => f)
+                            .Select(Path.GetFileName)
+                            .ToList();
+
+                        // Unir ambas listas sin duplicados
+                        allFiles = allFiles.Union(subFiles).ToList();
+                    }
+
+                    return allFiles.ToArray();
+                });
 
                 foreach (var file in files)
                     Games.Add(file!);
@@ -89,10 +107,30 @@ namespace POPSManager.ViewModels
             }
         }
 
-        private bool CanProcess() => Directory.Exists(VcdPath) && Games.Count > 0;
+        private bool CanProcess()
+        {
+            if (string.IsNullOrWhiteSpace(VcdPath))
+            {
+                _services.Notifications.Warning("No se ha configurado una carpeta de origen. Vaya a Configuración o seleccione una carpeta.");
+                return false;
+            }
+            return Directory.Exists(VcdPath) && Games.Count > 0;
+        }
 
         private async Task ProcessAsync()
         {
+            if (string.IsNullOrWhiteSpace(VcdPath))
+            {
+                _services.Notifications.Error("No se ha especificado una carpeta de origen.");
+                return;
+            }
+
+            if (Games.Count == 0)
+            {
+                _services.Notifications.Warning("No hay juegos para procesar.");
+                return;
+            }
+
             bool useAdvancedWindow = Games.Count >= 2;
             ProgressWindow? win = null;
 
