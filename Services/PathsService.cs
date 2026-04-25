@@ -14,7 +14,6 @@ namespace POPSManager.Services
         public string PopsFolder => ResolvePath(_customPopsFolder, "POPS");
         public string AppsFolder => ResolvePath(_customAppsFolder, "APPS");
 
-        // NUEVAS PROPIEDADES
         public string LngFolder => ResolvePath(_customLngFolder, "LNG");
         public string ThmFolder => ResolvePath(_customThmFolder, "THM");
 
@@ -27,8 +26,8 @@ namespace POPSManager.Services
 
         private string? _customPopsFolder;
         private string? _customAppsFolder;
-        private string? _customLngFolder;   // NUEVO
-        private string? _customThmFolder;   // NUEVO
+        private string? _customLngFolder;
+        private string? _customThmFolder;
 
         private readonly Action<string>? _log;
         private readonly SettingsService _settings;
@@ -44,8 +43,8 @@ namespace POPSManager.Services
 
             _customPopsFolder = settings.CustomPopsFolder;
             _customAppsFolder = settings.CustomAppsFolder;
-            _customLngFolder = settings.CustomLngFolder;   // NUEVO
-            _customThmFolder = settings.CustomThmFolder;   // NUEVO
+            _customLngFolder = settings.CustomLngFolder;
+            _customThmFolder = settings.CustomThmFolder;
 
             EnsureFolderStructure();
 
@@ -55,13 +54,13 @@ namespace POPSManager.Services
 
         private string NormalizeRoot(string? path)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
             {
                 string fallback = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "POPSManager");
 
-                _log?.Invoke($"[Paths] Usando raíz por defecto: {fallback}");
+                _log?.Invoke($"[Paths] Ruta inválida o no encontrada. Usando fallback: {fallback}");
                 return fallback;
             }
 
@@ -109,8 +108,8 @@ namespace POPSManager.Services
             CreateFolder(CfgFolder);
             CreateFolder(ArtFolder);
             CreateFolder(DvdFolder);
-            CreateFolder(LngFolder);   // NUEVO
-            CreateFolder(ThmFolder);   // NUEVO
+            CreateFolder(LngFolder);
+            CreateFolder(ThmFolder);
         }
 
         private void CreateFolder(string path)
@@ -167,10 +166,6 @@ namespace POPSManager.Services
             _log?.Invoke($"[Paths] ADVERTENCIA: No se encontró {elfName}.");
             return "";
         }
-
-        // ============================================================
-        // MÉTODOS ASÍNCRONOS PARA CARPETAS PERSONALIZADAS
-        // ============================================================
 
         public async Task SetCustomPopsFolderAsync(string path)
         {
@@ -236,8 +231,8 @@ namespace POPSManager.Services
         {
             _customPopsFolder = _settings.CustomPopsFolder;
             _customAppsFolder = _settings.CustomAppsFolder;
-            _customLngFolder = _settings.CustomLngFolder;   // NUEVO
-            _customThmFolder = _settings.CustomThmFolder;   // NUEVO
+            _customLngFolder = _settings.CustomLngFolder;
+            _customThmFolder = _settings.CustomThmFolder;
 
             RootFolder = NormalizeRoot(_settings.RootFolder);
 
@@ -258,8 +253,8 @@ namespace POPSManager.Services
             _settings.CustomPs2ElfPath = PopstarterPs2ElfPath;
             _settings.CustomPopsFolder = _customPopsFolder;
             _settings.CustomAppsFolder = _customAppsFolder;
-            _settings.CustomLngFolder = _customLngFolder;   // NUEVO
-            _settings.CustomThmFolder = _customThmFolder;   // NUEVO
+            _settings.CustomLngFolder = _customLngFolder;
+            _settings.CustomThmFolder = _customThmFolder;
 
             await _settings.SaveAsync();
         }
@@ -273,9 +268,6 @@ namespace POPSManager.Services
             return $"mass:/POPS/{folder}/{file}";
         }
 
-        // ============================================================
-        // WRAPPERS SÍNCRONOS PARA LA INTERFAZ
-        // ============================================================
         public void SetCustomPopsFolder(string path) =>
             SetCustomPopsFolderAsync(path).GetAwaiter().GetResult();
 
