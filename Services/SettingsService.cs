@@ -56,6 +56,14 @@ namespace POPSManager.Services
         public string? CustomThmFolder { get; set; }
 
         // ============================
+        //  NUEVAS PROPIEDADES (RUTAS CENTRALIZADAS)
+        // ============================
+        public string? SourceFolder { get; set; }
+        public string? DestinationFolder { get; set; }
+        public string? ElfFolder { get; set; }
+        public bool ProcessSubfolders { get; set; } = true;
+
+        // ============================
         //  IDIOMA
         // ============================
         public AppLanguage Language { get; set; } = AppLanguage.Auto;
@@ -118,8 +126,14 @@ namespace POPSManager.Services
 
                 CustomPopsFolder = data.CustomPopsFolder;
                 CustomAppsFolder = data.CustomAppsFolder;
-                CustomLngFolder = data.CustomLngFolder;   // NUEVO
-                CustomThmFolder = data.CustomThmFolder;   // NUEVO
+                CustomLngFolder = data.CustomLngFolder;
+                CustomThmFolder = data.CustomThmFolder;
+
+                // NUEVOS CAMPOS
+                SourceFolder = data.SourceFolder;
+                DestinationFolder = data.DestinationFolder;
+                ElfFolder = data.ElfFolder;
+                ProcessSubfolders = data.ProcessSubfolders;
 
                 Automation = data.Automation ?? new AutomationSettings();
 
@@ -153,8 +167,14 @@ namespace POPSManager.Services
                     CustomPs2ElfPath = CustomPs2ElfPath,
                     CustomPopsFolder = CustomPopsFolder,
                     CustomAppsFolder = CustomAppsFolder,
-                    CustomLngFolder = CustomLngFolder,   // NUEVO
-                    CustomThmFolder = CustomThmFolder,   // NUEVO
+                    CustomLngFolder = CustomLngFolder,
+                    CustomThmFolder = CustomThmFolder,
+
+                    // NUEVOS CAMPOS
+                    SourceFolder = SourceFolder,
+                    DestinationFolder = DestinationFolder,
+                    ElfFolder = ElfFolder,
+                    ProcessSubfolders = ProcessSubfolders,
 
                     Automation = Automation,
                     Language = Language
@@ -187,10 +207,20 @@ namespace POPSManager.Services
                 CustomAppsFolder = Normalize(CustomAppsFolder);
 
             if (!string.IsNullOrWhiteSpace(CustomLngFolder))
-                CustomLngFolder = Normalize(CustomLngFolder);   // NUEVO
+                CustomLngFolder = Normalize(CustomLngFolder);
 
             if (!string.IsNullOrWhiteSpace(CustomThmFolder))
-                CustomThmFolder = Normalize(CustomThmFolder);   // NUEVO
+                CustomThmFolder = Normalize(CustomThmFolder);
+
+            // NUEVOS CAMPOS
+            if (!string.IsNullOrWhiteSpace(SourceFolder))
+                SourceFolder = Normalize(SourceFolder);
+
+            if (!string.IsNullOrWhiteSpace(DestinationFolder))
+                DestinationFolder = Normalize(DestinationFolder);
+
+            if (!string.IsNullOrWhiteSpace(ElfFolder))
+                ElfFolder = Normalize(ElfFolder);
         }
 
         private string Normalize(string? path)
@@ -228,28 +258,17 @@ namespace POPSManager.Services
         // MÉTODOS ASINCRÓNICOS Y DE CONVENIENCIA
         // ============================================================
 
-        /// <summary>
-        /// Guarda la configuración de forma asíncrona.
-        /// </summary>
         public async Task SaveAsync()
         {
             await Task.Run(() => Save());
         }
 
-        /// <summary>
-        /// Establece la carpeta raíz y guarda la configuración.
-        /// </summary>
-        /// <param name="path">Nueva ruta raíz.</param>
         public void SetRootFolder(string path)
         {
             RootFolder = path;
             Save();
         }
 
-        /// <summary>
-        /// Establece la ruta personalizada de POPSTARTER.ELF y guarda la configuración.
-        /// </summary>
-        /// <param name="path">Ruta al archivo ELF.</param>
         public void SetCustomElfPath(string path)
         {
             CustomElfPath = path;
@@ -273,9 +292,14 @@ namespace POPSManager.Services
             public string? CustomPopsFolder { get; set; }
             public string? CustomAppsFolder { get; set; }
 
-            // NUEVOS CAMPOS
             public string? CustomLngFolder { get; set; }
             public string? CustomThmFolder { get; set; }
+
+            // NUEVOS CAMPOS
+            public string? SourceFolder { get; set; }
+            public string? DestinationFolder { get; set; }
+            public string? ElfFolder { get; set; }
+            public bool ProcessSubfolders { get; set; } = true;
 
             public AutomationSettings? Automation { get; set; } = new();
 
