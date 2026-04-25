@@ -29,8 +29,16 @@ namespace POPSManager.ViewModels
         {
             _services = App.Services!;
 
-            // Destino siempre es la raíz OPL
+            // Leer rutas guardadas (se sincronizan con el Dashboard)
+            SourcePath = _services.Settings.SourceFolder ?? "";
             OutputPath = _services.Settings.DestinationFolder ?? "";
+
+            // Suscribirse a cambios globales
+            _services.Settings.OnSettingsChanged += () =>
+            {
+                SourcePath = _services.Settings.SourceFolder ?? "";
+                OutputPath = _services.Settings.DestinationFolder ?? "";
+            };
 
             BrowseSourceCommand = new RelayCommand(BrowseSource);
             BrowseOutputCommand = new RelayCommand(BrowseOutput);
@@ -148,7 +156,6 @@ namespace POPSManager.ViewModels
             IsProcessing = true;
             try
             {
-                // 1. CONVERTIR
                 _services.Progress.Start("Convirtiendo archivos…");
                 await Task.Run(() =>
                 {
@@ -156,7 +163,6 @@ namespace POPSManager.ViewModels
                 });
                 _services.Progress.SetStatus("Conversión finalizada.");
 
-                // 2. POST‑PROCESAMIENTO (automático según configuración)
                 var convertedFiles = Directory.GetFiles(OutputPath, "*.vcd")
                     .Where(vcd => Files.Any(f =>
                         Path.GetFileNameWithoutExtension(f.Name).Equals(
