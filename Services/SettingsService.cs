@@ -44,6 +44,9 @@ namespace POPSManager.Services
         public bool UseDatabase { get; set; } = true;
         public bool UseCovers { get; set; } = true;
 
+        // NUEVO: usar metadatos (CFG) para OPL
+        public bool UseMetadata { get; set; } = true;
+
         public string RootFolder { get; set; } = "";
         public string CustomElfPath { get; set; } = "";
         public string CustomPs2ElfPath { get; set; } = "";
@@ -51,7 +54,6 @@ namespace POPSManager.Services
         public string? CustomPopsFolder { get; set; }
         public string? CustomAppsFolder { get; set; }
 
-        // NUEVAS PROPIEDADES
         public string? CustomLngFolder { get; set; }
         public string? CustomThmFolder { get; set; }
 
@@ -62,6 +64,11 @@ namespace POPSManager.Services
         public string? DestinationFolder { get; set; }
         public string? ElfFolder { get; set; }
         public bool ProcessSubfolders { get; set; } = true;
+
+        // NUEVO: formato del nombre del ELF
+        // true = "GameID - Titulo.ELF.NTSC"  (por defecto)
+        // false = "GameID.ELF" (para temas que requieren este formato)
+        public bool UseTitleInElfName { get; set; } = true;
 
         // ============================
         //  IDIOMA
@@ -119,6 +126,7 @@ namespace POPSManager.Services
 
                 UseDatabase = data.UseDatabase;
                 UseCovers = data.UseCovers;
+                UseMetadata = data.UseMetadata;
 
                 RootFolder = data.RootFolder ?? "";
                 CustomElfPath = data.CustomElfPath ?? "";
@@ -129,11 +137,11 @@ namespace POPSManager.Services
                 CustomLngFolder = data.CustomLngFolder;
                 CustomThmFolder = data.CustomThmFolder;
 
-                // NUEVOS CAMPOS
                 SourceFolder = data.SourceFolder;
                 DestinationFolder = data.DestinationFolder;
                 ElfFolder = data.ElfFolder;
                 ProcessSubfolders = data.ProcessSubfolders;
+                UseTitleInElfName = data.UseTitleInElfName;
 
                 Automation = data.Automation ?? new AutomationSettings();
 
@@ -161,6 +169,7 @@ namespace POPSManager.Services
 
                     UseDatabase = UseDatabase,
                     UseCovers = UseCovers,
+                    UseMetadata = UseMetadata,
 
                     RootFolder = RootFolder,
                     CustomElfPath = CustomElfPath,
@@ -170,11 +179,11 @@ namespace POPSManager.Services
                     CustomLngFolder = CustomLngFolder,
                     CustomThmFolder = CustomThmFolder,
 
-                    // NUEVOS CAMPOS
                     SourceFolder = SourceFolder,
                     DestinationFolder = DestinationFolder,
                     ElfFolder = ElfFolder,
                     ProcessSubfolders = ProcessSubfolders,
+                    UseTitleInElfName = UseTitleInElfName,
 
                     Automation = Automation,
                     Language = Language
@@ -212,7 +221,6 @@ namespace POPSManager.Services
             if (!string.IsNullOrWhiteSpace(CustomThmFolder))
                 CustomThmFolder = Normalize(CustomThmFolder);
 
-            // NUEVOS CAMPOS
             if (!string.IsNullOrWhiteSpace(SourceFolder))
                 SourceFolder = Normalize(SourceFolder);
 
@@ -257,7 +265,6 @@ namespace POPSManager.Services
         // ============================================================
         // MÉTODOS ASINCRÓNICOS Y DE CONVENIENCIA
         // ============================================================
-
         public async Task SaveAsync()
         {
             await Task.Run(() => Save());
@@ -285,6 +292,7 @@ namespace POPSManager.Services
 
             public bool UseDatabase { get; set; } = true;
             public bool UseCovers { get; set; } = true;
+            public bool UseMetadata { get; set; } = true;
 
             public string? RootFolder { get; set; }
             public string? CustomElfPath { get; set; }
@@ -295,11 +303,11 @@ namespace POPSManager.Services
             public string? CustomLngFolder { get; set; }
             public string? CustomThmFolder { get; set; }
 
-            // NUEVOS CAMPOS
             public string? SourceFolder { get; set; }
             public string? DestinationFolder { get; set; }
             public string? ElfFolder { get; set; }
             public bool ProcessSubfolders { get; set; } = true;
+            public bool UseTitleInElfName { get; set; } = true;
 
             public AutomationSettings? Automation { get; set; } = new();
 
