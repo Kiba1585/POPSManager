@@ -20,6 +20,9 @@ namespace POPSManager.Settings
         /// <summary>Comportamiento para creación de carpetas.</summary>
         public AutoBehavior FolderCreation { get; set; } = AutoBehavior.Automatico;
 
+        /// <summary>Comportamiento para generación de archivos ELF.</summary>
+        public AutoBehavior ElfGeneration { get; set; } = AutoBehavior.Automatico;
+
         /// <summary>Comportamiento para descarga de carátulas.</summary>
         public AutoBehavior Covers { get; set; } = AutoBehavior.Preguntar;
 
@@ -29,10 +32,12 @@ namespace POPSManager.Settings
         /// <summary>Comportamiento para generación de cheats.</summary>
         public AutoBehavior Cheats { get; set; } = AutoBehavior.Preguntar;
 
+        /// <summary>Comportamiento para generación de metadatos (.cfg).</summary>
+        public AutoBehavior Metadata { get; set; } = AutoBehavior.Automatico;
+
         /// <summary>Comportamiento para notificaciones.</summary>
         public AutoBehavior Notifications { get; set; } = AutoBehavior.Automatico;
 
-        // NUEVAS PROPIEDADES
         /// <summary>Comportamiento para copiar archivos de idioma (LNG).</summary>
         public AutoBehavior Lng { get; set; } = AutoBehavior.Automatico;
 
