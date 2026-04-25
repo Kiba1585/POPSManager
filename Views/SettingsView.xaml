@@ -130,7 +130,6 @@
             <!-- ========================================================= -->
             <!--  AUTOMATIZACIÓN INTELIGENTE -->
             <!-- ========================================================= -->
-            <!-- (Sección sin cambios) -->
             <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
                 <StackPanel>
                     <TextBlock Text="Automatización inteligente"
@@ -157,7 +156,6 @@
                                Foreground="{StaticResource Brush.TextSecondary}"
                                Margin="0 0 0 8"/>
 
-                    <!-- Normalizar nombres -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Normalizar nombres de juegos"
                                    Width="220" VerticalAlignment="Center"
@@ -167,7 +165,6 @@
                                   Width="160"/>
                     </StackPanel>
 
-                    <!-- Agrupar multidisco -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Agrupar juegos multidisco"
                                    Width="220" VerticalAlignment="Center"
@@ -177,7 +174,6 @@
                                   Width="160"/>
                     </StackPanel>
 
-                    <!-- Descargar carátulas -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Descargar carátulas"
                                    Width="220" VerticalAlignment="Center"
