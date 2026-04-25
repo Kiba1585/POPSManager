@@ -225,6 +225,25 @@
                                   Width="160"/>
                     </StackPanel>
 
+                    <!-- NUEVOS: Generar ELF y Metadatos -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
+                        <TextBlock Text="Generar archivos ELF"
+                                   Width="220" VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                        <ComboBox SelectedItem="{Binding ElfGenerationBehavior}"
+                                  ItemsSource="{Binding Source={StaticResource AutoBehaviorValues}}"
+                                  Width="160"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
+                        <TextBlock Text="Generar metadatos (CFG)"
+                                   Width="220" VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                        <ComboBox SelectedItem="{Binding MetadataBehavior}"
+                                  ItemsSource="{Binding Source={StaticResource AutoBehaviorValues}}"
+                                  Width="160"/>
+                    </StackPanel>
+
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Copiar archivos de idioma (LNG)"
                                    Width="220" VerticalAlignment="Center"
