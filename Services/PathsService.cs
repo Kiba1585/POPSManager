@@ -17,17 +17,13 @@ namespace POPSManager.Services
         public string LngFolder => ResolvePath(_customLngFolder, "LNG");
         public string ThmFolder => ResolvePath(_customThmFolder, "THM");
 
-        public string CfgFolder => Path.Combine(PopsFolder, "CFG");
-        public string ArtFolder => Path.Combine(PopsFolder, "ART");
+        // CORREGIDO: Ahora apuntan a la raíz OPL, no a POPS
+        public string CfgFolder => Path.Combine(RootFolder, "CFG");
+        public string ArtFolder => Path.Combine(RootFolder, "ART");
         public string DvdFolder => Path.Combine(RootFolder, "DVD");
 
         public string PopstarterElfPath { get; private set; } = "";
         public string PopstarterPs2ElfPath { get; private set; } = "";
-
-        // NUEVO: Carpeta temporal por defecto (si no hay una configurada)
-        public string TempFolder => !string.IsNullOrWhiteSpace(_settings.TempFolder) && Directory.Exists(_settings.TempFolder)
-            ? _settings.TempFolder
-            : Path.Combine(Path.GetTempPath(), "POPSManager");
 
         private string? _customPopsFolder;
         private string? _customAppsFolder;
@@ -115,8 +111,6 @@ namespace POPSManager.Services
             CreateFolder(DvdFolder);
             CreateFolder(LngFolder);
             CreateFolder(ThmFolder);
-            // Asegurar que la carpeta temporal por defecto existe
-            CreateFolder(TempFolder);
         }
 
         private void CreateFolder(string path)
