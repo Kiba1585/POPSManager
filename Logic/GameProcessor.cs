@@ -427,4 +427,82 @@ namespace POPSManager.Logic
 
             if (useMetadata)
             {
- 
+                perGameProgress?.UpdateStatus(gameIdForUi, "Generando metadatos…");
+                GenerateMetadataFile(detectedId, cleanTitle, dbEntry);
+            }
+
+            _notify.Success(string.Format("{0} {1}", cleanTitle, _loc.GetString("GameProcessor_CopiedToDvdSuccessfully")));
+        }
+
+        private void GenerateMetadataFile(string gameId, string title, GameEntry? dbEntry)
+        {
+            try
+            {
+                string cfgFolder = Path.Combine(_paths.RootFolder, "CFG");
+                Directory.CreateDirectory(cfgFolder);
+                string cfgPath = Path.Combine(cfgFolder, $"{gameId}.cfg");
+
+                string genre = "Action";
+                if (dbEntry?.Tags != null && dbEntry.Tags.Length > 0)
+                    genre = dbEntry.Tags[0];
+
+                var lines = new List<string>
+                {
+                    $"Title={title}",
+                    $"Description={(dbEntry?.CheatFixes != null ? "Fixes disponibles" : "Sin descripción")}",
+                    $"Release={dbEntry?.Year.ToString() ?? "2000"}",
+                    $"Genre={genre}",
+                    "Players=1",
+                    $"Developer={dbEntry?.Publisher ?? "Desconocido"}",
+                    "Rating=ESRB=E"
+                };
+
+                File.WriteAllLines(cfgPath, lines);
+                _log.Info($"[METADATA] Archivo CFG generado -> {cfgPath}");
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"[METADATA] Error generando CFG para {gameId}: {ex.Message}");
+            }
+        }
+
+        private void CopyCustomFolderContents(string sourceFolder, string folderName, Action<string> log)
+        {
+            if (string.IsNullOrWhiteSpace(sourceFolder) || !Directory.Exists(sourceFolder))
+            {
+                log(string.Format("[Copy] No se encontro carpeta {0} personalizada o no existe.", folderName));
+                return;
+            }
+            string destFolder = Path.Combine(_paths.RootFolder, folderName);
+            try
+            {
+                Directory.CreateDirectory(destFolder);
+                foreach (var file in Directory.GetFiles(sourceFolder))
+                {
+                    string destFile = Path.Combine(destFolder, Path.GetFileName(file));
+                    File.Copy(file, destFile, true);
+                    log(string.Format("[Copy] {0} -> {1}", file, destFile));
+                }
+                foreach (var dir in Directory.GetDirectories(sourceFolder))
+                {
+                    string destDir = Path.Combine(destFolder, Path.GetFileName(dir));
+                    CopyDirectoryRecursive(dir, destDir, log);
+                }
+                log(string.Format("[Copy] Contenido de {0} copiado a {1}", folderName, destFolder));
+            }
+            catch (Exception ex) { log(string.Format("[ERROR] Copiando {0}: {1}", folderName, ex.Message)); }
+        }
+
+        private void CopyDirectoryRecursive(string source, string dest, Action<string> log)
+        {
+            Directory.CreateDirectory(dest);
+            foreach (var file in Directory.GetFiles(source))
+            {
+                string destFile = Path.Combine(dest, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+                log(string.Format("[Copy] {0} -> {1}", file, destFile));
+            }
+            foreach (var dir in Directory.GetDirectories(source))
+                CopyDirectoryRecursive(dir, Path.Combine(dest, Path.GetFileName(dir)), log);
+        }
+    }
