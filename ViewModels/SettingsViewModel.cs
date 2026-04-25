@@ -24,16 +24,16 @@ namespace POPSManager.ViewModels
         private readonly SettingsService _settings;
 
         private string _rootPath = string.Empty;
-        private string _sourcePath = string.Empty;      // Carpeta de origen
-        private string _destinationPath = string.Empty;  // Carpeta de destino (raíz OPL)
+        private string _sourcePath = string.Empty;
+        private string _destinationPath = string.Empty;
         private string _popsPath = string.Empty;
         private string _appsPath = string.Empty;
         private string _lngPath = string.Empty;
         private string _thmPath = string.Empty;
-        private string _elfFolderPath = string.Empty;    // Carpeta de ELFs
+        private string _elfFolderPath = string.Empty;
         private bool _darkMode;
         private bool _notificationsEnabled;
-        private bool _processSubfolders = true;          // Procesar subcarpetas
+        private bool _processSubfolders = true;
         private AutomationMode _automationMode;
         private AutoBehavior _normalizeNamesBehavior;
         private AutoBehavior _groupMultiDiscBehavior;
@@ -60,7 +60,6 @@ namespace POPSManager.ViewModels
                 new LanguageItem { Value = AppLanguage.Japanese, DisplayName = "日本語" }
             };
 
-            // Comandos existentes + nuevos
             ChangeRootFolderCommand = new RelayCommand(async () => await ChangeRootFolderAsync());
             ChangeSourceFolderCommand = new RelayCommand(async () => await ChangeSourceFolderAsync());
             ChangeDestinationFolderCommand = new RelayCommand(async () => await ChangeDestinationFolderAsync());
@@ -85,7 +84,6 @@ namespace POPSManager.ViewModels
                 if (SetProperty(ref _selectedLanguage, value))
                 {
                     _settings.Language = value;
-                    // Refrescar UI inmediatamente
                     _services.Localization?.Refresh();
                     _ = SaveSettingsAsync();
                 }
@@ -130,25 +128,21 @@ namespace POPSManager.ViewModels
             get => _normalizeNamesBehavior;
             set { if (SetProperty(ref _normalizeNamesBehavior, value)) _ = SaveSettingsAsync(); }
         }
-
         public AutoBehavior GroupMultiDiscBehavior
         {
             get => _groupMultiDiscBehavior;
             set { if (SetProperty(ref _groupMultiDiscBehavior, value)) _ = SaveSettingsAsync(); }
         }
-
         public AutoBehavior DownloadCoversBehavior
         {
             get => _downloadCoversBehavior;
             set { if (SetProperty(ref _downloadCoversBehavior, value)) _ = SaveSettingsAsync(); }
         }
-
         public AutoBehavior LngBehavior
         {
             get => _lngBehavior;
             set { if (SetProperty(ref _lngBehavior, value)) _ = SaveSettingsAsync(); }
         }
-
         public AutoBehavior ThmBehavior
         {
             get => _thmBehavior;
@@ -369,7 +363,6 @@ namespace POPSManager.ViewModels
             }
 
             _settings.ElfFolder = dialog.FolderName;
-            // Buscar automáticamente ELFs dentro
             string popstarter = Path.Combine(dialog.FolderName, "POPSTARTER.ELF");
             string pops2 = Path.Combine(dialog.FolderName, "POPS2.ELF");
             if (File.Exists(popstarter)) await _paths.SetCustomElfPathAsync(popstarter);
