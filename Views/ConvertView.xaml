@@ -35,7 +35,7 @@
 
                 <!-- Carpeta origen -->
                 <StackPanel Grid.Row="0" Grid.Column="0">
-                    <TextBlock Text="Carpeta de origen"
+                    <TextBlock Text="Carpeta de origen (archivos a convertir)"
                                FontSize="16"
                                Foreground="{StaticResource Brush.TextSecondary}"
                                Margin="0 0 0 6"/>
@@ -56,9 +56,9 @@
                         Style="{StaticResource SecondaryButton}"
                         Command="{Binding BrowseSourceCommand}"/>
 
-                <!-- Carpeta destino -->
+                <!-- Carpeta destino (se hereda de Configuración, pero se puede cambiar) -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0 15 0 0">
-                    <TextBlock Text="Carpeta de destino"
+                    <TextBlock Text="Carpeta de destino (raíz OPL)"
                                FontSize="16"
                                Foreground="{StaticResource Brush.TextSecondary}"
                                Margin="0 0 0 6"/>
@@ -79,7 +79,7 @@
                         Style="{StaticResource SecondaryButton}"
                         Command="{Binding BrowseOutputCommand}"/>
 
-                <!-- Lista de archivos -->
+                <!-- Lista de archivos con identificación visual -->
                 <Border Grid.Row="2" Grid.ColumnSpan="2"
                         Style="{StaticResource Card}"
                         Margin="0 20 0 0"
@@ -97,7 +97,22 @@
                                  Background="{StaticResource Brush.Panel}"
                                  Foreground="{StaticResource Brush.TextPrimary}"
                                  BorderThickness="0"
-                                 Padding="6"/>
+                                 Padding="6">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- Emoji según tipo -->
+                                        <TextBlock Text="{Binding Emoji}" 
+                                                   FontSize="16"
+                                                   Margin="0 0 6 0"
+                                                   VerticalAlignment="Center"/>
+                                        <!-- Nombre del archivo -->
+                                        <TextBlock Text="{Binding Name}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </StackPanel>
                 </Border>
             </Grid>
