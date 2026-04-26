@@ -4,7 +4,6 @@
              Background="{StaticResource Brush.Panel}">
 
     <Grid>
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -30,11 +29,34 @@
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
 
-                <!-- StackPanel corregido -->
-                <StackPanel x:Name="LogStack"
-                            Orientation="Vertical">
-                    <!-- Los logs se agregan dinámicamente con margen desde el code-behind -->
-                </StackPanel>
+                <ItemsControl x:Name="LogItemsControl">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0 2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Icono según severidad -->
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Icon}"
+                                           FontSize="14"
+                                           VerticalAlignment="Top"
+                                           Margin="0 2 0 0"/>
+
+                                <!-- Mensaje con color según severidad -->
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Message}"
+                                           Foreground="{Binding Color}"
+                                           FontFamily="Consolas"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Top"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
             </ScrollViewer>
 
