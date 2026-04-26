@@ -195,7 +195,8 @@
                                FontWeight="SemiBold"
                                Foreground="{StaticResource Brush.TextPrimary}"
                                Margin="0 0 0 10"/>
-                    <controls:LogsPanel Margin="0 0 0 10"/>
+                    <!-- NOMBRE AÑADIDO para conectarlo desde code-behind -->
+                    <controls:LogsPanel x:Name="LogsPanelControl" Margin="0 0 0 10"/>
                 </StackPanel>
             </Border>
         </StackPanel>
