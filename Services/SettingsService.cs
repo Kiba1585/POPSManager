@@ -43,11 +43,7 @@ namespace POPSManager.Services
 
         public bool UseDatabase { get; set; } = true;
         public bool UseCovers { get; set; } = true;
-
-        // NUEVO: usar metadatos (CFG) para OPL
         public bool UseMetadata { get; set; } = true;
-
-        // NUEVO: usar carpeta temporal para conversión en dispositivos extraíbles
         public bool UseTempFolderForConversion { get; set; } = true;
 
         public string RootFolder { get; set; } = "";
@@ -56,32 +52,17 @@ namespace POPSManager.Services
 
         public string? CustomPopsFolder { get; set; }
         public string? CustomAppsFolder { get; set; }
-
         public string? CustomLngFolder { get; set; }
         public string? CustomThmFolder { get; set; }
-
-        // NUEVO: carpeta temporal personalizada (si está vacía, se usa %TEMP%\POPSManager\)
         public string? TempFolder { get; set; }
 
-        // ============================
-        //  NUEVAS PROPIEDADES (RUTAS CENTRALIZADAS)
-        // ============================
         public string? SourceFolder { get; set; }
         public string? DestinationFolder { get; set; }
         public string? ElfFolder { get; set; }
         public bool ProcessSubfolders { get; set; } = true;
-
-        // NUEVO: formato del nombre del ELF
         public bool UseTitleInElfName { get; set; } = true;
 
-        // ============================
-        //  IDIOMA
-        // ============================
         public AppLanguage Language { get; set; } = AppLanguage.Auto;
-
-        // ============================
-        //  AUTOMATIZACIÓN INTELIGENTE
-        // ============================
         public AutomationSettings Automation { get; set; } = new();
 
         public event Action? OnSettingsChanged;
@@ -91,11 +72,20 @@ namespace POPSManager.Services
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string folder = Path.Combine(appData, "POPSManager");
+            // Detectar modo portable: si existe portable.txt junto al .exe, usar carpeta local
+            string portableMarker = Path.Combine(AppContext.BaseDirectory, "portable.txt");
+            string folder;
+            if (File.Exists(portableMarker))
+            {
+                folder = AppContext.BaseDirectory;
+                _log("[Settings] Modo portable detectado, usando carpeta local.");
+            }
+            else
+            {
+                folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "POPSManager");
+            }
 
             Directory.CreateDirectory(folder);
-
             _settingsPath = Path.Combine(folder, "settings.json");
 
             Load();
@@ -127,7 +117,6 @@ namespace POPSManager.Services
 
                 DarkMode = data.DarkMode;
                 NotificationsEnabled = data.NotificationsEnabled;
-
                 UseDatabase = data.UseDatabase;
                 UseCovers = data.UseCovers;
                 UseMetadata = data.UseMetadata;
@@ -150,7 +139,6 @@ namespace POPSManager.Services
                 UseTitleInElfName = data.UseTitleInElfName;
 
                 Automation = data.Automation ?? new AutomationSettings();
-
                 Language = data.Language;
 
                 _log("[Settings] Settings cargados correctamente.");
@@ -172,7 +160,6 @@ namespace POPSManager.Services
                 {
                     DarkMode = DarkMode,
                     NotificationsEnabled = NotificationsEnabled,
-
                     UseDatabase = UseDatabase,
                     UseCovers = UseCovers,
                     UseMetadata = UseMetadata,
@@ -217,40 +204,20 @@ namespace POPSManager.Services
             CustomElfPath = Normalize(CustomElfPath);
             CustomPs2ElfPath = Normalize(CustomPs2ElfPath);
 
-            if (!string.IsNullOrWhiteSpace(CustomPopsFolder))
-                CustomPopsFolder = Normalize(CustomPopsFolder);
-
-            if (!string.IsNullOrWhiteSpace(CustomAppsFolder))
-                CustomAppsFolder = Normalize(CustomAppsFolder);
-
-            if (!string.IsNullOrWhiteSpace(CustomLngFolder))
-                CustomLngFolder = Normalize(CustomLngFolder);
-
-            if (!string.IsNullOrWhiteSpace(CustomThmFolder))
-                CustomThmFolder = Normalize(CustomThmFolder);
-
-            if (!string.IsNullOrWhiteSpace(TempFolder))
-                TempFolder = Normalize(TempFolder);
-
-            if (!string.IsNullOrWhiteSpace(SourceFolder))
-                SourceFolder = Normalize(SourceFolder);
-
-            if (!string.IsNullOrWhiteSpace(DestinationFolder))
-                DestinationFolder = Normalize(DestinationFolder);
-
-            if (!string.IsNullOrWhiteSpace(ElfFolder))
-                ElfFolder = Normalize(ElfFolder);
+            if (!string.IsNullOrWhiteSpace(CustomPopsFolder)) CustomPopsFolder = Normalize(CustomPopsFolder);
+            if (!string.IsNullOrWhiteSpace(CustomAppsFolder)) CustomAppsFolder = Normalize(CustomAppsFolder);
+            if (!string.IsNullOrWhiteSpace(CustomLngFolder)) CustomLngFolder = Normalize(CustomLngFolder);
+            if (!string.IsNullOrWhiteSpace(CustomThmFolder)) CustomThmFolder = Normalize(CustomThmFolder);
+            if (!string.IsNullOrWhiteSpace(TempFolder)) TempFolder = Normalize(TempFolder);
+            if (!string.IsNullOrWhiteSpace(SourceFolder)) SourceFolder = Normalize(SourceFolder);
+            if (!string.IsNullOrWhiteSpace(DestinationFolder)) DestinationFolder = Normalize(DestinationFolder);
+            if (!string.IsNullOrWhiteSpace(ElfFolder)) ElfFolder = Normalize(ElfFolder);
         }
 
         private string Normalize(string? path)
         {
-            if (string.IsNullOrWhiteSpace(path))
-                return "";
-
-            try
-            {
-                return Path.GetFullPath(path.Trim().TrimEnd('\\', '/'));
-            }
+            if (string.IsNullOrWhiteSpace(path)) return "";
+            try { return Path.GetFullPath(path.Trim().TrimEnd('\\', '/')); }
             catch
             {
                 _log($"[Settings] Ruta inválida: {path}");
@@ -265,42 +232,21 @@ namespace POPSManager.Services
             {
                 RootFolder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "POPSManager"
-                );
-
+                    "POPSManager");
                 _log("[Settings] RootFolder vacío → asignado valor por defecto.");
                 _notifications.Info("Se asignó carpeta raíz por defecto");
             }
         }
 
-        // ============================================================
-        // MÉTODOS ASINCRÓNICOS Y DE CONVENIENCIA
-        // ============================================================
-        public async Task SaveAsync()
-        {
-            await Task.Run(() => Save());
-        }
+        public async Task SaveAsync() => await Task.Run(() => Save());
 
-        public void SetRootFolder(string path)
-        {
-            RootFolder = path;
-            Save();
-        }
+        public void SetRootFolder(string path) { RootFolder = path; Save(); }
+        public void SetCustomElfPath(string path) { CustomElfPath = path; Save(); }
 
-        public void SetCustomElfPath(string path)
-        {
-            CustomElfPath = path;
-            Save();
-        }
-
-        // ============================================================
-        // CLASE INTERNA PARA SERIALIZACIÓN
-        // ============================================================
         private sealed class SettingsData
         {
             public bool DarkMode { get; set; }
             public bool NotificationsEnabled { get; set; }
-
             public bool UseDatabase { get; set; } = true;
             public bool UseCovers { get; set; } = true;
             public bool UseMetadata { get; set; } = true;
@@ -311,7 +257,6 @@ namespace POPSManager.Services
             public string? CustomPs2ElfPath { get; set; }
             public string? CustomPopsFolder { get; set; }
             public string? CustomAppsFolder { get; set; }
-
             public string? CustomLngFolder { get; set; }
             public string? CustomThmFolder { get; set; }
             public string? TempFolder { get; set; }
@@ -323,7 +268,6 @@ namespace POPSManager.Services
             public bool UseTitleInElfName { get; set; } = true;
 
             public AutomationSettings? Automation { get; set; } = new();
-
             public AppLanguage Language { get; set; } = AppLanguage.Auto;
         }
     }
