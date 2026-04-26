@@ -9,6 +9,15 @@ namespace POPSManager.Views
         {
             InitializeComponent();
             DataContext = new DashboardViewModel();
+
+            // Conectar el LogsPanel al servicio de logging global
+            App.Services!.LogService.OnLog += msg =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    LogsPanelControl.AddDebug(msg);
+                });
+            };
         }
     }
 }
