@@ -24,6 +24,9 @@ namespace POPSManager
         public ConverterService Converter { get; }
         public GameProcessor GameProcessor { get; }
         public LocalizationService Localization { get; }
+        
+        // 🆕 Servicio de actualización de base de datos
+        public DatabaseUpdater DatabaseUpdater { get; }
 
         public AppServices()
         {
@@ -90,6 +93,11 @@ namespace POPSManager
                 Automation,
                 Localization
             );
+
+            // ============================================================
+            // 9. DatabaseUpdater (NUEVO)
+            // ============================================================
+            DatabaseUpdater = new DatabaseUpdater(LogService.Info);
         }
 
         // ============================================================
