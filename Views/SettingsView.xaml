@@ -314,6 +314,95 @@
             </Border>
 
             <!-- ========================================================= -->
+            <!--  🆕 ACTUALIZACIÓN DE BASE DE DATOS -->
+            <!-- ========================================================= -->
+            <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
+                <StackPanel>
+                    <TextBlock Text="Actualización de base de datos"
+                               FontSize="18" FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               Margin="0 0 0 16"/>
+
+                    <!-- Auto comprobación -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
+                        <CheckBox IsChecked="{Binding AutoCheckDbUpdates}" Margin="0 0 10 0"/>
+                        <TextBlock Text="Comprobar actualizaciones al iniciar"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                    </StackPanel>
+
+                    <!-- Versión actual -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                        <TextBlock Text="Versión instalada:"
+                                   Width="120"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                        <TextBlock Text="{Binding LastDbTag, TargetNullValue='(ninguna)'}"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+                    </StackPanel>
+
+                    <!-- Indicador de nueva versión -->
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 12">
+                        <TextBlock Text="Estado:"
+                                   Width="120"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                        <TextBlock VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDbUpdateAvailable}" Value="True">
+                                            <Setter Property="Text" Value="⚠️ Nueva versión disponible"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Brush.Warning}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsDbUpdateAvailable}" Value="False">
+                                            <Setter Property="Text" Value="✅ Actualizada"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Brush.Success}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Botones de acción -->
+                    <WrapPanel Margin="0 0 0 12">
+                        <Button Content="🔍 Buscar actualizaciones"
+                                Width="180" Height="32"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CheckDbUpdatesCommand}"
+                                Margin="0 0 10 10"/>
+
+                        <Button Content="📦 Descargar base completa"
+                                Width="200" Height="32"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding DownloadFullDbCommand}"
+                                Margin="0 0 10 10"/>
+
+                        <Button Content="🎯 Descargar solo mis juegos"
+                                Width="200" Height="32"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding DownloadFilteredDbCommand}"
+                                Margin="0 0 10 10"/>
+                    </WrapPanel>
+
+                    <!-- Barra de progreso -->
+                    <ProgressBar Value="{Binding DbUpdateProgress}"
+                                 Height="10"
+                                 Minimum="0" Maximum="100"
+                                 Margin="0 0 0 8"
+                                 Visibility="{Binding IsDbUpdateInProgress, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Mensaje de estado -->
+                    <TextBlock Text="{Binding DbUpdateStatus}"
+                               FontSize="13"
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ========================================================= -->
             <!--  BOTÓN GUARDAR CONFIGURACIÓN -->
             <!-- ========================================================= -->
             <Button Content="💾 Guardar configuración"
@@ -326,3 +415,4 @@
         </StackPanel>
     </ScrollViewer>
 </UserControl>
+```
