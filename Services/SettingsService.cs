@@ -65,6 +65,12 @@ namespace POPSManager.Services
         public AppLanguage Language { get; set; } = AppLanguage.Auto;
         public AutomationSettings Automation { get; set; } = new();
 
+        // ----------------------------------------------------------
+        // NUEVAS PROPIEDADES PARA LA ACTUALIZACIÓN DE LA DB
+        // ----------------------------------------------------------
+        public string LastDbTag { get; set; } = "";          // ej: "db-11"
+        public bool AutoCheckDbUpdates { get; set; } = true; // comprobar al inicio
+
         public event Action? OnSettingsChanged;
 
         public SettingsService(Action<string> log, INotificationService notifications)
@@ -72,7 +78,6 @@ namespace POPSManager.Services
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
-            // Detectar modo portable: si existe portable.txt junto al .exe, usar carpeta local
             string portableMarker = Path.Combine(AppContext.BaseDirectory, "portable.txt");
             string folder;
             if (File.Exists(portableMarker))
@@ -141,6 +146,10 @@ namespace POPSManager.Services
                 Automation = data.Automation ?? new AutomationSettings();
                 Language = data.Language;
 
+                // NUEVOS
+                LastDbTag = data.LastDbTag ?? "";
+                AutoCheckDbUpdates = data.AutoCheckDbUpdates;
+
                 _log("[Settings] Settings cargados correctamente.");
             }
             catch (Exception ex)
@@ -181,7 +190,11 @@ namespace POPSManager.Services
                     UseTitleInElfName = UseTitleInElfName,
 
                     Automation = Automation,
-                    Language = Language
+                    Language = Language,
+
+                    // NUEVOS
+                    LastDbTag = LastDbTag,
+                    AutoCheckDbUpdates = AutoCheckDbUpdates
                 };
 
                 var json = JsonSerializer.Serialize(data, JsonOptions);
@@ -239,7 +252,6 @@ namespace POPSManager.Services
         }
 
         public async Task SaveAsync() => await Task.Run(() => Save());
-
         public void SetRootFolder(string path) { RootFolder = path; Save(); }
         public void SetCustomElfPath(string path) { CustomElfPath = path; Save(); }
 
@@ -269,6 +281,10 @@ namespace POPSManager.Services
 
             public AutomationSettings? Automation { get; set; } = new();
             public AppLanguage Language { get; set; } = AppLanguage.Auto;
+
+            // NUEVOS
+            public string? LastDbTag { get; set; }
+            public bool AutoCheckDbUpdates { get; set; } = true;
         }
     }
 }
