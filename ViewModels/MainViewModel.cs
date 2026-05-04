@@ -50,7 +50,6 @@ namespace POPSManager.ViewModels
 
             SubscribeToServiceEvents();
 
-            // Comprobación automática de base de datos al iniciar
             _ = CheckForDbUpdateOnStartupAsync();
         }
 
@@ -203,7 +202,12 @@ namespace POPSManager.ViewModels
 
             try
             {
-                await Task.Delay(1500);
+                var start = DateTime.UtcNow;
+                while (_notifications == null && (DateTime.UtcNow - start).TotalSeconds < 2)
+                    await Task.Delay(200);
+
+                if (_notifications == null)
+                    return;
 
                 if (!_services.Settings.AutoCheckDbUpdates)
                     return;
@@ -216,7 +220,7 @@ namespace POPSManager.ViewModels
                 string currentTag = _services.Settings.LastDbTag ?? "";
                 if (latestTag != currentTag)
                 {
-                    _notifications?.Show(new UiNotification
+                    _notifications.Show(new UiNotification
                     {
                         Type = NotificationType.Info,
                         Message = $"Nueva base de datos disponible: {latestTag}. Ve a Configuración para descargarla."
