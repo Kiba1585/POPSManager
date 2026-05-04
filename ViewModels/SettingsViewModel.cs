@@ -39,6 +39,8 @@ namespace POPSManager.ViewModels
         private string _lngPath = string.Empty;
         private string _thmPath = string.Empty;
         private string _elfFolderPath = string.Empty;
+        private string _tempFolderPath = string.Empty;
+        private bool _useTempFolder;
         private bool _darkMode;
         private bool _notificationsEnabled;
         private bool _processSubfolders = true;
@@ -82,7 +84,7 @@ namespace POPSManager.ViewModels
             ChangeLngPathCommand = new RelayCommand(async () => await ChangeLngPathAsync());
             ChangeThmPathCommand = new RelayCommand(async () => await ChangeThmPathAsync());
             ChangeElfFolderCommand = new RelayCommand(async () => await ChangeElfFolderAsync());
-            OpenProgramFolderCommand = new RelayCommand(OpenProgramFolder);
+            ChangeTempFolderCommand = new RelayCommand(async () => await ChangeTempFolderAsync());
             SaveSettingsCommand = new RelayCommand(async () => await SaveSettingsAsync());
 
             // --- NUEVOS COMANDOS PARA LA BASE DE DATOS ---
@@ -128,8 +130,10 @@ namespace POPSManager.ViewModels
             set => SetProperty(ref _dbUpdateProgress, value);
         }
 
-        private bool IsDbUpdateInProgress =>
-            !string.IsNullOrWhiteSpace(DbUpdateStatus) && !DbUpdateStatus.Contains("complet") && !DbUpdateStatus.Contains("falló");
+        public bool IsDbUpdateInProgress =>
+            !string.IsNullOrWhiteSpace(DbUpdateStatus)
+            && !DbUpdateStatus.Contains("complet", StringComparison.OrdinalIgnoreCase)
+            && !DbUpdateStatus.Contains("falló", StringComparison.OrdinalIgnoreCase);
 
         // ==================== PROPIEDADES EXISTENTES ====================
         public ObservableCollection<LanguageItem> Languages { get; }
@@ -137,7 +141,15 @@ namespace POPSManager.ViewModels
         public AppLanguage SelectedLanguage
         {
             get => _selectedLanguage;
-            set { if (SetProperty(ref _selectedLanguage, value)) { _settings.Language = value; _services.Localization?.Refresh(); _ = SaveSettingsAsync(); } }
+            set
+            {
+                if (SetProperty(ref _selectedLanguage, value))
+                {
+                    _settings.Language = value;
+                    _services.Localization?.Refresh();
+                    _ = SaveSettingsAsync();
+                }
+            }
         }
 
         public string RootPath { get => _rootPath; set => SetProperty(ref _rootPath, value); }
@@ -148,6 +160,8 @@ namespace POPSManager.ViewModels
         public string LngPath { get => _lngPath; set => SetProperty(ref _lngPath, value); }
         public string ThmPath { get => _thmPath; set => SetProperty(ref _thmPath, value); }
         public string ElfFolderPath { get => _elfFolderPath; set => SetProperty(ref _elfFolderPath, value); }
+        public string TempFolderPath { get => _tempFolderPath; set => SetProperty(ref _tempFolderPath, value); }
+        public bool UseTempFolder { get => _useTempFolder; set { if (SetProperty(ref _useTempFolder, value)) _ = SaveSettingsAsync(); } }
 
         public bool DarkMode { get => _darkMode; set { if (SetProperty(ref _darkMode, value)) _ = SaveSettingsAsync(); } }
         public bool NotificationsEnabled { get => _notificationsEnabled; set { if (SetProperty(ref _notificationsEnabled, value)) _ = SaveSettingsAsync(); } }
@@ -173,10 +187,9 @@ namespace POPSManager.ViewModels
         public ICommand ChangeLngPathCommand { get; }
         public ICommand ChangeThmPathCommand { get; }
         public ICommand ChangeElfFolderCommand { get; }
-        public ICommand OpenProgramFolderCommand { get; }
+        public ICommand ChangeTempFolderCommand { get; }
         public ICommand SaveSettingsCommand { get; }
 
-        // NUEVOS COMANDOS
         public ICommand CheckDbUpdatesCommand { get; }
         public ICommand DownloadFullDbCommand { get; }
         public ICommand DownloadFilteredDbCommand { get; }
@@ -184,7 +197,6 @@ namespace POPSManager.ViewModels
         // ==================== CARGA INICIAL ====================
         private void LoadSettings()
         {
-            // ... (existente sin cambios)
             RootPath = _paths.RootFolder;
             SourcePath = _settings.SourceFolder ?? "";
             DestinationPath = _settings.DestinationFolder ?? "";
@@ -193,6 +205,8 @@ namespace POPSManager.ViewModels
             LngPath = _paths.LngFolder;
             ThmPath = _paths.ThmFolder;
             ElfFolderPath = _settings.ElfFolder ?? "";
+            TempFolderPath = _settings.TempFolder ?? "";
+            UseTempFolder = _settings.UseTempFolderForConversion;
             DarkMode = _settings.DarkMode;
             NotificationsEnabled = _settings.NotificationsEnabled;
             ProcessSubfolders = _settings.ProcessSubfolders;
@@ -213,16 +227,101 @@ namespace POPSManager.ViewModels
             AutoCheckDbUpdates = _settings.AutoCheckDbUpdates;
         }
 
-        // ==================== MÉTODOS EXISTENTES (SIN CAMBIOS) ====================
-        private async Task ChangeRootFolderAsync() { /* ... igual que antes ... */ }
-        private async Task ChangeSourceFolderAsync() { /* ... */ }
-        private async Task ChangeDestinationFolderAsync() { /* ... */ }
-        private async Task ChangePopsPathAsync() { /* ... */ }
-        private async Task ChangeAppsPathAsync() { /* ... */ }
-        private async Task ChangeLngPathAsync() { /* ... */ }
-        private async Task ChangeThmPathAsync() { /* ... */ }
-        private async Task ChangeElfFolderAsync() { /* ... */ }
-        private void OpenProgramFolder() { /* ... */ }
+        // ==================== MÉTODOS DE SELECCIÓN DE CARPETAS ====================
+        private async Task ChangeRootFolderAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta raíz (OPL)" };
+            if (dialog.ShowDialog() != true) return;
+            _settings.RootFolder = dialog.FolderName;
+            RootPath = dialog.FolderName;
+            await _paths.ReloadAsync();
+            await SaveSettingsAsync();
+            PopsPath = _paths.PopsFolder;
+            AppsPath = _paths.AppsFolder;
+        }
+
+        private async Task ChangeSourceFolderAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta de origen" };
+            if (dialog.ShowDialog() != true) return;
+            SourcePath = dialog.FolderName;
+            _settings.SourceFolder = dialog.FolderName;
+            await SaveSettingsAsync();
+        }
+
+        private async Task ChangeDestinationFolderAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta de destino (raíz OPL)" };
+            if (dialog.ShowDialog() != true) return;
+            DestinationPath = dialog.FolderName;
+            _settings.DestinationFolder = dialog.FolderName;
+            _settings.RootFolder = dialog.FolderName;
+            RootPath = dialog.FolderName;
+            await _paths.ReloadAsync();
+            await SaveSettingsAsync();
+            PopsPath = _paths.PopsFolder;
+            AppsPath = _paths.AppsFolder;
+        }
+
+        private async Task ChangePopsPathAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta POPS personalizada" };
+            if (dialog.ShowDialog() != true) return;
+            PopsPath = dialog.FolderName;
+            await _paths.SetCustomPopsFolderAsync(dialog.FolderName);
+            await SaveSettingsAsync();
+        }
+
+        private async Task ChangeAppsPathAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta APPS personalizada" };
+            if (dialog.ShowDialog() != true) return;
+            AppsPath = dialog.FolderName;
+            await _paths.SetCustomAppsFolderAsync(dialog.FolderName);
+            await SaveSettingsAsync();
+        }
+
+        private async Task ChangeLngPathAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta LNG" };
+            if (dialog.ShowDialog() != true) return;
+            LngPath = dialog.FolderName;
+            await _paths.SetCustomLngFolderAsync(dialog.FolderName);
+            await SaveSettingsAsync();
+        }
+
+        private async Task ChangeThmPathAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta THM" };
+            if (dialog.ShowDialog() != true) return;
+            ThmPath = dialog.FolderName;
+            await _paths.SetCustomThmFolderAsync(dialog.FolderName);
+            await SaveSettingsAsync();
+        }
+
+        private async Task ChangeElfFolderAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta de ELFs" };
+            if (dialog.ShowDialog() != true) return;
+            ElfFolderPath = dialog.FolderName;
+            _settings.ElfFolder = dialog.FolderName;
+            string popstarter = Path.Combine(dialog.FolderName, "POPSTARTER.ELF");
+            string pops2 = Path.Combine(dialog.FolderName, "POPS2.ELF");
+            if (File.Exists(popstarter)) await _paths.SetCustomElfPathAsync(popstarter);
+            if (File.Exists(pops2)) await _paths.SetCustomPs2ElfPathAsync(pops2);
+            await SaveSettingsAsync();
+        }
+
+        private async Task ChangeTempFolderAsync()
+        {
+            var dialog = new OpenFolderDialog { Title = "Seleccionar carpeta temporal" };
+            if (dialog.ShowDialog() != true) return;
+            TempFolderPath = dialog.FolderName;
+            _settings.TempFolder = dialog.FolderName;
+            await SaveSettingsAsync();
+        }
+
+        // ==================== GUARDAR CONFIGURACIÓN ====================
         private async Task SaveSettingsAsync()
         {
             try
@@ -232,6 +331,11 @@ namespace POPSManager.ViewModels
                 _settings.ProcessSubfolders = ProcessSubfolders;
                 _settings.UseMetadata = UseMetadata;
                 _settings.UseTitleInElfName = UseTitleInElfName;
+                _settings.UseTempFolderForConversion = UseTempFolder;
+                _settings.TempFolder = TempFolderPath;
+                _settings.SourceFolder = SourcePath;
+                _settings.DestinationFolder = DestinationPath;
+                _settings.ElfFolder = ElfFolderPath;
                 _settings.Automation.Mode = AutomationMode;
                 _settings.Automation.Conversion = NormalizeNamesBehavior;
                 _settings.Automation.MultiDisc = GroupMultiDiscBehavior;
@@ -253,9 +357,8 @@ namespace POPSManager.ViewModels
                 _services.LogService.Error($"[Settings] Error guardando: {ex.Message}");
             }
         }
-        private static bool IsInvalidRoot(string path) { /* ... */ }
 
-        // ==================== NUEVOS MÉTODOS PARA DB ====================
+        // ==================== MÉTODOS DE BASE DE DATOS ====================
         private async Task CheckDbUpdatesAsync()
         {
             DbUpdateStatus = "Consultando última versión...";
@@ -271,14 +374,9 @@ namespace POPSManager.ViewModels
                 }
 
                 IsDbUpdateAvailable = latestTag != _settings.LastDbTag;
-                if (IsDbUpdateAvailable)
-                {
-                    DbUpdateStatus = $"¡Nueva versión disponible! ({latestTag})";
-                }
-                else
-                {
-                    DbUpdateStatus = "La base de datos está actualizada.";
-                }
+                DbUpdateStatus = IsDbUpdateAvailable
+                    ? $"¡Nueva versión disponible! ({latestTag})"
+                    : "La base de datos está actualizada.";
             }
             catch (Exception ex)
             {
@@ -287,36 +385,23 @@ namespace POPSManager.ViewModels
             }
         }
 
-        private async Task DownloadFullDbAsync()
-        {
-            await PerformDbDownload(useIndividual: false);
-        }
-
-        private async Task DownloadFilteredDbAsync()
-        {
-            await PerformDbDownload(useIndividual: true);
-        }
+        private async Task DownloadFullDbAsync() => await PerformDbDownload(useIndividual: false);
+        private async Task DownloadFilteredDbAsync() => await PerformDbDownload(useIndividual: true);
 
         private async Task PerformDbDownload(bool useIndividual)
         {
             DbUpdateProgress = 0;
-            DbUpdateStatus = useIndividual ? "Descargando metadatos de tus juegos..." : "Descargando base de datos completa...";
+            DbUpdateStatus = useIndividual
+                ? "Descargando metadatos de tus juegos..."
+                : "Descargando base de datos completa...";
 
             try
             {
                 var updater = _services.DatabaseUpdater;
-                updater.ProgressChanged += (pct, msg) =>
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        DbUpdateProgress = pct;
-                        DbUpdateStatus = msg;
-                    });
-                };
+                updater.ProgressChanged += OnDbProgressChanged;
 
                 if (useIndividual)
                 {
-                    // Obtener lista de GameIDs presentes en las carpetas configuradas
                     var gameIds = DiscoverCurrentGameIds();
                     await updater.DownloadAndExtractFilteredAsync(gameIds, _paths.CfgFolder, _settings);
                 }
@@ -331,58 +416,4 @@ namespace POPSManager.ViewModels
                 {
                     _settings.LastDbTag = newTag;
                     LastDbTag = newTag;
-                    await _settings.SaveAsync();
-                }
-
-                DbUpdateStatus = "Actualización completada correctamente.";
-                IsDbUpdateAvailable = false;
-            }
-            catch (Exception ex)
-            {
-                DbUpdateStatus = $"Error al descargar: {ex.Message}";
-            }
-        }
-
-        private System.Collections.Generic.List<string> DiscoverCurrentGameIds()
-        {
-            var ids = new System.Collections.Generic.List<string>();
-
-            // Buscar en POPS (PS1)
-            if (Directory.Exists(_paths.PopsFolder))
-            {
-                foreach (var dir in Directory.GetDirectories(_paths.PopsFolder))
-                {
-                    // Intentar obtener el ID desde el nombre o desde los VCD
-                    string? id = POPSManager.Logic.GameIdDetector.DetectFromName(Path.GetFileName(dir));
-                    if (!string.IsNullOrWhiteSpace(id) && !ids.Contains(id))
-                        ids.Add(id);
-                }
-            }
-
-            // Buscar en DVD (PS2)
-            if (Directory.Exists(_paths.DvdFolder))
-            {
-                foreach (var file in Directory.GetFiles(_paths.DvdFolder, "*.ISO"))
-                {
-                    string? id = POPSManager.Logic.GameIdDetector.DetectGameId(file);
-                    if (!string.IsNullOrWhiteSpace(id))
-                    {
-                        // Normalizar formato PS2: XXXX_YYYYY
-                        id = id.Replace("-", "_").Replace(" ", "_").Replace(".", "_");
-                        if (!ids.Contains(id))
-                            ids.Add(id);
-                    }
-                    else
-                    {
-                        // Intentar desde el nombre del archivo
-                        id = POPSManager.Logic.GameIdDetector.DetectFromName(Path.GetFileNameWithoutExtension(file));
-                        if (!string.IsNullOrWhiteSpace(id) && !ids.Contains(id))
-                            ids.Add(id);
-                    }
-                }
-            }
-
-            return ids;
-        }
-    }
-}
+                    await _settings.SaveA
