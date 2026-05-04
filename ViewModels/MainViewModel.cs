@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -22,6 +23,7 @@ namespace POPSManager.ViewModels
         private bool _isProgressVisible;
         private int _progressValue;
         private string _progressStatusText = string.Empty;
+        private bool _startupDbCheckDone;
 
         public MainViewModel()
         {
@@ -34,7 +36,6 @@ namespace POPSManager.ViewModels
             OpenAboutCommand = new RelayCommand(OpenAbout);
             OpenCheatsSettingsCommand = new RelayCommand(OpenCheatsSettings);
 
-            // Forzar refresco de la vista actual al cambiar el idioma
             _services.Localization.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(_services.Localization.CurrentLanguage))
@@ -48,6 +49,9 @@ namespace POPSManager.ViewModels
             };
 
             SubscribeToServiceEvents();
+
+            // Comprobación automática de base de datos al iniciar
+            _ = CheckForDbUpdateOnStartupAsync();
         }
 
         private void SubscribeToServiceEvents()
@@ -188,6 +192,40 @@ namespace POPSManager.ViewModels
                     Type = NotificationType.Error,
                     Message = $"Error abriendo configuración de cheats: {ex.Message}"
                 });
+            }
+        }
+
+        private async Task CheckForDbUpdateOnStartupAsync()
+        {
+            if (_startupDbCheckDone)
+                return;
+            _startupDbCheckDone = true;
+
+            try
+            {
+                await Task.Delay(1500);
+
+                if (!_services.Settings.AutoCheckDbUpdates)
+                    return;
+
+                var updater = _services.DatabaseUpdater;
+                string? latestTag = await updater.GetLatestReleaseTagAsync();
+                if (string.IsNullOrWhiteSpace(latestTag))
+                    return;
+
+                string currentTag = _services.Settings.LastDbTag ?? "";
+                if (latestTag != currentTag)
+                {
+                    _notifications?.Show(new UiNotification
+                    {
+                        Type = NotificationType.Info,
+                        Message = $"Nueva base de datos disponible: {latestTag}. Ve a Configuración para descargarla."
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DB Check on startup] Error: {ex.Message}");
             }
         }
     }
