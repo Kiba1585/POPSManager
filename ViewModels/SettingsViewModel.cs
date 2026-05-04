@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
@@ -121,7 +122,11 @@ namespace POPSManager.ViewModels
         public string DbUpdateStatus
         {
             get => _dbUpdateStatus;
-            set => SetProperty(ref _dbUpdateStatus, value);
+            set
+            {
+                if (SetProperty(ref _dbUpdateStatus, value))
+                    OnPropertyChanged(nameof(IsDbUpdateInProgress));
+            }
         }
 
         public int DbUpdateProgress
@@ -222,7 +227,6 @@ namespace POPSManager.ViewModels
             ThmBehavior = _settings.Automation.Thm;
             SelectedLanguage = _settings.Language;
 
-            // NUEVOS
             LastDbTag = _settings.LastDbTag;
             AutoCheckDbUpdates = _settings.AutoCheckDbUpdates;
         }
@@ -346,7 +350,6 @@ namespace POPSManager.ViewModels
                 _settings.Automation.Thm = ThmBehavior;
                 _settings.Language = SelectedLanguage;
 
-                // NUEVOS
                 _settings.LastDbTag = LastDbTag;
                 _settings.AutoCheckDbUpdates = AutoCheckDbUpdates;
 
@@ -410,87 +413,8 @@ namespace POPSManager.ViewModels
                     await updater.DownloadAndExtractFullAsync(_paths.CfgFolder, _settings);
                 }
 
-                // Guardar el tag de la versión descargada
                 var newTag = await updater.GetLatestReleaseTagAsync();
                 if (newTag != null)
                 {
                     _settings.LastDbTag = newTag;
                     LastDbTag = newTag;
-                    await _settings.SaveAsync();
-                }
-
-                DbUpdateStatus = "Actualización completada correctamente.";
-                IsDbUpdateAvailable = false;
-            }
-            catch (Exception ex)
-            {
-                DbUpdateStatus = $"Error al descargar: {ex.Message}";
-            }
-            finally
-            {
-                _services.DatabaseUpdater.ProgressChanged -= OnDbProgressChanged;
-            }
-        }
-
-        private void OnDbProgressChanged(int percent, string message)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                DbUpdateProgress = percent;
-                DbUpdateStatus = message;
-            });
-        }
-
-        private List<string> DiscoverCurrentGameIds()
-        {
-            var ids = new List<string>();
-
-            // Buscar en POPS (PS1)
-            string popsFolder = _paths.PopsFolder;
-            if (Directory.Exists(popsFolder))
-            {
-                foreach (var dir in Directory.GetDirectories(popsFolder))
-                {
-                    string folderName = Path.GetFileName(dir);
-                    string? id = Logic.GameIdDetector.DetectFromName(folderName);
-                    if (!string.IsNullOrWhiteSpace(id) && !ids.Contains(id))
-                        ids.Add(id);
-
-                    foreach (var subDir in Directory.GetDirectories(dir, "CD*"))
-                    {
-                        foreach (var vcd in Directory.GetFiles(subDir, "*.VCD"))
-                        {
-                            string? vcdId = Logic.GameIdDetector.DetectGameId(vcd);
-                            if (!string.IsNullOrWhiteSpace(vcdId) && !ids.Contains(vcdId))
-                                ids.Add(vcdId);
-                        }
-                    }
-                }
-            }
-
-            // Buscar en DVD (PS2)
-            string dvdFolder = _paths.DvdFolder;
-            if (Directory.Exists(dvdFolder))
-            {
-                foreach (var iso in Directory.GetFiles(dvdFolder, "*.ISO"))
-                {
-                    string? id = Logic.GameIdDetector.DetectGameId(iso);
-                    if (!string.IsNullOrWhiteSpace(id))
-                    {
-                        id = id.Replace("-", "_").Replace(" ", "_").Replace(".", "_");
-                        if (!ids.Contains(id)) ids.Add(id);
-                    }
-                    else
-                    {
-                        id = Logic.GameIdDetector.DetectFromName(Path.GetFileNameWithoutExtension(iso));
-                        if (!string.IsNullOrWhiteSpace(id) && !ids.Contains(id))
-                            ids.Add(id);
-                    }
-                }
-            }
-
-            _services.LogService.Info($"[DB] IDs detectados: {string.Join(", ", ids)}");
-            return ids;
-        }
-    }
-}
