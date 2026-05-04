@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace POPSManager.Services
 {
+    /// <summary>
+    /// Servicio para descargar y extraer la base de datos de metadatos desde GitHub Releases.
+    /// </summary>
     public class DatabaseUpdater
     {
         private readonly HttpClient _http;
@@ -138,10 +141,11 @@ namespace POPSManager.Services
         /// </summary>
         public async Task DownloadAndExtractFilteredAsync(IEnumerable<string> gameIds, string cfgFolder, SettingsService settings)
         {
-            var ids = new HashSet<string>(gameIds, StringComparer.OrdinalIgnoreCase);
+            var ids = new HashSet<string>(gameIds.Where(id => !string.IsNullOrWhiteSpace(id)), StringComparer.OrdinalIgnoreCase);
             if (ids.Count == 0)
             {
                 _log?.Invoke("[DB] No se encontraron Game IDs para filtrar.");
+                ReportProgress(100, "No hay juegos que actualizar.");
                 return;
             }
 
@@ -167,6 +171,7 @@ namespace POPSManager.Services
                     if (indexEntry == null)
                     {
                         _log?.Invoke("[DB] index.json no encontrado en el ZIP individual.");
+                        ReportProgress(100, "Error: índice no encontrado.");
                         return;
                     }
 
@@ -182,19 +187,20 @@ namespace POPSManager.Services
                     int extracted = 0;
 
                     // 3. Extraer solo los .cfg que coincidan con los Game IDs detectados
-                    // Asumimos estructura: cfg/XXXX_YYYYY.cfg
-                    foreach (var id in ids)
+                    if (index.Cfg != null)
                     {
-                        // Buscar en las entradas de cfg del índice
-                        var cfgPath = index.Cfg?.FirstOrDefault(p => p.StartsWith(id, StringComparison.OrdinalIgnoreCase));
-                        if (cfgPath != null)
+                        foreach (var cfgPath in index.Cfg)
                         {
-                            var entry = zip.GetEntry(cfgPath);
-                            if (entry != null)
+                            string cfgFileName = Path.GetFileNameWithoutExtension(cfgPath);
+                            if (ids.Contains(cfgFileName))
                             {
-                                string destFile = Path.Combine(cfgFolder, Path.GetFileName(cfgPath));
-                                entry.ExtractToFile(destFile, true);
-                                extracted++;
+                                var entry = zip.GetEntry(cfgPath);
+                                if (entry != null)
+                                {
+                                    string destFile = Path.Combine(cfgFolder, Path.GetFileName(cfgPath));
+                                    entry.ExtractToFile(destFile, true);
+                                    extracted++;
+                                }
                             }
                         }
                     }
@@ -220,7 +226,7 @@ namespace POPSManager.Services
             }
         }
 
-        // Modelo para el index.json
+        // Modelo para deserializar index.json
         private class IndexData
         {
             public List<string>? Ps1 { get; set; }
