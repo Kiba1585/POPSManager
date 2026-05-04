@@ -225,7 +225,6 @@
                                   Width="160"/>
                     </StackPanel>
 
-                    <!-- NUEVOS: Generar ELF y Metadatos -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
                         <TextBlock Text="Generar archivos ELF"
                                    Width="220" VerticalAlignment="Center"
@@ -314,7 +313,7 @@
             </Border>
 
             <!-- ========================================================= -->
-            <!--  🆕 ACTUALIZACIÓN DE BASE DE DATOS -->
+            <!--  ACTUALIZACIÓN DE BASE DE DATOS -->
             <!-- ========================================================= -->
             <Border Style="{StaticResource Card}" Padding="20" Effect="{StaticResource ShadowSoft}" Margin="0 0 0 20">
                 <StackPanel>
@@ -323,7 +322,6 @@
                                Foreground="{StaticResource Brush.TextPrimary}"
                                Margin="0 0 0 16"/>
 
-                    <!-- Auto comprobación -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
                         <CheckBox IsChecked="{Binding AutoCheckDbUpdates}" Margin="0 0 10 0"/>
                         <TextBlock Text="Comprobar actualizaciones al iniciar"
@@ -331,7 +329,6 @@
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
 
-                    <!-- Versión actual -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
                         <TextBlock Text="Versión instalada:"
                                    Width="120"
@@ -342,7 +339,6 @@
                                    Foreground="{StaticResource Brush.TextPrimary}"/>
                     </StackPanel>
 
-                    <!-- Indicador de nueva versión -->
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 12">
                         <TextBlock Text="Estado:"
                                    Width="120"
@@ -366,7 +362,6 @@
                         </TextBlock>
                     </StackPanel>
 
-                    <!-- Botones de acción -->
                     <WrapPanel Margin="0 0 0 12">
                         <Button Content="🔍 Buscar actualizaciones"
                                 Width="180" Height="32"
@@ -387,14 +382,12 @@
                                 Margin="0 0 10 10"/>
                     </WrapPanel>
 
-                    <!-- Barra de progreso -->
                     <ProgressBar Value="{Binding DbUpdateProgress}"
                                  Height="10"
                                  Minimum="0" Maximum="100"
                                  Margin="0 0 0 8"
                                  Visibility="{Binding IsDbUpdateInProgress, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <!-- Mensaje de estado -->
                     <TextBlock Text="{Binding DbUpdateStatus}"
                                FontSize="13"
                                Foreground="{StaticResource Brush.TextSecondary}"
@@ -415,4 +408,3 @@
         </StackPanel>
     </ScrollViewer>
 </UserControl>
-```
