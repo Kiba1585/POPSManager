@@ -9,9 +9,6 @@ using System.Threading.Tasks;
 
 namespace POPSManager.Services
 {
-    /// <summary>
-    /// Servicio para descargar y extraer la base de datos de metadatos desde GitHub Releases.
-    /// </summary>
     public class DatabaseUpdater
     {
         private readonly HttpClient _http;
@@ -32,10 +29,15 @@ namespace POPSManager.Services
             _log = log;
         }
 
+        private void ReportProgress(int percent, string message)
+        {
+            _log?.Invoke($"[DB] {percent}% - {message}");
+            ProgressChanged?.Invoke(percent, message);
+        }
+
         /// <summary>
         /// Obtiene el tag de la última release de GitHub.
         /// </summary>
-        /// <returns>El tag_name (ej. "db-11") o null si falla.</returns>
         public async Task<string?> GetLatestReleaseTagAsync()
         {
             try
@@ -54,10 +56,8 @@ namespace POPSManager.Services
         }
 
         /// <summary>
-        /// Descarga el ZIP completo y lo extrae.
+        /// Descarga y extrae el ZIP completo (ps1db.json, ps2db.json, y todos los CFG).
         /// </summary>
-        /// <param name="cfgFolder">Carpeta CFG de OPL donde copiar los .cfg</param>
-        /// <param name="settings">SettingsService para guardar los psXdb.json</param>
         public async Task DownloadAndExtractFullAsync(string cfgFolder, SettingsService settings)
         {
             ReportProgress(0, "Descargando base de datos completa...");
@@ -65,13 +65,167 @@ namespace POPSManager.Services
 
             try
             {
-                // Descargar
-                var response = await _http.GetAsync(FullDbUrl, HttpCompletionOption.ResponseHeadersRead);
-                response.EnsureSuccessStatusCode();
+                // 1. Descargar ZIP
+                using (var response = await _http.GetAsync(FullDbUrl, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    response.EnsureSuccessStatusCode();
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    using var fileStream = File.Create(tempZip);
+                    await stream.CopyToAsync(fileStream);
+                }
+                ReportProgress(30, "Descarga completada. Extrayendo...");
 
-                using var stream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = File.Create(tempZip);
-                await stream.CopyToAsync(fileStream);
-                fileStream.Close();
+                // 2. Extraer en carpeta temporal
+                string extractDir = Path.Combine(Path.GetTempPath(), "POPSManager_DB");
+                if (Directory.Exists(extractDir))
+                    Directory.Delete(extractDir, true);
+                Directory.CreateDirectory(extractDir);
+                ZipFile.ExtractToDirectory(tempZip, extractDir);
+                ReportProgress(50, "Extrayendo archivos...");
 
-                ReportProgress(50, "Extrayendo archivos
+                // 3. Copiar CFGs
+                string cfgSourceDir = Path.Combine(extractDir, "CFG");
+                if (Directory.Exists(cfgSourceDir))
+                {
+                    Directory.CreateDirectory(cfgFolder);
+                    int count = 0;
+                    foreach (var cfgFile in Directory.GetFiles(cfgSourceDir, "*.cfg"))
+                    {
+                        string destFile = Path.Combine(cfgFolder, Path.GetFileName(cfgFile));
+                        File.Copy(cfgFile, destFile, true);
+                        count++;
+                    }
+                    _log?.Invoke($"[DB] {count} archivos .cfg copiados a {cfgFolder}");
+                }
+                ReportProgress(70, "CFGs copiados. Guardando bases de datos...");
+
+                // 4. Guardar ps1db.json y ps2db.json en la carpeta de datos de la app
+                string dataDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "POPSManager", "Database");
+                Directory.CreateDirectory(dataDir);
+
+                foreach (var jsonFile in new[] { "ps1db.json", "ps2db.json" })
+                {
+                    string src = Path.Combine(extractDir, jsonFile);
+                    if (File.Exists(src))
+                    {
+                        string dst = Path.Combine(dataDir, jsonFile);
+                        File.Copy(src, dst, true);
+                        _log?.Invoke($"[DB] {jsonFile} guardado en {dst}");
+                    }
+                }
+
+                // 5. Actualizar el tag guardado
+                var newTag = await GetLatestReleaseTagAsync();
+                if (newTag != null)
+                {
+                    settings.LastDbTag = newTag;
+                    await settings.SaveAsync();
+                }
+
+                ReportProgress(100, "Actualización completa.");
+            }
+            finally
+            {
+                if (File.Exists(tempZip))
+                    File.Delete(tempZip);
+            }
+        }
+
+        /// <summary>
+        /// Descarga el ZIP individual, extrae solo los .cfg de los GameIDs proporcionados.
+        /// </summary>
+        public async Task DownloadAndExtractFilteredAsync(IEnumerable<string> gameIds, string cfgFolder, SettingsService settings)
+        {
+            var ids = new HashSet<string>(gameIds, StringComparer.OrdinalIgnoreCase);
+            if (ids.Count == 0)
+            {
+                _log?.Invoke("[DB] No se encontraron Game IDs para filtrar.");
+                return;
+            }
+
+            ReportProgress(0, "Descargando base de datos individual...");
+            string tempZip = Path.GetTempFileName();
+
+            try
+            {
+                // 1. Descargar ZIP
+                using (var response = await _http.GetAsync(IndividualDbUrl, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    response.EnsureSuccessStatusCode();
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    using var fileStream = File.Create(tempZip);
+                    await stream.CopyToAsync(fileStream);
+                }
+                ReportProgress(30, "Descarga completada. Leyendo índice...");
+
+                // 2. Leer index.json para obtener las rutas dentro del ZIP
+                using (var zip = ZipFile.OpenRead(tempZip))
+                {
+                    var indexEntry = zip.GetEntry("index.json");
+                    if (indexEntry == null)
+                    {
+                        _log?.Invoke("[DB] index.json no encontrado en el ZIP individual.");
+                        return;
+                    }
+
+                    IndexData index;
+                    using (var stream = indexEntry.Open())
+                    {
+                        index = await JsonSerializer.DeserializeAsync<IndexData>(stream) ?? new IndexData();
+                    }
+
+                    ReportProgress(50, $"Extrayendo CFGs para {ids.Count} juegos detectados...");
+
+                    Directory.CreateDirectory(cfgFolder);
+                    int extracted = 0;
+
+                    // 3. Extraer solo los .cfg que coincidan con los Game IDs detectados
+                    // Asumimos estructura: cfg/XXXX_YYYYY.cfg
+                    foreach (var id in ids)
+                    {
+                        // Buscar en las entradas de cfg del índice
+                        var cfgPath = index.Cfg?.FirstOrDefault(p => p.StartsWith(id, StringComparison.OrdinalIgnoreCase));
+                        if (cfgPath != null)
+                        {
+                            var entry = zip.GetEntry(cfgPath);
+                            if (entry != null)
+                            {
+                                string destFile = Path.Combine(cfgFolder, Path.GetFileName(cfgPath));
+                                entry.ExtractToFile(destFile, true);
+                                extracted++;
+                            }
+                        }
+                    }
+
+                    _log?.Invoke($"[DB] {extracted} CFGs extraídos para juegos detectados.");
+                    ReportProgress(80, "CFGs extraídos. Actualizando versión...");
+                }
+
+                // 4. Actualizar el tag
+                var newTag = await GetLatestReleaseTagAsync();
+                if (newTag != null)
+                {
+                    settings.LastDbTag = newTag;
+                    await settings.SaveAsync();
+                }
+
+                ReportProgress(100, "Actualización individual completada.");
+            }
+            finally
+            {
+                if (File.Exists(tempZip))
+                    File.Delete(tempZip);
+            }
+        }
+
+        // Modelo para el index.json
+        private class IndexData
+        {
+            public List<string>? Ps1 { get; set; }
+            public List<string>? Ps2 { get; set; }
+            public List<string>? Cfg { get; set; }
+        }
+    }
+}
