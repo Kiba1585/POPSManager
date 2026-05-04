@@ -416,4 +416,81 @@ namespace POPSManager.ViewModels
                 {
                     _settings.LastDbTag = newTag;
                     LastDbTag = newTag;
-                    await _settings.SaveA
+                    await _settings.SaveAsync();
+                }
+
+                DbUpdateStatus = "Actualización completada correctamente.";
+                IsDbUpdateAvailable = false;
+            }
+            catch (Exception ex)
+            {
+                DbUpdateStatus = $"Error al descargar: {ex.Message}";
+            }
+            finally
+            {
+                _services.DatabaseUpdater.ProgressChanged -= OnDbProgressChanged;
+            }
+        }
+
+        private void OnDbProgressChanged(int percent, string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                DbUpdateProgress = percent;
+                DbUpdateStatus = message;
+            });
+        }
+
+        private List<string> DiscoverCurrentGameIds()
+        {
+            var ids = new List<string>();
+
+            // Buscar en POPS (PS1)
+            string popsFolder = _paths.PopsFolder;
+            if (Directory.Exists(popsFolder))
+            {
+                foreach (var dir in Directory.GetDirectories(popsFolder))
+                {
+                    string folderName = Path.GetFileName(dir);
+                    string? id = Logic.GameIdDetector.DetectFromName(folderName);
+                    if (!string.IsNullOrWhiteSpace(id) && !ids.Contains(id))
+                        ids.Add(id);
+
+                    foreach (var subDir in Directory.GetDirectories(dir, "CD*"))
+                    {
+                        foreach (var vcd in Directory.GetFiles(subDir, "*.VCD"))
+                        {
+                            string? vcdId = Logic.GameIdDetector.DetectGameId(vcd);
+                            if (!string.IsNullOrWhiteSpace(vcdId) && !ids.Contains(vcdId))
+                                ids.Add(vcdId);
+                        }
+                    }
+                }
+            }
+
+            // Buscar en DVD (PS2)
+            string dvdFolder = _paths.DvdFolder;
+            if (Directory.Exists(dvdFolder))
+            {
+                foreach (var iso in Directory.GetFiles(dvdFolder, "*.ISO"))
+                {
+                    string? id = Logic.GameIdDetector.DetectGameId(iso);
+                    if (!string.IsNullOrWhiteSpace(id))
+                    {
+                        id = id.Replace("-", "_").Replace(" ", "_").Replace(".", "_");
+                        if (!ids.Contains(id)) ids.Add(id);
+                    }
+                    else
+                    {
+                        id = Logic.GameIdDetector.DetectFromName(Path.GetFileNameWithoutExtension(iso));
+                        if (!string.IsNullOrWhiteSpace(id) && !ids.Contains(id))
+                            ids.Add(id);
+                    }
+                }
+            }
+
+            _services.LogService.Info($"[DB] IDs detectados: {string.Join(", ", ids)}");
+            return ids;
+        }
+    }
+}
