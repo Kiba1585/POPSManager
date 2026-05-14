@@ -52,7 +52,7 @@ jobs:
         run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
 
       # ============================
-      # PUBLISH PORTABLE
+      # PUBLISH PORTABLE (optimizado)
       # ============================
       - name: Publish Portable (Framework-Dependent)
         run: >
@@ -63,19 +63,13 @@ jobs:
           --self-contained false
           -p:PublishSingleFile=false
           -p:PublishReadyToRun=true
+          -p:PublishTrimmed=true
+          -p:DebugType=none
+          -p:DebugSymbols=false
 
       # ============================
-      # PUBLISH SELF-CONTAINED
+      # ELIMINADO: Publish Self-Contained (no necesario)
       # ============================
-      - name: Publish Self-Contained (Single EXE)
-        run: >
-          dotnet publish ${{ env.PROJECT_PATH }}
-          --configuration Release
-          --output ./publish/self-contained
-          --runtime win-x64
-          --self-contained true
-          -p:PublishSingleFile=true
-          -p:PublishReadyToRun=true
 
       # ============================
       # CREAR CARPETA DE ARTEFACTOS
@@ -99,7 +93,7 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "Installer/POPSManager.iss" /O"./artifacts" /F"POPSManager-Installer"
 
       # ============================
-      # PAQUETE MSIX (COMPLETO Y VÁLIDO)
+      # PAQUETE MSIX
       # ============================
       - name: Prepare MSIX layout
         run: |
@@ -107,7 +101,7 @@ jobs:
           $appFolder = "$msixRoot/VFS/ProgramFilesX64/POPSManager"
           New-Item -ItemType Directory -Force -Path $appFolder | Out-Null
           
-          Copy-Item -Path "./publish/self-contained/*" -Destination $appFolder -Recurse -Force
+          Copy-Item -Path "./publish/portable/*" -Destination $appFolder -Recurse -Force
           Copy-Item -Path "Installer/AppxManifest.xml" -Destination $msixRoot -Force
           
           if (Test-Path "Installer/Assets") {
@@ -130,7 +124,7 @@ jobs:
           & "$env:MAKEAPPX" pack /v /h SHA256 /d ./msix /p ./artifacts/POPSManager_Unsigned.msix
 
       # ============================
-      # FIRMAR MSIX (CON CERTIFICADO PFX)
+      # FIRMAR MSIX
       # ============================
       - name: Sign MSIX package
         run: |
@@ -156,8 +150,7 @@ jobs:
       - name: Create Portable ZIP
         run: Compress-Archive -Path ./publish/portable/* -DestinationPath ./artifacts/POPSManager-Portable.zip
 
-      - name: Create Self-Contained ZIP
-        run: Compress-Archive -Path ./publish/self-contained/* -DestinationPath ./artifacts/POPSManager-SelfContained.zip
+      # Eliminado: Self-Contained ZIP
 
       # ============================
       # SHA256 CHECKSUMS
@@ -165,7 +158,6 @@ jobs:
       - name: Generate SHA256 checksums
         run: |
           $portable = Get-FileHash ./artifacts/POPSManager-Portable.zip -Algorithm SHA256
-          $self = Get-FileHash ./artifacts/POPSManager-SelfContained.zip -Algorithm SHA256
           $installer = Get-FileHash ./artifacts/POPSManager-Installer.exe -Algorithm SHA256
           $msix = Get-FileHash ./artifacts/POPSManager.msix -Algorithm SHA256
           @(
@@ -174,51 +166,52 @@ jobs:
             "| File | SHA256 |",
             "|------|--------|",
             "| POPSManager-Portable.zip | ``$($portable.Hash)`` |",
-            "| POPSManager-SelfContained.zip | ``$($self.Hash)`` |",
             "| POPSManager-Installer.exe | ``$($installer.Hash)`` |",
             "| POPSManager.msix | ``$($msix.Hash)`` |"
           ) | Out-File -FilePath ./artifacts/CHECKSUMS.md -Encoding utf8
 
       # ============================
-      # UPLOAD ARTIFACTS
+      # UPLOAD ARTIFACTS (solo en main o tags, retención 3 días)
       # ============================
       - name: Upload Portable ZIP
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager-Portable
           path: ./artifacts/POPSManager-Portable.zip
-
-      - name: Upload Self-Contained ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: POPSManager-SelfContained
-          path: ./artifacts/POPSManager-SelfContained.zip
+          retention-days: 3
 
       - name: Upload Inno Setup Installer
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager-Installer
           path: ./artifacts/POPSManager-Installer.exe
+          retention-days: 3
 
       - name: Upload MSIX Package
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: POPSManager-MSIX
           path: ./artifacts/POPSManager.msix
+          retention-days: 3
 
       - name: Upload Checksums
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: CHECKSUMS
           path: ./artifacts/CHECKSUMS.md
+          retention-days: 3
 
   # ============================
-  # RELEASE JOB
+  # RELEASE JOB (solo en tags o manual)
   # ============================
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Download all artifacts
@@ -232,12 +225,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: "POPSManager v${{ github.run_number }}"
+          tag_name: ${{ github.ref_name }}
+          name: "POPSManager ${{ github.ref_name }}"
           generate_release_notes: true
           files: |
             ./artifacts/POPSManager-Portable/POPSManager-Portable.zip
-            ./artifacts/POPSManager-SelfContained/POPSManager-SelfContained.zip
             ./artifacts/POPSManager-Installer/POPSManager-Installer.exe
             ./artifacts/POPSManager-MSIX/POPSManager.msix
             ./artifacts/CHECKSUMS/CHECKSUMS.md
